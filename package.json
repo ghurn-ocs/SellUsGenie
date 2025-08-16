@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:quick": "vite build",
+    "build:quick": "vite build --mode production",
     "build:production": "node build-production.js",
+    "postbuild": "echo '✅ Production build completed for static hosting'",
     "lint": "eslint .",
     "preview": "vite preview",
     "serve": "npx serve -s dist -p 3000",
+    "start": "npm run build:quick",
     "test": "node scripts/run-tests.js",
     "test:verbose": "node scripts/run-tests.js --verbose"
   },
