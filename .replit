@@ -1,21 +1,67 @@
-run = "./main.sh"
+entrypoint = "main.sh"
 
-modules = ["nodejs-18"]
+modules = ["nodejs-20"]
+
+hidden = [".config"]
 
 [env]
-NODE_ENV = "production"
+PATH = "/home/runner/$REPL_SLUG/.config/npm/node_global/bin:/home/runner/$REPL_SLUG/node_modules/.bin:$PATH"
+npm_config_prefix = "/home/runner/$REPL_SLUG/.config/npm/node_global"
+
+[gitHubImport]
+requiredFiles = [".replit"]
 
 [nix]
-channel = "stable-23_11"
+channel = "stable-22_11"
 
-[[ports]]
-localPort = 3000
-externalPort = 80
+[unitTest]
+language = "nodejs"
 
-[deployment]
-run = ["sh", "-c", "npm ci && npm run build:quick && npx serve -s dist -p 3000"]
-deploymentTarget = "static"
-publicDir = "dist"
+[debugger]
+support = true
+
+[debugger.interactive]
+transport = "localhost:0"
+startCommand = ["dap-node"]
+
+[debugger.interactive.initializeMessage]
+command = "initialize"
+type = "request"
+
+[debugger.interactive.initializeMessage.arguments]
+clientID = "replit"
+clientName = "replit.com"
+columnsStartAt1 = true
+linesStartAt1 = true
+locale = "en-us"
+pathFormat = "path"
+supportsInvalidatedEvent = true
+supportsProgressReporting = true
+supportsRunInTerminalRequest = true
+supportsVariablePaging = true
+supportsVariableType = true
+
+[debugger.interactive.launchMessage]
+command = "launch"
+type = "request"
+
+[debugger.interactive.launchMessage.arguments]
+console = "externalTerminal"
+cwd = "."
+pauseForSourceMap = false
+program = "./index.js"
+request = "launch"
+sourceMaps = true
+stopOnEntry = false
+type = "pwa-node"
+
+[packager]
+language = "nodejs"
+
+[packager.features]
+enabledForHosting = false
+packageSearch = true
+guessImports = true
 
 [languages]
 
@@ -24,3 +70,12 @@ pattern = "**/{*.js,*.jsx,*.ts,*.tsx,*.json}"
 
 [languages.javascript.languageServer]
 start = "typescript-language-server --stdio"
+
+[deployment]
+build = ["npm", "run", "build:quick"]
+run = ["npx", "serve", "-s", "dist", "-p", "3000"]
+deploymentTarget = "static"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
