@@ -55,7 +55,7 @@ const LandingPage: React.FC = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
-            <GenieMascot mood="excited" size="xxl" showBackground className="mx-auto" />
+            <GenieMascot mood="happy" size="xxl" showBackground className="mx-auto" />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Launch Your <span className="text-[#9B51E0]">E-commerce Empire</span>

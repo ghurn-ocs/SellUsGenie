@@ -206,7 +206,7 @@ export const ClaudePromptSettings: React.FC<ClaudePromptSettingsProps> = ({ stor
       <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <GenieMascot mood="excited" size="lg" className="flex-shrink-0" />
+            <GenieMascot mood="happy" size="lg" className="flex-shrink-0" />
             <div>
               <h3 className="text-xl font-semibold text-white">Claude AI Settings</h3>
               <p className="text-[#A0A0A0]">Configure AI-powered features for your store</p>

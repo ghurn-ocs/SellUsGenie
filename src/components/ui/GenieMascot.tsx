@@ -1,6 +1,6 @@
 import React from 'react'
 
-export type GenieMood = 'happy' | 'excited' | 'helpful' | 'confused' | 'thinking' | 'hover' | 'main'
+export type GenieMood = 'happy' | 'helpful' | 'confused' | 'thinking' | 'hover' | 'main'
 
 interface GenieMascotProps {
   mood?: GenieMood
@@ -31,7 +31,6 @@ export const GenieMascot: React.FC<GenieMascotProps> = ({
       main: 'SellUsGenie-Logo-Hover-Translucent-Purple.png',
       hover: 'SellUsGenie-Logo-Hover-Translucent-Purple.png',
       happy: 'SellUsGenie-Happy.png',
-      excited: 'SellUsGenie-Excited.png', 
       helpful: 'SellUsGenie-Helpful.png',
       confused: 'SellUsGenie-Confused.png',
       thinking: 'SellUsGenie-Thinking.png'

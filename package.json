@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:quick": "vite build",
+    "build:production": "node build-production.js",
     "lint": "eslint .",
     "preview": "vite preview",
+    "serve": "npx serve -s dist -l 3000",
     "test": "node scripts/run-tests.js",
     "test:verbose": "node scripts/run-tests.js --verbose"
   },

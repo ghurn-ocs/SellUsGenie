@@ -16,7 +16,7 @@ const GettingStartedGuide: React.FC = () => {
         </button>
         
         <div className="flex items-center mb-4">
-          <GenieMascot mood="excited" size="lg" className="mr-4" />
+          <GenieMascot mood="happy" size="lg" className="mr-4" />
           <h1 className="text-3xl font-bold">Getting Started Guide</h1>
         </div>
         <p className="text-[#A0A0A0] text-lg">
