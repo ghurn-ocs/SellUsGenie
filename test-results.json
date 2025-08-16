@@ -1,0 +1,217 @@
+{
+  "timestamp": "2025-08-16T02:28:33.790Z",
+  "totalTests": 22,
+  "passedTests": 15,
+  "failedTests": 7,
+  "categories": {
+    "Code Quality": {
+      "tests": [
+        {
+          "name": "TypeScript Compilation",
+          "status": "PASS",
+          "duration": 351,
+          "timestamp": "2025-08-16T02:28:34.143Z"
+        },
+        {
+          "name": "Linting",
+          "status": "PASS",
+          "duration": 0,
+          "timestamp": "2025-08-16T02:28:34.143Z"
+        },
+        {
+          "name": "Import Validation",
+          "status": "PASS",
+          "duration": 24,
+          "timestamp": "2025-08-16T02:28:34.167Z"
+        },
+        {
+          "name": "Code Complexity Analysis",
+          "status": "WARN",
+          "duration": 2,
+          "error": "/Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/AnalyticsDashboard.tsx: Large component (245 lines), consider splitting; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/AnalyticsDashboard.tsx: Multiple ternary operators, consider simplifying; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/CustomerList.tsx: Large component (217 lines), consider splitting",
+          "timestamp": "2025-08-16T02:28:34.172Z"
+        }
+      ],
+      "passed": 3,
+      "failed": 1
+    },
+    "Component Testing": {
+      "tests": [
+        {
+          "name": "React Component Validation",
+          "status": "FAIL",
+          "duration": 1,
+          "error": "/Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/cart/CartSidebar.tsx: Missing TypeScript props interface; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/documentation/GettingStartedGuide.tsx: Missing TypeScript props interface; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/pages/AuthCallback.tsx: Missing TypeScript props interface",
+          "timestamp": "2025-08-16T02:28:34.175Z"
+        }
+      ],
+      "passed": 0,
+      "failed": 1
+    },
+    "UI/UX Testing": {
+      "tests": [
+        {
+          "name": "Accessibility Compliance",
+          "status": "FAIL",
+          "duration": 2,
+          "error": "/Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/ProductCard.tsx: Button missing accessibility label; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/ProductForm.tsx: Button missing accessibility label; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/ProductList.tsx: Button missing accessibility label",
+          "timestamp": "2025-08-16T02:28:34.180Z"
+        },
+        {
+          "name": "Responsive Design Testing",
+          "status": "PASS",
+          "duration": 2,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        }
+      ],
+      "passed": 1,
+      "failed": 1
+    },
+    "Functional Testing": {
+      "tests": [],
+      "passed": 0,
+      "failed": 0
+    },
+    "Performance Testing": {
+      "tests": [],
+      "passed": 0,
+      "failed": 0
+    },
+    "Security Testing": {
+      "tests": [
+        {
+          "name": "Supabase RLS Validation",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "Data Validation": {
+      "tests": [
+        {
+          "name": "Supabase Schema Validation",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        },
+        {
+          "name": "Type Definitions",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        },
+        {
+          "name": "Database Interface Validation",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        }
+      ],
+      "passed": 3,
+      "failed": 0
+    },
+    "Build System": {
+      "tests": [
+        {
+          "name": "Vite Configuration",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        },
+        {
+          "name": "Tailwind CSS Configuration",
+          "status": "FAIL",
+          "duration": 0,
+          "error": "postcss.config.js not found",
+          "timestamp": "2025-08-16T02:28:34.182Z"
+        },
+        {
+          "name": "Environment Variables",
+          "status": "PASS",
+          "duration": 1,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.183Z"
+        }
+      ],
+      "passed": 2,
+      "failed": 1
+    },
+    "Dependencies": {
+      "tests": [
+        {
+          "name": "Package Installation",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.183Z"
+        },
+        {
+          "name": "Version Compatibility",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.183Z"
+        },
+        {
+          "name": "React Query Integration",
+          "status": "FAIL",
+          "duration": 0,
+          "error": "/Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/hooks/useAnalytics.ts: Missing React Query import; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/hooks/useAnalytics.ts: Missing React Query hooks; /Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/hooks/useAnalyticsTracking.ts: Missing React Query import",
+          "timestamp": "2025-08-16T02:28:34.185Z"
+        }
+      ],
+      "passed": 2,
+      "failed": 1
+    },
+    "E-commerce Specific": {
+      "tests": [
+        {
+          "name": "Store Management Testing",
+          "status": "PASS",
+          "duration": 0,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.185Z"
+        },
+        {
+          "name": "Product Management Testing",
+          "status": "PASS",
+          "duration": 1,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.186Z"
+        },
+        {
+          "name": "Order Management Testing",
+          "status": "FAIL",
+          "duration": 1,
+          "error": "/Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/OrderList.tsx: Order list missing statistics",
+          "timestamp": "2025-08-16T02:28:34.188Z"
+        },
+        {
+          "name": "Customer Management Testing",
+          "status": "FAIL",
+          "duration": 1,
+          "error": "/Users/glennhurn/Documents/App_Dev/Projects/StreamSell/src/components/CustomerList.tsx: Customer list missing statistics",
+          "timestamp": "2025-08-16T02:28:34.189Z"
+        },
+        {
+          "name": "Authentication Flow Testing",
+          "status": "PASS",
+          "duration": 1,
+          "error": null,
+          "timestamp": "2025-08-16T02:28:34.190Z"
+        }
+      ],
+      "passed": 3,
+      "failed": 2
+    }
+  }
+}
