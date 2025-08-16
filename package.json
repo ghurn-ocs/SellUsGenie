@@ -10,7 +10,7 @@
     "build:production": "node build-production.js",
     "lint": "eslint .",
     "preview": "vite preview",
-    "serve": "npx serve -s dist -l 3000",
+    "serve": "npx serve -s dist -p 3000",
     "test": "node scripts/run-tests.js",
     "test:verbose": "node scripts/run-tests.js --verbose"
   },
@@ -70,6 +70,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
+    "serve": "^14.2.4",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",

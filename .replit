@@ -1,23 +1,21 @@
-[deploy]
-run = ["sh", "-c", "npm run build && npx serve -s dist -l 3000"]
+run = "./main.sh"
+
+modules = ["nodejs-18"]
+
+[env]
+NODE_ENV = "production"
+
+[nix]
+channel = "stable-23_11"
 
 [[ports]]
 localPort = 3000
 externalPort = 80
 
-[nix]
-channel = "stable-23_11"
-
-[env]
-NODE_ENV = "production"
-
-[packager]
-language = "nodejs"
-
-[packager.features]
-enabledForHosting = false
-packageSearch = true
-guessImports = true
+[deployment]
+run = ["sh", "-c", "npm ci && npm run build:quick && npx serve -s dist -p 3000"]
+deploymentTarget = "static"
+publicDir = "dist"
 
 [languages]
 
@@ -26,11 +24,3 @@ pattern = "**/{*.js,*.jsx,*.ts,*.tsx,*.json}"
 
 [languages.javascript.languageServer]
 start = "typescript-language-server --stdio"
-
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix"]
-
-[deployment]
-run = ["sh", "-c", "npm ci && npm run build && npx serve -s dist -l 3000"]
-deploymentTarget = "static"
-publicDir = "dist"
