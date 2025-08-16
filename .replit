@@ -1,9 +1,12 @@
+run = "npm start"
+
 modules = ["nodejs-20", "web"]
 
 hidden = [".config", "package-lock.json", "node_modules"]
 
 [env]
 NODE_ENV = "production"
+PORT = "3000"
 
 [gitHubImport]
 requiredFiles = [".replit"]
@@ -12,9 +15,13 @@ requiredFiles = [".replit"]
 channel = "stable-22_11"
 
 [deployment]
-deploymentTarget = "static"
-publicDir = "dist"
-build = ["./build.sh"]
+deploymentTarget = "autoscaling"
+build = ["npm", "ci"]
+run = ["npm", "start"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
 
 [packager]
 language = "nodejs"
@@ -23,8 +30,3 @@ language = "nodejs"
 enabledForHosting = true
 packageSearch = true
 guessImports = true
-
-[languages]
-
-[languages.javascript]
-pattern = "**/{*.js,*.jsx,*.ts,*.tsx,*.json}"

@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "serve": "npx serve -s dist -p 3000",
-    "start": "npm run build:quick",
+    "start": "npm run build:quick && npx serve -s dist -p 3000",
     "test": "node scripts/run-tests.js",
     "test:verbose": "node scripts/run-tests.js --verbose"
   },
