@@ -1,33 +1,69 @@
 # GoDaddy Deployment Guide for SellUsGenie
 
-## 🚀 Deployment Steps
+## 📋 GitHub Integration Status
+✅ **Repository Connected**: This GitHub repository is connected to GoDaddy hosting with **manual deployment control** to prevent accidental deployments.
 
-### 1. Build Process (Completed)
-The production build has been created in the `dist/` directory with:
-- Optimized assets with relative paths
-- .htaccess file for React Router support
-- Code splitting for better performance
-- Gzip compression configuration
+## 🚀 Deployment Setup
 
-### 2. Upload to GoDaddy cPanel
+### 1. Current Configuration
+GoDaddy is serving the **development version** directly from the repository root:
+- Serves `index.html` from repository root
+- Uses Vite development mode with `/src/main.tsx`
+- No build process currently configured on server
 
-#### Access cPanel
-1. Log into your GoDaddy account
-2. Navigate to "Web Hosting" section
-3. Click "Admin cPanel" button
+### 2. GitHub-GoDaddy Manual Deployment
 
-#### Upload Files
-1. Open **File Manager** in cPanel
-2. Navigate to `public_html` directory
-3. **IMPORTANT**: Upload the CONTENTS of the `dist/` folder, not the folder itself
-4. Upload these files/folders:
-   - `index.html`
-   - `assets/` folder (with all JS/CSS files)
-   - `images/` folder (with genie images)
-   - `vite.svg`
-   - `.htaccess` (for routing support)
+Since your GoDaddy hosting requires manual deployment:
 
-### 3. Environment Variables Setup
+#### Current Deployment Process
+1. **Push to GitHub**: Commit and push changes to the repository
+2. **SSH/Terminal Access**: Connect to GoDaddy server via SSH or cPanel Terminal  
+3. **Manual Pull**: Execute `git pull origin main` to fetch latest changes
+4. **Development Mode**: Files are served directly from source
+
+#### Safety Benefits
+- **Prevents accidental deployments** from development commits
+- **Full control** over when changes go live
+- **Review changes** before deployment
+- **Rollback capability** by checking out previous commits
+
+#### Current Server Commands
+```bash
+# On GoDaddy server (development mode):
+git pull origin main
+# No build step - serves directly from src/
+```
+
+### 3. Repository Structure on GoDaddy
+
+The entire GitHub repository is deployed to GoDaddy hosting:
+
+```
+Repository Root (served by GoDaddy)
+├── index.html (entry point - served directly)
+├── src/ (source code - served via Vite)
+│   ├── main.tsx
+│   ├── App.tsx
+│   └── components/
+├── public/ (static assets)
+├── package.json
+├── vite.config.ts
+└── ... (all other repo files)
+```
+
+#### Web Server Configuration
+- **Document Root**: Repository root directory
+- **Entry Point**: `index.html` in root
+- **Development Mode**: Vite serves from `/src/main.tsx`
+- **No Build Step**: Source files served directly
+
+#### ⚠️ Production Optimization Recommendation
+For better performance in production, consider:
+1. **Enable build process**: Run `npm run build:production` on server
+2. **Configure web server**: Point document root to `dist/` directory
+3. **Benefits**: Faster loading, optimized bundles, better caching
+
+### 4. Environment Variables Setup
 
 You'll need to configure these environment variables on GoDaddy:
 
@@ -44,7 +80,7 @@ VITE_TRIAL_DAYS=14
 
 **Note**: Since this is a static site, environment variables are baked into the build. Update your domain URL in the environment and rebuild if needed.
 
-### 4. Domain Configuration
+### 5. Domain Configuration
 
 #### Update Environment for Your Domain
 1. Create a `.env` file with your actual domain:
@@ -52,22 +88,23 @@ VITE_TRIAL_DAYS=14
    VITE_APP_URL=https://yourdomain.com
    VITE_API_URL=https://yourdomain.com/api
    ```
-2. Rebuild: `npm run build:production`
-3. Re-upload the new `dist/` contents
+2. Rebuild: `npm run build:production` 
+3. Push changes to GitHub
+4. Manually pull and deploy on GoDaddy server
 
 #### OAuth Redirect URLs
 Update your OAuth providers with your new domain:
 - **Google OAuth**: Add `https://yourdomain.com/auth/callback`
 - **Apple OAuth**: Add `https://yourdomain.com/auth/callback`
 
-### 5. Supabase Configuration
+### 6. Supabase Configuration
 
 Update Supabase settings:
 1. Go to Supabase Dashboard > Authentication > URL Configuration
 2. Add your domain to "Allowed Origins"
 3. Update redirect URLs to match your domain
 
-### 6. Stripe Configuration
+### 7. Stripe Configuration
 
 If using Stripe:
 1. Update webhook endpoints to point to your domain
