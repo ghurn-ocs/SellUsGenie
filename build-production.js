@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-// Production build script for Replit hosting
+// Production build script for GoDaddy hosting
 // This script ignores TypeScript errors for a quick deployment build
 
-const { execSync } = require('child_process');
-const fs = require('fs');
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 console.log('🚀 Building SellUsGenie for production deployment...');
 
