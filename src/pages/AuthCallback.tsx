@@ -11,6 +11,37 @@ const AuthCallback: React.FC<AuthCallbackProps> = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // First, check if this is an OAuth callback with URL fragments
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        
+        if (accessToken && refreshToken) {
+          // Handle OAuth callback with URL fragments
+          console.log('Processing OAuth callback with fragments')
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          
+          if (error) {
+            console.error('Auth callback error:', error)
+            setError(error.message)
+            return
+          }
+
+          if (data.session) {
+            await handleUserSetup(data.session.user)
+            // Clear the URL hash after successful authentication
+            window.history.replaceState({}, document.title, window.location.pathname)
+            // Redirect to admin dashboard
+            setLocation('/admin')
+            return
+          }
+        }
+        
+        // Fallback: check existing session
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -20,42 +51,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = () => {
         }
 
         if (data.session) {
-          // Check if user is a store owner
-          const { data: storeOwner, error: storeOwnerError } = await supabase
-            .from('store_owners')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single()
-
-          if (storeOwnerError && storeOwnerError.code !== 'PGRST116') {
-            // PGRST116 is "not found" error, which is expected for new users
-            console.error('Store owner check error:', storeOwnerError)
-            setError('Failed to verify store owner status')
-            return
-          }
-
-          if (!storeOwner) {
-            // Create store owner record for new users
-            const { error: createError } = await supabase
-              .from('store_owners')
-              .insert([
-                {
-                  id: data.session.user.id,
-                  email: data.session.user.email,
-                  google_id: data.session.user.app_metadata?.provider === 'google' ? data.session.user.id : null,
-                  apple_id: data.session.user.app_metadata?.provider === 'apple' ? data.session.user.id : null,
-                  subscription_tier: 'trial',
-                  trial_expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days
-                }
-              ])
-
-            if (createError) {
-              console.error('Create store owner error:', createError)
-              setError('Failed to create store owner account')
-              return
-            }
-          }
-
+          await handleUserSetup(data.session.user)
           // Redirect to admin dashboard
           setLocation('/admin')
         } else {
@@ -64,6 +60,44 @@ const AuthCallback: React.FC<AuthCallbackProps> = () => {
       } catch (err) {
         console.error('Auth callback error:', err)
         setError('Authentication failed')
+      }
+    }
+
+    const handleUserSetup = async (user: any) => {
+      // Check if user is a store owner
+      const { data: storeOwner, error: storeOwnerError } = await supabase
+        .from('store_owners')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (storeOwnerError && storeOwnerError.code !== 'PGRST116') {
+        // PGRST116 is "not found" error, which is expected for new users
+        console.error('Store owner check error:', storeOwnerError)
+        setError('Failed to verify store owner status')
+        return
+      }
+
+      if (!storeOwner) {
+        // Create store owner record for new users
+        const { error: createError } = await supabase
+          .from('store_owners')
+          .insert([
+            {
+              id: user.id,
+              email: user.email,
+              google_id: user.app_metadata?.provider === 'google' ? user.user_metadata?.provider_id || user.id : null,
+              apple_id: user.app_metadata?.provider === 'apple' ? user.user_metadata?.provider_id || user.id : null,
+              subscription_tier: 'trial',
+              trial_expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days
+            }
+          ])
+
+        if (createError) {
+          console.error('Create store owner error:', createError)
+          setError('Failed to create store owner account')
+          return
+        }
       }
     }
 
