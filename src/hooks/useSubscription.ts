@@ -19,13 +19,13 @@ export const useSubscription = () => {
       if (!user?.id) return null
 
       const { data, error } = await supabase
-        .from('user_subscriptions')
+        .from('store_owner_subscriptions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('store_owner_id', user.id)
         .eq('status', 'active')
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error
       }
 
@@ -116,11 +116,11 @@ export const useSubscription = () => {
     if (!subscription) {
       // Trial limits
       return {
-        maxStores: 2,
-        maxProducts: 10,
-        maxOrders: 50,
+        maxStores: 1,
+        maxProducts: 5,
+        maxOrders: 10,
         maxImageUploads: 1,
-        maxCustomPages: 5,
+        maxCustomPages: 2,
         maxBandwidthGB: 1,
         prioritySupport: false,
         customDomain: false,
@@ -133,35 +133,35 @@ export const useSubscription = () => {
     switch (subscription.plan_id) {
       case 'starter':
         return {
-          maxStores: 5,
-          maxProducts: 100,
+          maxStores: 2,
+          maxProducts: 30,
           maxOrders: 1000,
           maxImageUploads: 5,
           maxCustomPages: 10,
           maxBandwidthGB: 10,
           prioritySupport: false,
           customDomain: false,
-          advancedAnalytics: false,
+          advancedAnalytics: true,
           apiAccess: false
         }
       case 'professional':
         return {
-          maxStores: 25,
-          maxProducts: 1000,
+          maxStores: 5,
+          maxProducts: 50,
           maxOrders: 10000,
           maxImageUploads: 20,
-          maxCustomPages: 50,
+          maxCustomPages: -1, // unlimited
           maxBandwidthGB: 100,
           prioritySupport: true,
           customDomain: true,
           advancedAnalytics: true,
-          apiAccess: true
+          apiAccess: false
         }
       case 'enterprise':
         return {
-          maxStores: -1, // unlimited
-          maxProducts: -1,
-          maxOrders: -1,
+          maxStores: 20,
+          maxProducts: 200,
+          maxOrders: -1, // unlimited
           maxImageUploads: -1,
           maxCustomPages: -1,
           maxBandwidthGB: -1,
@@ -173,11 +173,11 @@ export const useSubscription = () => {
       default:
         // Trial limits as fallback
         return {
-          maxStores: 2,
-          maxProducts: 10,
-          maxOrders: 50,
+          maxStores: 1,
+          maxProducts: 5,
+          maxOrders: 10,
           maxImageUploads: 1,
-          maxCustomPages: 5,
+          maxCustomPages: 2,
           maxBandwidthGB: 1,
           prioritySupport: false,
           customDomain: false,

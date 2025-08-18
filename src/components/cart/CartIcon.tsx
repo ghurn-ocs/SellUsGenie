@@ -11,7 +11,30 @@ export const CartIcon: React.FC<CartIconProps> = ({
   className = '',
   showCount = true 
 }) => {
-  const { itemCount, setIsOpen } = useCart()
+  console.log('🛒 CartIcon rendered')
+  
+  let cartContext
+  try {
+    cartContext = useCart()
+    console.log('✅ CartIcon useCart hook successful:', !!cartContext)
+  } catch (error) {
+    console.error('❌ CartIcon useCart hook failed:', error)
+    return (
+      <button
+        disabled
+        className={`relative p-2 text-red-500 ${className}`}
+        title="Cart context not available"
+      >
+        <ShoppingCart className="w-6 h-6" />
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          !
+        </span>
+      </button>
+    )
+  }
+
+  const { itemCount, setIsOpen } = cartContext
+  console.log('🛒 CartIcon state:', { itemCount, hasSetIsOpen: typeof setIsOpen === 'function' })
 
   return (
     <button

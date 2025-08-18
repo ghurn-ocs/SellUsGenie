@@ -1,0 +1,14 @@
+# SellUsGenie Production robots.txt
+User-agent: *
+Allow: /
+
+# SEO-friendly paths
+Sitemap: https://sellusgenie.com/sitemap.xml
+
+# Disallow admin and internal paths
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api
+Disallow: /auth
+Disallow: /*.js$
+Disallow: /*.css$

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { Upload, X, Loader2 } from 'lucide-react'
+import { uploadImage } from '../lib/storage'
 
 interface ImageUploadProps {
   onImageUploaded: (url: string) => void
@@ -28,52 +28,32 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const validateFile = (file: File): string | null => {
-    if (!acceptedTypes.includes(file.type)) {
-      return `Invalid file type. Accepted types: ${acceptedTypes.join(', ')}`
-    }
-    
-    if (file.size > maxSize * 1024 * 1024) {
-      return `File too large. Maximum size: ${maxSize}MB`
-    }
-    
-    return null
-  }
+  // File validation is now handled by the storage utility
 
   const uploadFile = async (file: File) => {
     setIsUploading(true)
     setError(null)
 
     try {
-      const validationError = validateFile(file)
-      if (validationError) {
-        setError(validationError)
+      // Use the new storage utility for upload
+      const { url, error: uploadError } = await uploadImage(
+        file,
+        bucket,
+        folder,
+        {
+          maxSizeMB: maxSize,
+          allowedTypes: acceptedTypes
+        }
+      );
+
+      if (uploadError) {
+        setError(uploadError)
         return
       }
 
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`
-      const filePath = `${folder}/${fileName}`
-
-      // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (uploadError) {
-        throw uploadError
+      if (url) {
+        onImageUploaded(url)
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath)
-
-      onImageUploaded(publicUrl)
     } catch (err) {
       console.error('Upload error:', err)
       setError(err instanceof Error ? err.message : 'Upload failed')

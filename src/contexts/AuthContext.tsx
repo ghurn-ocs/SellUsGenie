@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean
   signInWithGoogle: () => Promise<void>
   signInWithApple: () => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -49,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -65,9 +66,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Error signing in with Google:', error)
       throw error
     }
-  }
+  }, [])
 
-  const signInWithApple = async () => {
+  const signInWithApple = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
@@ -83,9 +84,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Error signing in with Apple:', error)
       throw error
     }
-  }
+  }, [])
 
-  const signOut = async () => {
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error('Error signing in with email:', error)
+      throw error
+    }
+  }, [])
+
+  const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut({ scope: 'global' })
       if (error) throw error
@@ -95,15 +109,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Error signing out:', error)
       throw error
     }
-  }
+  }, [])
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     signInWithGoogle,
     signInWithApple,
+    signInWithEmail,
     signOut
-  }
+  }), [user, loading, signInWithGoogle, signInWithApple, signInWithEmail, signOut])
 
   return (
     <AuthContext.Provider value={value}>

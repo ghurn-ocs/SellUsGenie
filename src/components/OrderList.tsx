@@ -67,12 +67,18 @@ const OrderList: React.FC<OrderListProps> = ({
   }
 
   // Calculate statistics
-  const totalOrders = orders.length
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0)
-  const statusCounts = orders.reduce((acc, order) => {
-    acc[order.status] = (acc[order.status] || 0) + 1
-    return acc
-  }, {} as Record<Order['status'], number>)
+  const getOrderStats = (orders: Order[]) => {
+    const totalOrders = orders.length
+    const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0)
+    const statusCounts = orders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1
+      return acc
+    }, {} as Record<Order['status'], number>)
+    
+    return { totalOrders, totalRevenue, statusCounts }
+  }
+  
+  const { totalOrders, totalRevenue, statusCounts } = getOrderStats(orders)
 
   return (
     <div className="space-y-6">

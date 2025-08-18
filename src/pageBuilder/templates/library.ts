@@ -34,7 +34,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Newsletter signup form',
       'Footer with social links'
     ],
-    createdAt: '2024-01-15',
+    createdAt: '2025-01-15',
     document: {
       name: 'Modern Hero Landing',
       version: 1,
@@ -157,7 +157,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Newsletter signup',
       'Customer testimonials'
     ],
-    createdAt: '2024-01-10',
+    createdAt: '2025-01-10',
     document: {
       name: 'E-commerce Product Showcase',
       version: 1,
@@ -211,7 +211,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Contact form',
       'Skills showcase'
     ],
-    createdAt: '2024-01-08',
+    createdAt: '2025-01-08',
     document: {
       name: 'Minimal Portfolio',
       version: 1,
@@ -268,7 +268,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Client testimonials',
       'Contact form and info'
     ],
-    createdAt: '2024-01-12',
+    createdAt: '2025-01-12',
     document: {
       name: 'Corporate Business',
       version: 1,
@@ -293,7 +293,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Ticket booking form',
       'Venue information map'
     ],
-    createdAt: '2024-01-05',
+    createdAt: '2025-01-05',
     document: {
       name: 'Event & Conference',
       version: 1,
@@ -317,7 +317,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Author bio section',
       'Newsletter subscription'
     ],
-    createdAt: '2024-01-03',
+    createdAt: '2025-01-03',
     document: {
       name: 'Blog & Magazine',
       version: 1,
@@ -341,7 +341,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Reservation booking form',
       'Location and hours info'
     ],
-    createdAt: '2024-01-01',
+    createdAt: '2025-01-01',
     document: {
       name: 'Restaurant & Menu',
       version: 1,
@@ -366,7 +366,7 @@ export const templateLibrary: ExtendedPageTemplate[] = [
       'Customer testimonials',
       'Free trial signup form'
     ],
-    createdAt: '2024-01-20',
+    createdAt: '2025-01-20',
     document: {
       name: 'SaaS Product',
       version: 1,

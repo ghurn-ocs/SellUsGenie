@@ -54,7 +54,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
+        <button 
+          className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+          aria-label={`Add ${product.name} to wishlist`}
+        >
           <Heart className="w-4 h-4 text-gray-400" />
         </button>
       </div>

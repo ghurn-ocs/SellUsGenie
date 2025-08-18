@@ -26,6 +26,24 @@ export const useCustomers = (storeId: string) => {
 
   const createCustomer = useMutation({
     mutationFn: async (customerData: Omit<Customer, 'id' | 'store_id' | 'created_at' | 'updated_at'>) => {
+      // First check if customer with this email already exists in this store
+      const { data: existingCustomer, error: checkError } = await supabase
+        .from('customers')
+        .select('id, email, first_name, last_name')
+        .eq('store_id', storeId)
+        .eq('email', customerData.email)
+        .single()
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 = no rows returned, which is what we want
+        throw checkError
+      }
+
+      if (existingCustomer) {
+        throw new Error(`Customer with email ${customerData.email} already exists in this store`)
+      }
+
+      // Create the customer
       const { data, error } = await supabase
         .from('customers')
         .insert([{ ...customerData, store_id: storeId }])
@@ -57,6 +75,21 @@ export const useCustomers = (storeId: string) => {
     }
   })
 
+  const deleteCustomer = useMutation({
+    mutationFn: async (customerId: string) => {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customerId)
+
+      if (error) throw error
+      return { id: customerId }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers', storeId] })
+    }
+  })
+
   const getCustomerStats = () => {
     const totalCustomers = customers.length
     const customersWithOrders = 0 // TODO: Calculate from separate orders query if needed
@@ -69,12 +102,37 @@ export const useCustomers = (storeId: string) => {
     }
   }
 
+  const checkCustomerExists = async (email: string): Promise<boolean> => {
+    if (!email || !storeId) return false
+    
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('store_id', storeId)
+        .eq('email', email)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking customer:', error)
+        return false
+      }
+
+      return !!data
+    } catch (error) {
+      console.error('Error checking customer:', error)
+      return false
+    }
+  }
+
   return {
     customers,
     isLoading,
     error,
     createCustomer,
     updateCustomer,
+    deleteCustomer,
+    checkCustomerExists,
     getCustomerStats
   }
 }

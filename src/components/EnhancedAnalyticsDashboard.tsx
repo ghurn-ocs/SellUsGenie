@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useRealAnalytics } from '../hooks/useRealAnalytics'
+import { useSubscription } from '../hooks/useSubscription'
+import { useStore } from '../contexts/StoreContext'
 
 interface BusinessAnalyticsProps {
   storeId: string
@@ -12,6 +14,10 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
   // Get real analytics data
   const analytics = useRealAnalytics(storeId)
   const { orderStats, customerStats, productStats, websiteStats } = analytics
+  
+  // Get subscription data
+  const { subscription, subscriptionLimits, isTrialUser } = useSubscription()
+  const { stores } = useStore()
 
   // Business-Level Calculations - using real data from analytics hook
 
@@ -72,6 +78,12 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
             className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
           >
             Product Analytics
+          </Tabs.Trigger>
+          <Tabs.Trigger
+            value="subscription"
+            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+          >
+            Subscription Usage
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -620,6 +632,254 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
                 </div>
               )}
             </div>
+          </div>
+        </Tabs.Content>
+
+        <Tabs.Content value="subscription" className="space-y-6 mt-6">
+          {/* Subscription Overview */}
+          <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-white">Subscription Overview</h3>
+              {isTrialUser && (
+                <span className="px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full text-sm font-medium">
+                  Trial Account
+                </span>
+              )}
+              {subscription && (
+                <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm font-medium">
+                  {subscription.plan_id.charAt(0).toUpperCase() + subscription.plan_id.slice(1)} Plan
+                </span>
+              )}
+            </div>
+
+            {/* Current Plan Details */}
+            {subscription && (
+              <div className="bg-[#1E1E1E] rounded-lg p-4 mb-6">
+                <h4 className="text-white font-medium mb-2">Current Plan: {subscription.plan_id.charAt(0).toUpperCase() + subscription.plan_id.slice(1)}</h4>
+                <p className="text-sm text-[#A0A0A0] mb-3">
+                  Active since {new Date(subscription.current_period_start).toLocaleDateString()}
+                </p>
+                <p className="text-sm text-[#A0A0A0]">
+                  Renews on {new Date(subscription.current_period_end).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Usage Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Stores Usage */}
+            <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-[#A0A0A0]">Stores</p>
+                  <p className="text-2xl font-bold text-white">
+                    {stores.length} / {subscriptionLimits.maxStores === -1 ? '∞' : subscriptionLimits.maxStores}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+              </div>
+              <div className="w-full bg-[#3A3A3A] rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${
+                    subscriptionLimits.maxStores === -1 
+                      ? 'bg-green-400' 
+                      : stores.length / subscriptionLimits.maxStores > 0.8 
+                      ? 'bg-red-400' 
+                      : stores.length / subscriptionLimits.maxStores > 0.6 
+                      ? 'bg-yellow-400' 
+                      : 'bg-green-400'
+                  }`}
+                  style={{
+                    width: subscriptionLimits.maxStores === -1 
+                      ? '10%' 
+                      : `${Math.min((stores.length / subscriptionLimits.maxStores) * 100, 100)}%`
+                  }}
+                />
+              </div>
+              <p className="text-xs text-[#A0A0A0] mt-2">
+                {subscriptionLimits.maxStores === -1 
+                  ? 'Unlimited stores available'
+                  : `${subscriptionLimits.maxStores - stores.length} stores remaining`
+                }
+              </p>
+            </div>
+
+            {/* Products Usage */}
+            <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-[#A0A0A0]">Products per Store</p>
+                  <p className="text-2xl font-bold text-white">
+                    {productStats.totalProducts} / {subscriptionLimits.maxProducts === -1 ? '∞' : subscriptionLimits.maxProducts}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+              </div>
+              <div className="w-full bg-[#3A3A3A] rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${
+                    subscriptionLimits.maxProducts === -1 
+                      ? 'bg-green-400' 
+                      : productStats.totalProducts / subscriptionLimits.maxProducts > 0.8 
+                      ? 'bg-red-400' 
+                      : productStats.totalProducts / subscriptionLimits.maxProducts > 0.6 
+                      ? 'bg-yellow-400' 
+                      : 'bg-green-400'
+                  }`}
+                  style={{
+                    width: subscriptionLimits.maxProducts === -1 
+                      ? '15%' 
+                      : `${Math.min((productStats.totalProducts / subscriptionLimits.maxProducts) * 100, 100)}%`
+                  }}
+                />
+              </div>
+              <p className="text-xs text-[#A0A0A0] mt-2">
+                {subscriptionLimits.maxProducts === -1 
+                  ? 'Unlimited products per store'
+                  : `${subscriptionLimits.maxProducts - productStats.totalProducts} products remaining this store`
+                }
+              </p>
+            </div>
+
+            {/* Orders Usage */}
+            <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-[#A0A0A0]">Orders This Month</p>
+                  <p className="text-2xl font-bold text-white">
+                    {orderStats.totalOrders} / {subscriptionLimits.maxOrders === -1 ? '∞' : subscriptionLimits.maxOrders}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="w-full bg-[#3A3A3A] rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${
+                    subscriptionLimits.maxOrders === -1 
+                      ? 'bg-green-400' 
+                      : orderStats.totalOrders / subscriptionLimits.maxOrders > 0.8 
+                      ? 'bg-red-400' 
+                      : orderStats.totalOrders / subscriptionLimits.maxOrders > 0.6 
+                      ? 'bg-yellow-400' 
+                      : 'bg-green-400'
+                  }`}
+                  style={{
+                    width: subscriptionLimits.maxOrders === -1 
+                      ? '20%' 
+                      : `${Math.min((orderStats.totalOrders / subscriptionLimits.maxOrders) * 100, 100)}%`
+                  }}
+                />
+              </div>
+              <p className="text-xs text-[#A0A0A0] mt-2">
+                {subscriptionLimits.maxOrders === -1 
+                  ? 'Unlimited orders per month'
+                  : `${subscriptionLimits.maxOrders - orderStats.totalOrders} orders remaining this month`
+                }
+              </p>
+            </div>
+          </div>
+
+          {/* Plan Features */}
+          <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+            <h3 className="text-lg font-semibold text-white mb-6">Plan Features</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  subscriptionLimits.customDomain ? 'bg-green-500' : 'bg-red-500'
+                }`}>
+                  {subscriptionLimits.customDomain ? (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-white">Custom Domain</span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  subscriptionLimits.prioritySupport ? 'bg-green-500' : 'bg-red-500'
+                }`}>
+                  {subscriptionLimits.prioritySupport ? (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-white">Priority Support</span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  subscriptionLimits.apiAccess ? 'bg-green-500' : 'bg-red-500'
+                }`}>
+                  {subscriptionLimits.apiAccess ? (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-white">API Access</span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  subscriptionLimits.advancedAnalytics ? 'bg-green-500' : 'bg-red-500'
+                }`}>
+                  {subscriptionLimits.advancedAnalytics ? (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-white">Advanced Analytics</span>
+              </div>
+            </div>
+
+            {isTrialUser && (
+              <div className="mt-6 p-4 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-200 font-medium">Trial Account</p>
+                    <p className="text-sm text-orange-300 mt-1">
+                      Upgrade to unlock full features and remove limitations
+                    </p>
+                  </div>
+                  <button className="px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors">
+                    Upgrade Now
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </Tabs.Content>
       </Tabs.Root>

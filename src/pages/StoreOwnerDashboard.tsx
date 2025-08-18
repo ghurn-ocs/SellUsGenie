@@ -6,6 +6,7 @@ import { useProductsNew } from '../hooks/useProductsNew'
 import { useOrders } from '../hooks/useOrders'
 import { useCustomers } from '../hooks/useCustomers'
 import { useTrialLimits } from '../hooks/useTrialLimits'
+import { NurtureDashboard } from '../components/nurture/NurtureDashboard'
 import { CreateProductModal } from '../components/CreateProductModal'
 import { ViewProductModal } from '../components/ViewProductModal'
 import { EditProductModal } from '../components/EditProductModal'
@@ -23,7 +24,14 @@ import EnhancedAnalyticsDashboard from '../components/EnhancedAnalyticsDashboard
 import { StripeSettings } from '../components/settings/StripeSettings'
 import { FinancialYearSettings } from '../components/settings/FinancialYearSettings'
 import { SubscriptionUpgrade } from '../components/settings/SubscriptionUpgrade'
+import { DeliveryAreasSettings } from '../components/settings/DeliveryAreasSettings'
+import { StoreAddressSettings } from '../components/settings/StoreAddressSettings'
+import { CustomDomainSettings } from '../components/settings/CustomDomainSettings'
+import { PolicySettings } from '../components/settings/PolicySettings'
+import { SettingsSubTabs, SettingsSubTabContent } from '../components/settings/SettingsSubTabs'
+import { StoreFrontCustomizer } from '../components/storefront/StoreFrontCustomizer'
 import { useSubscription } from '../hooks/useSubscription'
+import { useCustomDomain } from '../hooks/useCustomDomain'
 import { useRealAnalytics } from '../hooks/useRealAnalytics'
 import DocumentationRouter from '../components/documentation/DocumentationRouter'
 import { GenieMascot, GenieLogotype } from '../components/ui/GenieMascot'
@@ -80,6 +88,7 @@ const StoreOwnerDashboard: React.FC = () => {
   
   const { canCreateProduct, getProductLimitMessage } = useTrialLimits()
   const { subscription, isTrialUser, createCheckoutSession } = useSubscription()
+  const { primaryDomain } = useCustomDomain(currentStore?.id || '')
   
   // Analytics data
   const analytics = useRealAnalytics(currentStore?.id || '')
@@ -88,6 +97,8 @@ const StoreOwnerDashboard: React.FC = () => {
   const [newStoreName, setNewStoreName] = useState('')
   const [newStoreSlug, setNewStoreSlug] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
+  const [productsSubTab, setProductsSubTab] = useState('products')
+  const [settingsSubTab, setSettingsSubTab] = useState('general')
   const [documentationModal, setDocumentationModal] = useState<{
     isOpen: boolean
     page: 'getting-started' | 'tutorials' | 'api' | null
@@ -205,6 +216,12 @@ const StoreOwnerDashboard: React.FC = () => {
 
   const handleCloseCreateOrder = () => {
     setIsCreateOrderOpen(false)
+  }
+
+  // Navigation handlers
+  const handleNavigateToDomainSettings = () => {
+    setActiveTab('settings')
+    setSettingsSubTab('domain')
   }
 
   const handleViewOrder = (order: any) => {
@@ -450,52 +467,58 @@ const StoreOwnerDashboard: React.FC = () => {
           <div>
             {/* Tabs */}
             <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <Tabs.List className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg">
+              <Tabs.List className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg overflow-x-auto">
                 <Tabs.Trigger
                   value="overview"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
                   Overview
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="products"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
-                  Products
+                  Products & Inventory
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="orders"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
                   Orders
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="customers"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
                   Customers
                 </Tabs.Trigger>
                 <Tabs.Trigger
-                  value="page-builder"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  value="nurture"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
-                  Page Builder
+                  Nurture & Email
+                </Tabs.Trigger>
+                <Tabs.Trigger
+                  value="storefront"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
+                >
+                  Store Front
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="analytics"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
                   Analytics
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="settings"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
                   Settings
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="help"
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors whitespace-nowrap"
                 >
                   Help
                 </Tabs.Trigger>
@@ -514,31 +537,214 @@ const StoreOwnerDashboard: React.FC = () => {
 
               <Tabs.Content value="products" className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-white">Products</h3>
-                  <button 
-                    onClick={handleAddProduct}
-                    disabled={!canCreateProduct}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      canCreateProduct 
-                        ? 'bg-[#9B51E0] text-white hover:bg-[#A051E0]'
-                        : 'bg-[#3A3A3A] text-[#A0A0A0] cursor-not-allowed'
-                    }`}
-                    title={!canCreateProduct ? getProductLimitMessage() || undefined : undefined}
-                  >
-                    Add Product
-                  </button>
+                  <h3 className="text-lg font-semibold text-white">Products & Inventory</h3>
                 </div>
                 
-                <ProductListNew
-                  products={products}
-                  isLoading={productsLoading}
-                  onView={handleViewProduct}
-                  onEdit={handleEditProduct}
-                  onDelete={handleDeleteProduct}
-                  onToggleActive={handleToggleProductActive}
-                  isDeleting={isDeleting}
-                  isToggling={isToggling}
-                />
+                {/* Sub-tabs for Products and Inventory */}
+                <div className="border-b border-[#3A3A3A] mb-6">
+                  <nav className="-mb-px flex space-x-8">
+                    <button
+                      onClick={() => setProductsSubTab('products')}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        productsSubTab === 'products'
+                          ? 'border-[#9B51E0] text-[#9B51E0]'
+                          : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                      }`}
+                    >
+                      Products
+                    </button>
+                    <button
+                      onClick={() => setProductsSubTab('inventory')}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        productsSubTab === 'inventory'
+                          ? 'border-[#9B51E0] text-[#9B51E0]'
+                          : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                      }`}
+                    >
+                      Inventory Management
+                    </button>
+                  </nav>
+                </div>
+                
+                {/* Products Sub-tab Content */}
+                {productsSubTab === 'products' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-md font-medium text-white">Product Catalog</h4>
+                      <button 
+                        onClick={handleAddProduct}
+                        disabled={!canCreateProduct}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          canCreateProduct 
+                            ? 'bg-[#9B51E0] text-white hover:bg-[#A051E0]'
+                            : 'bg-[#3A3A3A] text-[#A0A0A0] cursor-not-allowed'
+                        }`}
+                        title={!canCreateProduct ? getProductLimitMessage() || undefined : undefined}
+                      >
+                        Add Product
+                      </button>
+                    </div>
+                    
+                    <ProductListNew
+                      products={products}
+                      isLoading={productsLoading}
+                      onView={handleViewProduct}
+                      onEdit={handleEditProduct}
+                      onDelete={handleDeleteProduct}
+                      onToggleActive={handleToggleProductActive}
+                      isDeleting={isDeleting}
+                      isToggling={isToggling}
+                    />
+                  </div>
+                )}
+                
+                {/* Inventory Sub-tab Content */}
+                {productsSubTab === 'inventory' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-md font-medium text-white">Stock Management</h4>
+                      <div className="flex items-center space-x-3">
+                        <button className="px-4 py-2 bg-[#00AEEF] text-white hover:bg-[#007AFF] rounded-lg font-medium transition-colors">
+                          Bulk Update
+                        </button>
+                        <button className="px-4 py-2 bg-[#9B51E0] text-white hover:bg-[#8A47D0] rounded-lg font-medium transition-colors">
+                          Add Stock
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Inventory Overview Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                      <div className="bg-[#1E1E1E] rounded-lg p-6 border border-[#3A3A3A]">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#A0A0A0]">Total Products</p>
+                            <p className="text-2xl font-bold text-white">{products.length}</p>
+                          </div>
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-[#1E1E1E] rounded-lg p-6 border border-[#3A3A3A]">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#A0A0A0]">Low Stock</p>
+                            <p className="text-2xl font-bold text-orange-500">
+                              {products.filter(p => p.inventory <= 10).length}
+                            </p>
+                          </div>
+                          <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-[#1E1E1E] rounded-lg p-6 border border-[#3A3A3A]">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#A0A0A0]">Out of Stock</p>
+                            <p className="text-2xl font-bold text-red-500">
+                              {products.filter(p => p.inventory === 0).length}
+                            </p>
+                          </div>
+                          <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-[#1E1E1E] rounded-lg p-6 border border-[#3A3A3A]">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#A0A0A0]">Total Value</p>
+                            <p className="text-2xl font-bold text-green-500">
+                              ${products.reduce((sum, p) => sum + (p.price * p.inventory), 0).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+            
+                    {/* Inventory Table */}
+                    <div className="bg-[#1E1E1E] rounded-lg border border-[#3A3A3A] overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-[#2A2A2A]">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">Product</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">SKU</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">Stock</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">Status</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">Value</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#3A3A3A]">
+                            {products.map((product) => (
+                              <tr key={product.id} className="hover:bg-[#2A2A2A] transition-colors">
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center">
+                                    {product.images && product.images.length > 0 ? (
+                                      <img src={product.images[0]} alt={product.name} className="h-10 w-10 rounded object-cover mr-3" />
+                                    ) : (
+                                      <div className="h-10 w-10 bg-[#3A3A3A] rounded flex items-center justify-center mr-3">
+                                        <svg className="h-5 w-5 text-[#666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <div className="text-sm font-medium text-white">{product.name}</div>
+                                      <div className="text-sm text-[#A0A0A0]">${product.price}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-[#E0E0E0]">
+                                  {product.sku || 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 text-sm font-medium text-white">
+                                  {product.inventory}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    product.inventory === 0 
+                                      ? 'bg-red-100 text-red-800'
+                                      : product.inventory <= 10
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
+                                    {product.inventory === 0 ? 'Out of Stock' : product.inventory <= 10 ? 'Low Stock' : 'In Stock'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-[#E0E0E0]">
+                                  ${(product.price * product.inventory).toLocaleString()}
+                                </td>
+                                <td className="px-6 py-4 text-sm">
+                                  <button className="text-[#9B51E0] hover:text-[#A051E0] font-medium">
+                                    Update Stock
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Tabs.Content>
 
               <Tabs.Content value="orders" className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
@@ -583,13 +789,25 @@ const StoreOwnerDashboard: React.FC = () => {
                 />
               </Tabs.Content>
 
+
+              <Tabs.Content value="nurture" className="space-y-6">
+                <NurtureDashboard />
+              </Tabs.Content>
+
+              <Tabs.Content value="storefront" className="space-y-0">
+                <StoreFrontCustomizer 
+                  storeId={currentStore?.id || ''} 
+                  storeName={currentStore?.store_name || 'Your Store'}
+                  storeSlug={currentStore?.store_slug}
+                />
+              </Tabs.Content>
               <Tabs.Content value="page-builder" className="space-y-6">
                 <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white">Page Builder</h3>
+                    <h3 className="text-lg font-semibold text-white">Page Builder (Deprecated)</h3>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-[#A0A0A0]">
-                        Design and customize your store pages
+                      <span className="text-sm text-red-400">
+                        Replaced by Store Front customizer
                       </span>
                     </div>
                   </div>
@@ -601,58 +819,49 @@ const StoreOwnerDashboard: React.FC = () => {
                         </svg>
                       </div>
                       <h4 className="text-xl font-bold text-white mb-2">
-                        🎨 NEW: Webflow-Style Visual Builder
+                        🎨 Use Store Front Instead
                       </h4>
                       <p className="text-[#A0A0A0] mb-4">
-                        Design like a pro with our advanced visual page builder featuring:
+                        The Page Builder has been replaced with our new Store Front customizer featuring:
                       </p>
                       <div className="text-left text-sm text-[#A0A0A0] mb-6 space-y-1">
                         <div className="flex items-center">
                           <span className="text-green-400 mr-2">✓</span>
-                          Drag & drop elements
+                          50+ industry-specific layouts
                         </div>
                         <div className="flex items-center">
                           <span className="text-green-400 mr-2">✓</span>
-                          Advanced styling controls
+                          20 professional color schemes
                         </div>
                         <div className="flex items-center">
                           <span className="text-green-400 mr-2">✓</span>
-                          Responsive design tools
+                          Easy drag & drop customization
                         </div>
                         <div className="flex items-center">
                           <span className="text-green-400 mr-2">✓</span>
-                          Animations & interactions
+                          Mobile responsive designs
                         </div>
                         <div className="flex items-center">
                           <span className="text-green-400 mr-2">✓</span>
-                          CMS & dynamic content
+                          Real-time preview
                         </div>
                         <div className="flex items-center">
                           <span className="text-green-400 mr-2">✓</span>
-                          Clean code export
+                          One-click publish
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <button
-                          onClick={() => setLocation('/admin/page-builder')}
-                          className="bg-gradient-to-r from-[#9B51E0] to-[#FF7F00] text-white px-6 py-3 rounded-lg hover:from-[#A051E0] hover:to-[#FF8C00] transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
+                          onClick={() => setActiveTab('storefront')}
+                          className="bg-[#9B51E0] hover:bg-[#A051E0] text-white px-6 py-2 rounded-lg font-medium transition-colors"
                         >
-                          🚀 Launch Builder
-                        </button>
-                        <button
-                          onClick={() => setLocation('/admin/page-builder/new')}
-                          className="bg-[#2A2A2A] text-white px-6 py-3 rounded-lg hover:bg-[#3A3A3A] transition-colors font-medium border border-[#3A3A3A]"
-                        >
-                          Create New Page
+                          Go to Store Front
                         </button>
                       </div>
                       <div className="mt-4 pt-4 border-t border-[#3A3A3A]">
-                        <button
-                          onClick={() => window.open('/admin/page-builder-legacy', '_blank')}
-                          className="text-xs text-[#A0A0A0] hover:text-white transition-colors"
-                        >
-                          Use Legacy Builder →
-                        </button>
+                        <p className="text-xs text-[#A0A0A0]">
+                          The new Store Front designer provides better templates and easier customization.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -664,7 +873,13 @@ const StoreOwnerDashboard: React.FC = () => {
               </Tabs.Content>
 
               <Tabs.Content value="settings" className="space-y-8">
-                {/* Subscription Management - Only show for trial users */}
+                <SettingsSubTabs 
+                  value={settingsSubTab}
+                  onValueChange={setSettingsSubTab}
+                >
+                  {/* General Tab */}
+                  <SettingsSubTabContent value="general">
+                    {/* Subscription Management - Only show for trial users */}
                 {isTrialUser && (
                   <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                     <SubscriptionUpgrade 
@@ -717,9 +932,20 @@ const StoreOwnerDashboard: React.FC = () => {
                       <div>
                         <p className="text-sm font-medium text-[#A0A0A0]">Current Store</p>
                         <p className="text-2xl font-bold text-white">{currentStore?.store_name}</p>
-                        <p className="text-sm text-[#A0A0A0]">
-                          {currentStore?.store_slug}.sellusgenie.com
-                        </p>
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm text-[#A0A0A0]">
+                            {primaryDomain?.verification_status === 'verified' && primaryDomain?.ssl_status === 'active' 
+                              ? primaryDomain.full_domain 
+                              : `${currentStore?.store_slug}.sellusgenie.com`}
+                          </p>
+                          {primaryDomain?.verification_status === 'verified' && primaryDomain?.ssl_status === 'active' && (
+                            <div className="flex items-center space-x-1 text-green-400">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
                         <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -751,12 +977,43 @@ const StoreOwnerDashboard: React.FC = () => {
                       <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
                         Store URL
                       </label>
-                      <input
-                        type="text"
-                        value={`${currentStore.store_slug}.sellusgenie.com`}
-                        className="w-full px-3 py-2 border border-[#3A3A3A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent bg-[#1E1E1E] text-white"
-                        readOnly
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={primaryDomain?.verification_status === 'verified' && primaryDomain?.ssl_status === 'active' 
+                            ? `https://${primaryDomain.full_domain}` 
+                            : `https://${currentStore.store_slug}.sellusgenie.com`}
+                          className="w-full px-3 py-2 border border-[#3A3A3A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent bg-[#1E1E1E] text-white"
+                          readOnly
+                        />
+                        {primaryDomain?.verification_status === 'verified' && primaryDomain?.ssl_status === 'active' ? (
+                          <div className="flex items-center space-x-2 text-xs">
+                            <div className="flex items-center space-x-1 text-green-400">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              <span>Using custom domain</span>
+                            </div>
+                            <span className="text-[#A0A0A0]">•</span>
+                            <span className="text-[#A0A0A0]">Default: {currentStore.store_slug}.sellusgenie.com</span>
+                          </div>
+                        ) : primaryDomain?.verification_status === 'pending' ? (
+                          <div className="flex items-center space-x-2 text-xs">
+                            <div className="flex items-center space-x-1 text-yellow-400">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 102 0V5zm0 8a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
+                              </svg>
+                              <span>Custom domain pending verification</span>
+                            </div>
+                            <span className="text-[#A0A0A0]">•</span>
+                            <span className="text-[#A0A0A0]">Using default for now</span>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-[#A0A0A0]">
+                            Default store URL • <button onClick={handleNavigateToDomainSettings} className="text-[#9B51E0] hover:text-[#B16CE8] underline hover:no-underline">Add custom domain in Domain settings</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
@@ -789,16 +1046,46 @@ const StoreOwnerDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                  </SettingsSubTabContent>
 
-                {/* Financial Year Settings */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <FinancialYearSettings storeId={currentStore.id} />
-                </div>
+                  {/* Business Tab */}
+                  <SettingsSubTabContent value="business">
+                    {/* Financial Year Settings */}
+                    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                      <FinancialYearSettings storeId={currentStore.id} />
+                    </div>
 
-                {/* Stripe Payment Settings */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <StripeSettings storeId={currentStore.id} />
-                </div>
+                    {/* Store Address Settings */}
+                    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                      <StoreAddressSettings storeId={currentStore.id} />
+                    </div>
+                  </SettingsSubTabContent>
+
+                  {/* Payment Tab */}
+                  <SettingsSubTabContent value="payment">
+                    {/* Stripe Payment Settings */}
+                    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                      <StripeSettings storeId={currentStore.id} />
+                    </div>
+                  </SettingsSubTabContent>
+
+                  {/* Delivery Tab */}
+                  <SettingsSubTabContent value="delivery">
+                    {/* Delivery Areas Settings */}
+                    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                      <DeliveryAreasSettings storeId={currentStore.id} />
+                    </div>
+                  </SettingsSubTabContent>
+
+                  {/* Custom Domain Tab */}
+                  <SettingsSubTabContent value="domain">
+                    <CustomDomainSettings storeId={currentStore.id} />
+                  </SettingsSubTabContent>
+                  {/* Policies Tab */}
+                  <SettingsSubTabContent value="policies">
+                    <PolicySettings storeId={currentStore.id} />
+                  </SettingsSubTabContent>
+                </SettingsSubTabs>
               </Tabs.Content>
 
 

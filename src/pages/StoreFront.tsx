@@ -2,6 +2,7 @@ import React from 'react'
 import { useProducts } from '../hooks/useProducts'
 import { ShoppingCartSystem, CartIcon } from '../components/cart/ShoppingCartSystem'
 import { ProductCard } from '../components/ProductCard'
+import { DeliveryAreaDisplay } from '../components/DeliveryAreaDisplay'
 
 interface StoreFrontProps {
   storeId: string
@@ -36,6 +37,13 @@ export const StoreFront: React.FC<StoreFrontProps> = ({ storeId, storeName }) =>
             <p className="text-xl text-primary-100 mb-8">
               Discover amazing products with fast, secure checkout
             </p>
+          </div>
+        </section>
+
+        {/* Delivery Areas Section */}
+        <section className="py-12 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <DeliveryAreaDisplay storeId={storeId} showMap={false} />
           </div>
         </section>
 

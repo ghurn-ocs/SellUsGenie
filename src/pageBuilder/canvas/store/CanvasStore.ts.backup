@@ -1,0 +1,605 @@
+/**
+ * Canvas State Management - Zustand store for WYSIWYG canvas
+ * Centralized state management with undo/redo and real-time synchronization
+ */
+
+import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { 
+  CanvasState, 
+  CanvasElement, 
+  Breakpoint, 
+  CSSProperties, 
+  ResponsiveStyles,
+  BreadcrumbItem,
+  CanvasError
+} from '../types/CanvasTypes';
+
+interface CanvasStore extends CanvasState {
+  // Element Management
+  createElement: (element: Omit<CanvasElement, 'id' | 'children'>, parentId?: string, position?: number) => string;
+  updateElement: (elementId: string, updates: Partial<CanvasElement>) => void;
+  updateElementStyles: (elementId: string, styles: Partial<CSSProperties>, breakpoint?: Breakpoint) => void;
+  updateElementTextContent: (elementId: string, textContent: string) => void;
+  deleteElement: (elementId: string) => void;
+  moveElement: (elementId: string, newParentId: string, position?: number) => void;
+  duplicateElement: (elementId: string) => string;
+  
+  // Selection Management
+  selectElement: (elementId: string | null) => void;
+  hoverElement: (elementId: string | null) => void;
+  
+  // Drag and Drop
+  startDrag: (elementId: string) => void;
+  updateDragTarget: (targetId: string | null, position: 'before' | 'after' | 'inside' | null) => void;
+  endDrag: () => void;
+  
+  // Breakpoint Management
+  setActiveBreakpoint: (breakpoint: Breakpoint) => void;
+  
+  // Viewport Management
+  updateViewport: (viewport: Partial<CanvasState['viewport']>) => void;
+  
+  // History Management
+  undo: () => void;
+  redo: () => void;
+  saveToHistory: () => void;
+  clearHistory: () => void;
+  
+  // Utility Functions
+  getElementById: (elementId: string) => CanvasElement | null;
+  getElementChildren: (elementId: string) => CanvasElement[];
+  getElementPath: (elementId: string) => BreadcrumbItem[];
+  getComputedStyles: (elementId: string, breakpoint?: Breakpoint) => CSSProperties;
+  validateElementStructure: () => boolean;
+  exportCanvasData: () => any;
+  importCanvasData: (data: any) => void;
+  
+  // Error Handling
+  reportError: (error: CanvasError) => void;
+  clearErrors: () => void;
+  errors: CanvasError[];
+}
+
+// Create initial canvas state
+const createInitialCanvasState = (): Omit<CanvasState, 'history'> => {
+  const rootId = 'root-body';
+  const initialElement: CanvasElement = {
+    id: rootId,
+    tag: 'body',
+    children: [],
+    attributes: {},
+    styles: {
+      desktop: {
+        margin: '0',
+        padding: '20px',
+        minHeight: '100vh',
+        backgroundColor: '#ffffff',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '16px',
+        lineHeight: '1.5',
+        color: '#1f2937'
+      }
+    }
+  };
+
+  return {
+    elements: { [rootId]: initialElement },
+    rootId,
+    selectedElementId: null,
+    hoveredElementId: null,
+    activeBreakpoint: 'desktop',
+    dragState: {
+      isDragging: false,
+      draggedElementId: null,
+      dropTargetId: null,
+      dropPosition: null
+    },
+    viewport: {
+      width: 1200,
+      height: 800,
+      scale: 1
+    }
+  };
+};
+
+export const useCanvasStore = create<CanvasStore>()(
+  subscribeWithSelector(
+    immer((set, get) => {
+      const initialState = createInitialCanvasState();
+      
+      return {
+        ...initialState,
+        history: {
+          past: [],
+          present: initialState as CanvasState,
+          future: []
+        },
+        errors: [],
+
+        // Element Management
+        createElement: (elementData, parentId = 'root-body', position) => {
+          const newId = `element_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
+          try {
+            set((state) => {
+              const newElement: CanvasElement = {
+                ...elementData,
+                id: newId,
+                children: [],
+                parentId
+              };
+
+              // Add to elements
+              state.elements[newId] = newElement;
+
+              // Add to parent's children
+              const parent = state.elements[parentId];
+              if (parent) {
+                if (typeof position === 'number' && position >= 0) {
+                  parent.children.splice(position, 0, newId);
+                } else {
+                  parent.children.push(newId);
+                }
+              }
+
+              // Auto-select new element
+              state.selectedElementId = newId;
+            });
+            
+            get().saveToHistory();
+            return newId;
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to create element',
+              'CREATE_ELEMENT_ERROR',
+              undefined,
+              error as Error
+            ));
+            return '';
+          }
+        },
+
+        updateElement: (elementId, updates) => {
+          try {
+            set((state) => {
+              const element = state.elements[elementId];
+              if (element) {
+                Object.assign(element, updates);
+              }
+            });
+            get().saveToHistory();
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to update element',
+              'UPDATE_ELEMENT_ERROR',
+              elementId,
+              error as Error
+            ));
+          }
+        },
+
+        updateElementStyles: (elementId, styles, breakpoint = 'desktop') => {
+          try {
+            set((state) => {
+              const element = state.elements[elementId];
+              if (element) {
+                if (breakpoint === 'desktop') {
+                  Object.assign(element.styles.desktop, styles);
+                } else {
+                  if (!element.styles[breakpoint]) {
+                    element.styles[breakpoint] = {};
+                  }
+                  Object.assign(element.styles[breakpoint]!, styles);
+                }
+              }
+            });
+            get().saveToHistory();
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to update element styles',
+              'UPDATE_STYLES_ERROR',
+              elementId,
+              error as Error
+            ));
+          }
+        },
+
+        updateElementTextContent: (elementId, textContent) => {
+          try {
+            set((state) => {
+              const element = state.elements[elementId];
+              if (element) {
+                element.textContent = textContent;
+              }
+            });
+            get().saveToHistory();
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to update text content',
+              'UPDATE_TEXT_ERROR',
+              elementId,
+              error as Error
+            ));
+          }
+        },
+
+        deleteElement: (elementId) => {
+          try {
+            set((state) => {
+              const element = state.elements[elementId];
+              if (!element || elementId === state.rootId) return;
+
+              // Remove from parent's children
+              const parent = element.parentId ? state.elements[element.parentId] : null;
+              if (parent) {
+                parent.children = parent.children.filter(id => id !== elementId);
+              }
+
+              // Recursively delete children
+              const deleteRecursive = (id: string) => {
+                const el = state.elements[id];
+                if (el) {
+                  el.children.forEach(deleteRecursive);
+                  delete state.elements[id];
+                }
+              };
+
+              deleteRecursive(elementId);
+
+              // Clear selection if deleted element was selected
+              if (state.selectedElementId === elementId) {
+                state.selectedElementId = null;
+              }
+            });
+            get().saveToHistory();
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to delete element',
+              'DELETE_ELEMENT_ERROR',
+              elementId,
+              error as Error
+            ));
+          }
+        },
+
+        moveElement: (elementId, newParentId, position) => {
+          try {
+            set((state) => {
+              const element = state.elements[elementId];
+              const newParent = state.elements[newParentId];
+              
+              if (!element || !newParent || elementId === state.rootId) return;
+
+              // Remove from old parent
+              const oldParent = element.parentId ? state.elements[element.parentId] : null;
+              if (oldParent) {
+                oldParent.children = oldParent.children.filter(id => id !== elementId);
+              }
+
+              // Add to new parent
+              element.parentId = newParentId;
+              if (typeof position === 'number' && position >= 0) {
+                newParent.children.splice(position, 0, elementId);
+              } else {
+                newParent.children.push(elementId);
+              }
+            });
+            get().saveToHistory();
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to move element',
+              'MOVE_ELEMENT_ERROR',
+              elementId,
+              error as Error
+            ));
+          }
+        },
+
+        duplicateElement: (elementId) => {
+          try {
+            const element = get().elements[elementId];
+            if (!element) return '';
+
+            const duplicatedId = get().createElement(
+              {
+                tag: element.tag,
+                textContent: element.textContent,
+                attributes: { ...element.attributes },
+                styles: JSON.parse(JSON.stringify(element.styles)),
+                className: element.className
+              },
+              element.parentId,
+              element.parentId ? get().elements[element.parentId!].children.indexOf(elementId) + 1 : undefined
+            );
+
+            return duplicatedId;
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to duplicate element',
+              'DUPLICATE_ELEMENT_ERROR',
+              elementId,
+              error as Error
+            ));
+            return '';
+          }
+        },
+
+        // Selection Management
+        selectElement: (elementId) => {
+          set((state) => {
+            state.selectedElementId = elementId;
+          });
+        },
+
+        hoverElement: (elementId) => {
+          set((state) => {
+            state.hoveredElementId = elementId;
+          });
+        },
+
+        // Drag and Drop
+        startDrag: (elementId) => {
+          set((state) => {
+            state.dragState = {
+              isDragging: true,
+              draggedElementId: elementId,
+              dropTargetId: null,
+              dropPosition: null
+            };
+          });
+        },
+
+        updateDragTarget: (targetId, position) => {
+          set((state) => {
+            state.dragState.dropTargetId = targetId;
+            state.dragState.dropPosition = position;
+          });
+        },
+
+        endDrag: () => {
+          const { dragState } = get();
+          
+          if (dragState.isDragging && dragState.draggedElementId && dragState.dropTargetId) {
+            const { draggedElementId, dropTargetId, dropPosition } = dragState;
+            
+            if (dropPosition === 'inside') {
+              get().moveElement(draggedElementId, dropTargetId);
+            } else {
+              const targetElement = get().elements[dropTargetId];
+              if (targetElement && targetElement.parentId) {
+                const targetIndex = get().elements[targetElement.parentId].children.indexOf(dropTargetId);
+                const newIndex = dropPosition === 'before' ? targetIndex : targetIndex + 1;
+                get().moveElement(draggedElementId, targetElement.parentId, newIndex);
+              }
+            }
+          }
+
+          set((state) => {
+            state.dragState = {
+              isDragging: false,
+              draggedElementId: null,
+              dropTargetId: null,
+              dropPosition: null
+            };
+          });
+        },
+
+        // Breakpoint Management
+        setActiveBreakpoint: (breakpoint) => {
+          set((state) => {
+            state.activeBreakpoint = breakpoint;
+          });
+        },
+
+        // Viewport Management
+        updateViewport: (viewport) => {
+          set((state) => {
+            Object.assign(state.viewport, viewport);
+          });
+        },
+
+        // History Management
+        saveToHistory: () => {
+          set((state) => {
+            const currentState = { ...state };
+            delete (currentState as any).history;
+            
+            state.history.past.push(state.history.present);
+            state.history.present = currentState as CanvasState;
+            state.history.future = [];
+            
+            // Limit history size
+            if (state.history.past.length > 50) {
+              state.history.past.shift();
+            }
+          });
+        },
+
+        undo: () => {
+          set((state) => {
+            if (state.history.past.length > 0) {
+              const previous = state.history.past.pop()!;
+              state.history.future.unshift(state.history.present);
+              
+              // Apply previous state
+              Object.assign(state, previous);
+              state.history = {
+                past: state.history.past,
+                present: previous,
+                future: state.history.future
+              };
+            }
+          });
+        },
+
+        redo: () => {
+          set((state) => {
+            if (state.history.future.length > 0) {
+              const next = state.history.future.shift()!;
+              state.history.past.push(state.history.present);
+              
+              // Apply next state
+              Object.assign(state, next);
+              state.history = {
+                past: state.history.past,
+                present: next,
+                future: state.history.future
+              };
+            }
+          });
+        },
+
+        clearHistory: () => {
+          set((state) => {
+            state.history = {
+              past: [],
+              present: state.history.present,
+              future: []
+            };
+          });
+        },
+
+        // Utility Functions
+        getElementById: (elementId) => {
+          return get().elements[elementId] || null;
+        },
+
+        getElementChildren: (elementId) => {
+          const element = get().elements[elementId];
+          if (!element) return [];
+          
+          return element.children
+            .map(id => get().elements[id])
+            .filter(Boolean)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+        },
+
+        getElementPath: (elementId) => {
+          const path: BreadcrumbItem[] = [];
+          let currentId: string | undefined = elementId;
+          
+          while (currentId) {
+            const element = get().elements[currentId];
+            if (!element) break;
+            
+            path.unshift({
+              id: currentId,
+              tag: element.tag,
+              name: element.textContent || element.tag.charAt(0).toUpperCase() + element.tag.slice(1)
+            });
+            
+            currentId = element.parentId;
+          }
+          
+          return path;
+        },
+
+        getComputedStyles: (elementId, breakpoint) => {
+          const element = get().elements[elementId];
+          if (!element) return {};
+          
+          const bp = breakpoint || get().activeBreakpoint;
+          const baseStyles = element.styles.desktop || {};
+          const responsiveStyles = element.styles[bp] || {};
+          
+          return { ...baseStyles, ...responsiveStyles };
+        },
+
+        validateElementStructure: () => {
+          try {
+            const { elements, rootId } = get();
+            
+            // Check if root exists
+            if (!elements[rootId]) return false;
+            
+            // Validate all elements have valid parents (except root)
+            for (const [id, element] of Object.entries(elements)) {
+              if (id !== rootId) {
+                if (!element.parentId || !elements[element.parentId]) {
+                  return false;
+                }
+              }
+            }
+            
+            return true;
+          } catch {
+            return false;
+          }
+        },
+
+        exportCanvasData: () => {
+          const { elements, rootId } = get();
+          return {
+            version: '1.0',
+            elements,
+            rootId,
+            timestamp: Date.now()
+          };
+        },
+
+        importCanvasData: (data) => {
+          try {
+            if (data.version === '1.0' && data.elements && data.rootId) {
+              set((state) => {
+                state.elements = data.elements;
+                state.rootId = data.rootId;
+                state.selectedElementId = null;
+                state.hoveredElementId = null;
+              });
+              get().saveToHistory();
+            }
+          } catch (error) {
+            get().reportError(new CanvasError(
+              'Failed to import canvas data',
+              'IMPORT_ERROR',
+              undefined,
+              error as Error
+            ));
+          }
+        },
+
+        // Error Handling
+        reportError: (error) => {
+          console.error('Canvas Error:', error);
+          set((state) => {
+            state.errors.push(error);
+            // Keep only last 10 errors
+            if (state.errors.length > 10) {
+              state.errors.shift();
+            }
+          });
+        },
+
+        clearErrors: () => {
+          set((state) => {
+            state.errors = [];
+          });
+        }
+      };
+    })
+  )
+);
+
+// Selector hooks for optimized re-renders
+export const useSelectedElement = () => useCanvasStore(state => 
+  state.selectedElementId ? state.elements[state.selectedElementId] : null
+);
+
+export const useHoveredElement = () => useCanvasStore(state => 
+  state.hoveredElementId ? state.elements[state.hoveredElementId] : null
+);
+
+export const useCanvasElements = () => useCanvasStore(state => state.elements);
+
+export const useActiveBreakpoint = () => useCanvasStore(state => state.activeBreakpoint);
+
+export const useDragState = () => useCanvasStore(state => state.dragState);
+
+export const useCanvasHistory = () => useCanvasStore(state => ({
+  canUndo: state.history.past.length > 0,
+  canRedo: state.history.future.length > 0,
+  undo: state.undo,
+  redo: state.redo
+}));

@@ -114,6 +114,7 @@ const ProductList: React.FC<ProductListProps> = ({
                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
+                aria-label={`${product.is_active ? 'Deactivate' : 'Activate'} product ${product.name}`}
               >
                 {product.is_active ? 'Deactivate' : 'Activate'}
               </button>
@@ -121,6 +122,7 @@ const ProductList: React.FC<ProductListProps> = ({
               <button
                 onClick={() => onEdit(product)}
                 className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                aria-label={`Edit product ${product.name}`}
               >
                 Edit
               </button>
@@ -128,6 +130,7 @@ const ProductList: React.FC<ProductListProps> = ({
               <button
                 onClick={() => setDeleteConfirm(product.id)}
                 className="px-3 py-1 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                aria-label={`Delete product ${product.name}`}
               >
                 Delete
               </button>
@@ -151,12 +154,14 @@ const ProductList: React.FC<ProductListProps> = ({
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="btn-secondary"
+                aria-label="Cancel product deletion"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
                 className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                aria-label="Confirm product deletion"
               >
                 Delete
               </button>

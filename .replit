@@ -1,23 +1,17 @@
-run = "npm start"
-
 modules = ["nodejs-20", "web"]
 
 hidden = [".config", "package-lock.json", "node_modules"]
 
 [env]
 NODE_ENV = "production"
-PORT = "3000"
 
 [gitHubImport]
 requiredFiles = [".replit"]
 
-[nix]
-channel = "stable-22_11"
-
 [deployment]
 deploymentTarget = "autoscaling"
-build = ["npm", "ci"]
-run = ["npm", "start"]
+build = ["sh", "-c", "npm ci --production && npm run build:quick"]
+run = ["npx", "serve", "-s", "dist", "-p", "3000"]
 
 [[ports]]
 localPort = 3000

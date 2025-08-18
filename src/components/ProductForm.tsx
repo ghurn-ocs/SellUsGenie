@@ -47,7 +47,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   isLoading = false
 }) => {
   const [currentImageUrl, setCurrentImageUrl] = useState(product?.image_url || '')
-  const { isTrialStore, getProductLimitMessage } = useTrialLimits()
+  const { isTrialUser, getProductLimitMessage } = useTrialLimits()
   
   const {
     register,
@@ -113,7 +113,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             {product ? 'Edit Product' : 'Add New Product'}
           </Dialog.Title>
           
-          {isTrialStore && !product && (
+          {isTrialUser && !product && (
             <div className="mb-4 p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg">
               <p className="text-sm text-orange-300">
                 {getProductLimitMessage()}
@@ -276,6 +276,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-[#A0A0A0] bg-[#3A3A3A] rounded-lg hover:bg-[#4A4A4A] transition-colors"
                 disabled={isLoading}
+                aria-label="Cancel product form"
               >
                 Cancel
               </button>
@@ -283,6 +284,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 type="submit"
                 className="px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
                 disabled={isLoading}
+                aria-label={isLoading ? 'Saving product changes' : (product ? 'Update product' : 'Add new product')}
               >
                 {isLoading ? 'Saving...' : (product ? 'Update Product' : 'Add Product')}
               </button>

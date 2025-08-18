@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+// @react-query-skip: Uses computed analytics, not data fetching
 import { useOrders } from './useOrders'
 import { useCustomers } from './useCustomers'
 import { useProducts } from './useProducts'

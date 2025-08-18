@@ -1,0 +1,143 @@
+  // Food & Beverage Layouts (5)
+  {
+    id: 'food-gourmet',
+    name: 'Gourmet Kitchen',
+    industry: 'Food & Beverage',
+    description: 'Upscale layout for gourmet food products',
+    preview: '/layouts/food-gourmet.jpg',
+    config: {
+      hero: { style: 'carousel', height: 'large', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'sticky', showCategories: true, showSearch: true },
+      productGrid: { columns: 3, cardStyle: 'detailed', showFilters: true, showSorting: true },
+      footer: { style: 'detailed', columns: 3, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'chef-picks', 'recipes', 'origins', 'pairings']
+  },
+  {
+    id: 'food-organic',
+    name: 'Organic Market',
+    industry: 'Food & Beverage',
+    description: 'Natural layout for organic and healthy foods',
+    preview: '/layouts/food-organic.jpg',
+    config: {
+      hero: { style: 'banner', height: 'medium', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'top', showCategories: true, showSearch: true },
+      productGrid: { columns: 4, cardStyle: 'modern', showFilters: true, showSorting: true },
+      footer: { style: 'newsletter', columns: 2, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'farm-fresh', 'certifications', 'health-benefits', 'sustainability']
+  },
+  {
+    id: 'food-restaurant',
+    name: 'Restaurant Supply',
+    industry: 'Food & Beverage',
+    description: 'Professional layout for restaurant and catering supplies',
+    preview: '/layouts/food-restaurant.jpg',
+    config: {
+      hero: { style: 'split', height: 'medium', showCTA: true, showSearch: true },
+      navigation: { style: 'horizontal', position: 'sticky', showCategories: true, showSearch: true },
+      productGrid: { columns: 4, cardStyle: 'minimal', showFilters: true, showSorting: true },
+      footer: { style: 'detailed', columns: 4, showSocial: false, showNewsletter: true }
+    },
+    sections: ['hero', 'bulk-ordering', 'equipment', 'supplies', 'business-support']
+  },
+  {
+    id: 'food-artisan',
+    name: 'Artisan Delights',
+    industry: 'Food & Beverage',
+    description: 'Craft-focused layout for artisanal foods and beverages',
+    preview: '/layouts/food-artisan.jpg',
+    config: {
+      hero: { style: 'banner', height: 'large', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'top', showCategories: true, showSearch: true },
+      productGrid: { columns: 3, cardStyle: 'detailed', showFilters: true, showSorting: true },
+      footer: { style: 'simple', columns: 3, showSocial: true, showNewsletter: false }
+    },
+    sections: ['hero', 'maker-stories', 'small-batch', 'local-sourcing', 'taste-profiles']
+  },
+  {
+    id: 'food-beverage',
+    name: 'Beverage Bar',
+    industry: 'Food & Beverage',
+    description: 'Specialized layout for drinks and beverages',
+    preview: '/layouts/food-beverage.jpg',
+    config: {
+      hero: { style: 'video', height: 'large', showCTA: true, showSearch: false },
+      navigation: { style: 'mega', position: 'fixed', showCategories: true, showSearch: true },
+      productGrid: { columns: 4, cardStyle: 'modern', showFilters: true, showSorting: true },
+      footer: { style: 'minimal', columns: 2, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'drink-categories', 'mixology', 'seasonal-flavors', 'reviews']
+  },
+
+  // Sports & Fitness Layouts (5)
+  {
+    id: 'sports-athletic',
+    name: 'Athletic Gear',
+    industry: 'Sports & Fitness',
+    description: 'Dynamic layout for athletic equipment and apparel',
+    preview: '/layouts/sports-athletic.jpg',
+    config: {
+      hero: { style: 'video', height: 'full', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'sticky', showCategories: true, showSearch: true },
+      productGrid: { columns: 4, cardStyle: 'modern', showFilters: true, showSorting: true },
+      footer: { style: 'detailed', columns: 3, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'sports-categories', 'performance', 'athlete-endorsed', 'training-tips']
+  },
+  {
+    id: 'sports-fitness',
+    name: 'Fitness Hub',
+    industry: 'Sports & Fitness',
+    description: 'Motivational layout for fitness equipment and supplements',
+    preview: '/layouts/sports-fitness.jpg',
+    config: {
+      hero: { style: 'split', height: 'large', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'top', showCategories: true, showSearch: true },
+      productGrid: { columns: 3, cardStyle: 'detailed', showFilters: true, showSorting: true },
+      footer: { style: 'newsletter', columns: 3, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'workout-plans', 'equipment', 'nutrition', 'progress-tracking']
+  },
+  {
+    id: 'sports-outdoor',
+    name: 'Outdoor Adventure',
+    industry: 'Sports & Fitness',
+    description: 'Adventure-themed layout for outdoor sports gear',
+    preview: '/layouts/sports-outdoor.jpg',
+    config: {
+      hero: { style: 'carousel', height: 'large', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'sticky', showCategories: true, showSearch: true },
+      productGrid: { columns: 4, cardStyle: 'detailed', showFilters: true, showSorting: true },
+      footer: { style: 'detailed', columns: 4, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'adventure-gear', 'trail-guides', 'weather-resistant', 'community']
+  },
+  {
+    id: 'sports-team',
+    name: 'Team Sports',
+    industry: 'Sports & Fitness',
+    description: 'Professional layout for team sports equipment',
+    preview: '/layouts/sports-team.jpg',
+    config: {
+      hero: { style: 'banner', height: 'medium', showCTA: true, showSearch: true },
+      navigation: { style: 'mega', position: 'sticky', showCategories: true, showSearch: true },
+      productGrid: { columns: 5, cardStyle: 'minimal', showFilters: true, showSorting: true },
+      footer: { style: 'simple', columns: 2, showSocial: false, showNewsletter: false }
+    },
+    sections: ['hero', 'team-uniforms', 'bulk-orders', 'customization', 'leagues']
+  },
+  {
+    id: 'sports-wellness',
+    name: 'Wellness Center',
+    industry: 'Sports & Fitness',
+    description: 'Holistic layout for wellness and recovery products',
+    preview: '/layouts/sports-wellness.jpg',
+    config: {
+      hero: { style: 'minimal', height: 'medium', showCTA: true, showSearch: false },
+      navigation: { style: 'horizontal', position: 'top', showCategories: true, showSearch: true },
+      productGrid: { columns: 3, cardStyle: 'detailed', showFilters: true, showSorting: true },
+      footer: { style: 'detailed', columns: 3, showSocial: true, showNewsletter: true }
+    },
+    sections: ['hero', 'recovery-tools', 'mindfulness', 'nutrition', 'expert-guidance']
+  }

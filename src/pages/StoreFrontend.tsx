@@ -6,7 +6,9 @@ import { useAnalyticsTracking } from '../hooks/useAnalyticsTracking'
 import type { Product, Store } from '../lib/supabase'
 import { GenieMascot } from '../components/ui/GenieMascot'
 
-const StoreFrontend: React.FC = () => {
+interface StoreFrontendProps {}
+
+const StoreFrontend: React.FC<StoreFrontendProps> = () => {
   const [, setLocation] = useLocation()
   const [, params] = useRoute('/store/:storeSlug')
   const { user, signInWithGoogle, signOut } = useAuth()

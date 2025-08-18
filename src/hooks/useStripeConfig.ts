@@ -12,19 +12,35 @@ export const useStripeConfig = (storeId: string) => {
   } = useQuery({
     queryKey: ['stripe-config', storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stripe_configurations')
-        .select('*')
-        .eq('store_id', storeId)
-        .single()
+      try {
+        const { data, error } = await supabase
+          .from('stripe_configurations')
+          .select('*')
+          .eq('store_id', storeId)
+          .single()
 
-      if (error && error.code !== 'PGRST116') {
-        throw error
+        if (error && error.code !== 'PGRST116') {
+          // If table doesn't exist, return default values
+          if (error.message?.includes('does not exist')) {
+            console.warn('stripe_configurations table does not exist - using defaults')
+            return null
+          }
+          throw error
+        }
+        
+        return data || null
+      } catch (err: any) {
+        // Handle table not found gracefully
+        if (err.message?.includes('does not exist') || err.code === 'PGRST205') {
+          console.warn('stripe_configurations table does not exist - using defaults')
+          return null
+        }
+        throw err
       }
-      
-      return data || null
     },
-    enabled: !!storeId
+    enabled: !!storeId,
+    retry: 1, // Only retry once to avoid long delays
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 
   const updateStripeConfig = useMutation({

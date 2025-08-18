@@ -4,23 +4,27 @@ import {
   useStripe,
   useElements
 } from '@stripe/react-stripe-js'
-import { Loader2, CreditCard, Shield } from 'lucide-react'
+import { Loader2, CreditCard, Shield, AlertCircle } from 'lucide-react'
 import { useCheckout } from '../../contexts/CheckoutContext'
+import { usePaymentConfiguration } from '../../hooks/usePaymentConfiguration'
 
 interface CheckoutFormProps {
   clientSecret: string
   orderId: string
   onSuccess: () => void
+  storeId: string
 }
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   clientSecret,
   orderId,
-  onSuccess
+  onSuccess,
+  storeId
 }) => {
   const stripe = useStripe()
   const elements = useElements()
   const { confirmPayment } = useCheckout()
+  const { isPaymentEnabled, isLoading: paymentConfigLoading } = usePaymentConfiguration(storeId)
   
   const [isProcessing, setIsProcessing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -29,7 +33,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
+    if (!isPaymentEnabled) {
+      setErrorMessage('Payment system is not configured for this store.')
+      return
+    }
+
     if (!stripe || !elements) {
+      setErrorMessage('Payment system is not ready. Please try again.')
       return
     }
 
@@ -68,6 +78,35 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  if (paymentConfigLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-[#9B51E0] mr-2" />
+        <span className="text-gray-600">Checking payment configuration...</span>
+      </div>
+    )
+  }
+
+  if (!isPaymentEnabled) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8 text-red-600" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Payment System Not Configured</h3>
+        <p className="text-gray-600 mb-4">
+          The payment system has not been set up for this store. Please contact the store owner to enable payments.
+        </p>
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <h4 className="text-sm font-medium text-gray-900 mb-2">Store Owner Instructions:</h4>
+          <p className="text-sm text-gray-600">
+            To enable payments, configure your Stripe account in the store settings with your publishable key and webhook secret.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (paymentSucceeded) {
@@ -114,8 +153,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       <div className="space-y-3">
         <button
           type="submit"
-          disabled={!stripe || !elements || isProcessing}
-          className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          disabled={!stripe || !elements || isProcessing || !isPaymentEnabled}
+          className="w-full bg-[#9B51E0] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#8A47D0] disabled:bg-[#9B51E0]/50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
         >
           {isProcessing ? (
             <>

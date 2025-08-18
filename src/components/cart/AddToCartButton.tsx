@@ -7,6 +7,7 @@ interface AddToCartButtonProps {
   quantity?: number
   disabled?: boolean
   className?: string
+  style?: React.CSSProperties
   showSuccessState?: boolean
   size?: 'sm' | 'md' | 'lg'
   variant?: 'primary' | 'secondary' | 'outline'
@@ -17,11 +18,32 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   quantity = 1,
   disabled = false,
   className = '',
+  style,
   showSuccessState = true,
   size = 'md',
   variant = 'primary'
 }) => {
-  const { addToCart } = useCart()
+  console.log('🔘 AddToCartButton rendered for product:', productId)
+  
+  let cartContext
+  try {
+    cartContext = useCart()
+    console.log('✅ AddToCartButton useCart hook successful:', !!cartContext)
+  } catch (error) {
+    console.error('❌ AddToCartButton useCart hook failed:', error)
+    return (
+      <button
+        disabled
+        className={`${className} bg-red-500 text-white px-4 py-2 rounded opacity-50 cursor-not-allowed`}
+        title="Cart context not available"
+      >
+        Cart Error
+      </button>
+    )
+  }
+
+  const { addToCart } = cartContext
+  console.log('🛒 AddToCartButton addToCart function available:', typeof addToCart === 'function')
   const [isAdding, setIsAdding] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
@@ -40,17 +62,29 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const handleAddToCart = async () => {
     if (disabled || isAdding) return
 
+    console.log('🛒 AddToCartButton: Starting add to cart process')
+    console.log('📦 Product ID:', productId)
+    console.log('🔢 Quantity:', quantity)
+
     setIsAdding(true)
     
     try {
+      console.log('📞 Calling addToCart function...')
       await addToCart(productId, quantity)
+      console.log('✅ Add to cart successful!')
       
       if (showSuccessState) {
         setShowSuccess(true)
         setTimeout(() => setShowSuccess(false), 2000)
       }
     } catch (error) {
-      console.error('Failed to add to cart:', error)
+      console.error('❌ Failed to add to cart:', error)
+      console.error('Error details:', {
+        error,
+        productId,
+        quantity,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      })
     } finally {
       setIsAdding(false)
     }
@@ -87,13 +121,15 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     <button
       onClick={handleAddToCart}
       disabled={disabled || isAdding}
+      style={style}
       className={`
         inline-flex items-center justify-center
         font-medium rounded-lg transition-colors
         disabled:cursor-not-allowed disabled:opacity-50
+        text-white hover:opacity-90
         ${sizeClasses[size]}
-        ${variantClasses[variant]}
-        ${showSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
+        ${!style ? variantClasses[variant] : ''}
+        ${showSuccess && !style ? 'bg-green-600 hover:bg-green-700' : ''}
         ${className}
       `}
     >

@@ -4,10 +4,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StoreProvider } from './contexts/StoreContext'
 import LandingPage from './pages/LandingPage'
+import FeaturesPage from './pages/FeaturesPage'
+import WhyNotPage from './pages/WhyNotPage'
+import ContactUsPage from './pages/ContactUsPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
+import CookiePolicyPage from './pages/CookiePolicyPage'
 import StoreOwnerDashboard from './pages/StoreOwnerDashboard'
-import StoreFrontend from './pages/StoreFrontend'
+import { StoreFrontView } from './pages/StoreFrontView'
 import AuthCallback from './pages/AuthCallback'
-import { PageBuilder } from './pages/admin/PageBuilder'
+import CookieConsent from './components/ui/CookieConsent'
+// Page Builder components removed - launched separately
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,8 +38,23 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>
 }
 
-// Create a client
-const queryClient = new QueryClient()
+// Create a client with proper configuration to prevent infinite loops
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      refetchOnReconnect: 'always',
+      retry: 3,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+})
 
 function App() {
   return (
@@ -41,26 +63,22 @@ function App() {
         <StoreProvider>
           <Switch>
             <Route path="/" component={LandingPage} />
+            <Route path="/features" component={FeaturesPage} />
+            <Route path="/why-not" component={WhyNotPage} />
+            <Route path="/contact" component={ContactUsPage} />
+            <Route path="/privacy" component={PrivacyPolicyPage} />
+            <Route path="/terms" component={TermsOfServicePage} />
+            <Route path="/cookies" component={CookiePolicyPage} />
             <Route path="/admin">
               <ProtectedRoute>
                 <StoreOwnerDashboard />
               </ProtectedRoute>
             </Route>
-            <Route path="/admin/page-builder">
-              <ProtectedRoute>
-                <PageBuilder isFullScreen={true} />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/admin/page-builder/:pageId">
-              {({ pageId }) => (
-                <ProtectedRoute>
-                  <PageBuilder pageId={pageId} isFullScreen={true} />
-                </ProtectedRoute>
-              )}
-            </Route>
+            {/* Page Builder routes removed - launched separately */}
             <Route path="/auth/callback" component={AuthCallback} />
-            <Route path="/store/:storeSlug" component={StoreFrontend} />
+            <Route path="/store/:storeSlug" component={StoreFrontView} />
           </Switch>
+          <CookieConsent />
         </StoreProvider>
       </AuthProvider>
     </QueryClientProvider>

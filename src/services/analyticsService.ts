@@ -2,11 +2,7 @@ import { supabase } from '../lib/supabase'
 import type { 
   PageView, 
   ProductView, 
-  CartEvent, 
-  CustomerSession,
-  ProductPerformance,
-  StoreAnalytics,
-  CustomerBehavior 
+  CartEvent
 } from '../types/analytics'
 
 // Generate a session ID for tracking
@@ -69,9 +65,15 @@ export class AnalyticsTracker {
         browser: getBrowser()
       }
 
-      await supabase.from('page_views').insert([pageView])
+      const { error } = await supabase.from('page_views').insert([pageView])
+      if (error && error.message.includes('does not exist')) {
+        console.warn('Analytics table page_views does not exist - run database migration')
+        return
+      } else if (error) {
+        throw error
+      }
     } catch (error) {
-      console.error('Error tracking page view:', error)
+      console.warn('Analytics tracking failed (non-critical):', error)
     }
   }
 
@@ -112,9 +114,15 @@ export class AnalyticsTracker {
         cart_value: cartValue
       }
 
-      await supabase.from('cart_events').insert([cartEvent])
+      const { error } = await supabase.from('cart_events').insert([cartEvent])
+      if (error && error.message.includes('does not exist')) {
+        console.warn('Analytics table cart_events does not exist - run database migration')
+        return
+      } else if (error) {
+        throw error
+      }
     } catch (error) {
-      console.error('Error tracking cart event:', error)
+      console.warn('Analytics tracking failed (non-critical):', error)
     }
   }
 

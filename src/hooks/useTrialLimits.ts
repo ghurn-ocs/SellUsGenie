@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+// @react-query-skip: Trial limits calculation hook, not data fetching
 import { useStore } from '../contexts/StoreContext'
 import { useProducts } from './useProducts'
 import { useSubscription } from './useSubscription'

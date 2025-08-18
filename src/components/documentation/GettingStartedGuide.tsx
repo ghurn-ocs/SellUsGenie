@@ -1,7 +1,9 @@
 import React from 'react'
 import { GenieMascot } from '../ui/GenieMascot'
 
-const GettingStartedGuide: React.FC = () => {
+interface GettingStartedGuideProps {}
+
+const GettingStartedGuide: React.FC<GettingStartedGuideProps> = () => {
   return (
     <div className="max-w-4xl mx-auto p-6 bg-[#1E1E1E] text-white">
       <div className="mb-8">

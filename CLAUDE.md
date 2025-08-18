@@ -140,6 +140,19 @@ Required environment variables (see `env.example`):
 - `VITE_GOOGLE_CLIENT_ID` - Google OAuth client ID
 - `VITE_APPLE_CLIENT_ID` - Apple OAuth client ID
 
+## Storage Setup
+
+Before using image upload features, you must set up Supabase storage buckets:
+
+1. Run `database/storage-setup.sql` in your Supabase SQL Editor
+2. This creates required buckets: `product-images`, `store-images`
+3. Sets up proper RLS policies for secure file access
+
+**Common Issue**: "Bucket not found" error when uploading images
+**Solution**: Execute the storage setup script in your Supabase project
+
+See `STORAGE_SETUP.md` for detailed instructions.
+
 ## Development Guidelines
 
 - Follow existing TypeScript patterns and interfaces

@@ -31,6 +31,18 @@ export interface Store {
   is_active: boolean
   subscription_status: 'active' | 'inactive' | 'trial'
   trial_expires_at: string | null
+  // Payment configuration
+  stripe_publishable_key?: string
+  stripe_webhook_secret?: string
+  payment_enabled: boolean
+  // Store address
+  store_address_line1?: string
+  store_address_line2?: string
+  store_city?: string
+  store_state?: string
+  store_postal_code?: string
+  store_country?: string
+  store_phone?: string
   created_at: string
   updated_at: string
 }
@@ -58,6 +70,7 @@ export interface Product {
   sku?: string
   inventory_quantity: number
   is_active: boolean
+  is_featured?: boolean
   image_url?: string
   image_alt?: string
   gallery_images?: string[] // Array of additional image URLs
@@ -74,6 +87,21 @@ export interface Customer {
   first_name?: string
   last_name?: string
   phone?: string
+  // Shipping Address
+  shipping_address_line1?: string
+  shipping_address_line2?: string
+  shipping_city?: string
+  shipping_state?: string
+  shipping_postal_code?: string
+  shipping_country?: string
+  // Billing Address
+  billing_different_from_shipping?: boolean
+  billing_address_line1?: string
+  billing_address_line2?: string
+  billing_city?: string
+  billing_state?: string
+  billing_postal_code?: string
+  billing_country?: string
   created_at: string
   updated_at: string
 }

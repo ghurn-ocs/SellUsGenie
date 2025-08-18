@@ -47,6 +47,21 @@ const CustomerList: React.FC<CustomerListProps> = ({
     )
   }
 
+  // Calculate customer statistics
+  const getCustomerStats = (customers: CustomerWithOrders[]) => {
+    const totalCustomers = customers.length
+    const totalOrders = customers.reduce((sum, customer) => getCustomerOrderCount(customer), 0)
+    const totalRevenue = customers.reduce((sum, customer) => getCustomerTotalSpent(customer), 0)
+    const averageCustomerValue = totalCustomers > 0 ? totalRevenue / totalCustomers : 0
+    
+    const activeCustomers = customers.filter(customer => getCustomerOrderCount(customer) > 0).length
+    const oauthCustomers = customers.filter(c => c.google_id || c.apple_id).length
+    
+    return { totalCustomers, totalOrders, totalRevenue, averageCustomerValue, activeCustomers, oauthCustomers }
+  }
+  
+  const { totalCustomers, totalOrders, totalRevenue } = getCustomerStats(customers)
+
   if (customers.length === 0) {
     return (
       <div className="text-center py-12">

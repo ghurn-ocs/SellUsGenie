@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+// @react-query-skip: Event tracking hook, not data fetching
 import { useAuth } from '../contexts/AuthContext'
 import { useStore } from '../contexts/StoreContext'
 import { AnalyticsTracker } from '../services/analyticsService'

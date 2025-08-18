@@ -4,6 +4,33 @@ import { useAuth } from './AuthContext'
 import { useCart } from './CartContext'
 import type { Order, Customer } from '../lib/supabase'
 
+interface ShippingFormData {
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  // Shipping Address
+  shippingAddress: {
+    address1: string
+    address2?: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+  }
+  // Billing Address (conditional)
+  billingDifferent: boolean
+  billingAddress?: {
+    address1: string
+    address2?: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+  }
+}
+
+// Legacy interface for backward compatibility
 interface ShippingAddress {
   firstName: string
   lastName: string
@@ -22,7 +49,11 @@ interface CheckoutContextType {
   isCheckingOut: boolean
   error: string | null
   
-  // Customer info
+  // Customer info (updated structure)
+  shippingFormData: ShippingFormData | null
+  setShippingFormData: (data: ShippingFormData) => void
+  
+  // Legacy support
   shippingAddress: ShippingAddress | null
   setShippingAddress: (address: ShippingAddress) => void
   
@@ -75,6 +106,40 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
 
       // Create customer record if guest checkout
       let customerId = user?.id
+
+      // For logged-in users, ensure customer record exists
+      if (user && !isGuestCheckout) {
+        const { data: existingCustomer } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('id', user.id)
+          .eq('store_id', storeId)
+          .single()
+
+        if (!existingCustomer) {
+          // Create customer record for logged-in user
+          const { data: newCustomer, error: customerError } = await supabase
+            .from('customers')
+            .insert([
+              {
+                id: user.id,
+                store_id: storeId,
+                email: user.email || `user-${user.id}@example.com`,
+                first_name: user.user_metadata?.given_name || 'User',
+                last_name: user.user_metadata?.family_name || '',
+                phone: user.user_metadata?.phone || null,
+              },
+            ])
+            .select()
+            .single()
+
+          if (customerError) {
+            console.error('Error creating customer record:', customerError)
+            throw new Error('Failed to create customer record')
+          }
+          customerId = newCustomer.id
+        }
+      }
 
       if (isGuestCheckout && shippingAddress) {
         // Check if customer already exists by email
@@ -149,43 +214,9 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
 
       if (orderItemsError) throw orderItemsError
 
-      // Create Stripe Payment Intent
-      const response = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: totalAmount,
-          currency: 'usd',
-          orderId: order.id,
-          storeId,
-          metadata: {
-            orderNumber: order.order_number,
-            customerId,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create payment intent')
-      }
-
-      const { clientSecret, paymentIntentId } = await response.json()
-
-      // Store payment intent in database
-      await supabase.from('payment_intents').insert([
-        {
-          store_id: storeId,
-          order_id: order.id,
-          stripe_payment_intent_id: paymentIntentId,
-          amount: totalAmount / 100,
-          currency: 'usd',
-          status: 'requires_payment_method',
-        },
-      ])
-
-      return { clientSecret, orderId: order.id }
+      // For production, this would call your backend API to create a Stripe Payment Intent
+      // Since no backend API is configured, throw an error
+      throw new Error('Payment system is not configured. Please contact the store owner to enable payments.')
     } catch (err) {
       console.error('Error creating payment intent:', err)
       setError(err instanceof Error ? err.message : 'Failed to create payment intent')

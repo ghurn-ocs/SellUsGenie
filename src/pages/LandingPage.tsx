@@ -1,8 +1,12 @@
 import React from 'react'
+import { useLocation } from 'wouter'
 import { useAuth } from '../contexts/AuthContext'
 import { GenieMascot } from '../components/ui/GenieMascot'
 
-const LandingPage: React.FC = () => {
+interface LandingPageProps {}
+
+const LandingPage: React.FC<LandingPageProps> = () => {
+  const [, navigate] = useLocation()
   const { signInWithGoogle, signInWithApple } = useAuth()
 
   const handleGoogleSignIn = async () => {
@@ -29,14 +33,19 @@ const LandingPage: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <GenieMascot mood="happy" size="md" showBackground={true} />
-              <h1 className="text-2xl font-bold text-[#9B51E0]">Sell Us Genie</h1>
+              <div>
+                <h1 className="text-2xl font-bold text-[#9B51E0]">Sell Us Genie™</h1>
+                <p className="text-xs text-[#A0A0A0] italic">Where wishes are real!</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <a href="#features" className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors">Features</a>
-              <a href="#pricing" className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors">Pricing</a>
+              <button onClick={() => navigate('/features')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Features</button>
+              <a href="#pricing" className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Pricing</a>
+              <button onClick={() => navigate('/why-not')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Why Not Others?</button>
+              <button onClick={() => navigate('/contact')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Contact</button>
               <button 
                 onClick={handleGoogleSignIn}
-                className="text-[#E0E0E0] hover:text-[#9B51E0] font-medium transition-colors"
+                className="bg-[#9B51E0] text-white px-4 py-2 rounded-lg hover:bg-[#8A47D0] transition-colors font-medium"
               >
                 Sign In to Store
               </button>
@@ -311,7 +320,8 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4 text-[#9B51E0]">Sell Us Genie</h3>
+              <h3 className="text-xl font-bold mb-2 text-[#9B51E0]">Sell Us Genie™</h3>
+              <p className="text-xs text-[#A0A0A0] italic mb-4">Where wishes are real!</p>
               <p className="text-[#A0A0A0]">
                 The ultimate multi-tenant e-commerce platform for modern businesses.
               </p>
@@ -319,7 +329,7 @@ const LandingPage: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Product</h4>
               <ul className="space-y-2 text-[#A0A0A0]">
-                <li><a href="#features" className="hover:text-[#9B51E0] transition-colors">Features</a></li>
+                <li><button onClick={() => navigate('/features')} className="hover:text-[#9B51E0] transition-colors">Features</button></li>
                 <li><a href="#pricing" className="hover:text-[#9B51E0] transition-colors">Pricing</a></li>
                 <li><a href="#" className="hover:text-[#9B51E0] transition-colors">API</a></li>
               </ul>
@@ -328,21 +338,21 @@ const LandingPage: React.FC = () => {
               <h4 className="font-semibold mb-4 text-white">Support</h4>
               <ul className="space-y-2 text-[#A0A0A0]">
                 <li><a href="#" className="hover:text-[#9B51E0] transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-[#9B51E0] transition-colors">Contact Us</a></li>
+                <li><button onClick={() => navigate('/contact')} className="hover:text-[#9B51E0] transition-colors">Contact Us</button></li>
                 <li><a href="#" className="hover:text-[#9B51E0] transition-colors">Status</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-white">Legal</h4>
               <ul className="space-y-2 text-[#A0A0A0]">
-                <li><a href="#" className="hover:text-[#9B51E0] transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-[#9B51E0] transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-[#9B51E0] transition-colors">Cookie Policy</a></li>
+                <li><button onClick={() => navigate('/privacy')} className="hover:text-[#9B51E0] transition-colors">Privacy Policy</button></li>
+                <li><button onClick={() => navigate('/terms')} className="hover:text-[#9B51E0] transition-colors">Terms of Service</button></li>
+                <li><button onClick={() => navigate('/cookies')} className="hover:text-[#9B51E0] transition-colors">Cookie Policy</button></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-[#2A2A2A] mt-8 pt-8 text-center text-[#A0A0A0]">
-            <p>&copy; 2024 Sell Us Genie. All rights reserved.</p>
+            <p>&copy; 2025 Sell Us Genie™. All rights reserved.</p>
           </div>
         </div>
       </footer>

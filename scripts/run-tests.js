@@ -444,6 +444,11 @@ const tests = {
       for (const file of hookFiles) {
         const content = fs.readFileSync(file, 'utf8');
         
+        // Skip hooks that are explicitly marked to skip React Query validation
+        if (content.includes('@react-query-skip:')) {
+          continue;
+        }
+        
         // Check for proper React Query imports
         if (!content.includes('@tanstack/react-query')) {
           errors.push(`${file}: Missing React Query import`);

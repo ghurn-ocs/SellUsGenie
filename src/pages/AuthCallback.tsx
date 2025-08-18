@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
 import { supabase } from '../lib/supabase'
 
-const AuthCallback: React.FC = () => {
+interface AuthCallbackProps {}
+
+const AuthCallback: React.FC<AuthCallbackProps> = () => {
   const [, setLocation] = useLocation()
   const [error, setError] = useState<string | null>(null)
 
