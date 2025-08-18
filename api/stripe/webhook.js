@@ -50,6 +50,10 @@ export default async function handler(req, res) {
         await handleInvoicePaymentSucceeded(event.data.object);
         break;
       
+      case 'customer.subscription.created':
+        await handleSubscriptionCreated(event.data.object);
+        break;
+      
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event.data.object);
         break;
@@ -176,50 +180,155 @@ async function handleInvoicePaymentSucceeded(invoice) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription) {
-  console.log('Subscription updated:', subscription.id);
+// Helper function to map Stripe price ID to plan type
+function mapPriceIdToPlanType(priceId) {
+  const priceMap = {
+    [process.env.VITE_STRIPE_STARTER_PRICE_ID]: 'starter',
+    [process.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID]: 'professional', 
+    [process.env.VITE_STRIPE_ENTERPRISE_PRICE_ID]: 'enterprise'
+  };
   
-  // Update store subscription status
+  return priceMap[priceId] || 'trial';
+}
+
+async function handleSubscriptionCreated(subscription) {
+  console.log('Subscription created:', subscription.id);
+  
   const customerId = subscription.customer;
+  const priceId = subscription.items.data[0]?.price?.id;
+  const planType = mapPriceIdToPlanType(priceId);
   
-  const { data: store } = await supabase
-    .from('stores')
+  // Find store owner by customer ID
+  const { data: storeOwner } = await supabase
+    .from('store_owners')
     .select('id')
     .eq('stripe_customer_id', customerId)
     .single();
 
-  if (store) {
+  if (storeOwner) {
+    // Update store owner subscription tier
+    await supabase
+      .from('store_owners')
+      .update({
+        subscription_tier: planType,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', storeOwner.id);
+
+    // Create subscription record
+    await supabase
+      .from('store_owner_subscriptions')
+      .insert({
+        store_owner_id: storeOwner.id,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        plan_type: planType,
+        status: subscription.status,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end
+      });
+
+    // Update all stores owned by this store owner
+    await supabase
+      .from('stores')
+      .update({
+        subscription_status: subscription.status === 'active' ? 'active' : 'inactive',
+        updated_at: new Date().toISOString()
+      })
+      .eq('store_owner_id', storeOwner.id);
+  }
+}
+
+async function handleSubscriptionUpdated(subscription) {
+  console.log('Subscription updated:', subscription.id);
+  
+  const customerId = subscription.customer;
+  const priceId = subscription.items.data[0]?.price?.id;
+  const planType = mapPriceIdToPlanType(priceId);
+  
+  // Find store owner by customer ID
+  const { data: storeOwner } = await supabase
+    .from('store_owners')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (storeOwner) {
+    // Update store owner subscription tier
+    await supabase
+      .from('store_owners')
+      .update({
+        subscription_tier: planType,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', storeOwner.id);
+
+    // Update subscription record
+    await supabase
+      .from('store_owner_subscriptions')
+      .update({
+        plan_type: planType,
+        status: subscription.status,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscription.id);
+
+    // Update all stores owned by this store owner
     const status = subscription.status === 'active' ? 'active' : 'inactive';
-    
     await supabase
       .from('stores')
       .update({
         subscription_status: status,
         updated_at: new Date().toISOString()
       })
-      .eq('id', store.id);
+      .eq('store_owner_id', storeOwner.id);
   }
 }
 
 async function handleSubscriptionDeleted(subscription) {
   console.log('Subscription deleted:', subscription.id);
   
-  // Update store subscription status to inactive
   const customerId = subscription.customer;
   
-  const { data: store } = await supabase
-    .from('stores')
+  // Find store owner by customer ID
+  const { data: storeOwner } = await supabase
+    .from('store_owners')
     .select('id')
     .eq('stripe_customer_id', customerId)
     .single();
 
-  if (store) {
+  if (storeOwner) {
+    // Revert store owner to trial tier
+    await supabase
+      .from('store_owners')
+      .update({
+        subscription_tier: 'trial',
+        trial_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days grace period
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', storeOwner.id);
+
+    // Update subscription record status
+    await supabase
+      .from('store_owner_subscriptions')
+      .update({
+        status: 'canceled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscription.id);
+
+    // Update all stores to trial status
     await supabase
       .from('stores')
       .update({
-        subscription_status: 'inactive',
+        subscription_status: 'trial',
+        trial_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', store.id);
+      .eq('store_owner_id', storeOwner.id);
   }
 }

@@ -72,7 +72,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     price: 29,
     interval: 'month',
     currency: 'usd',
-    stripePriceId: 'price_starter_monthly', // Will be replaced with actual Stripe price IDs
+    stripePriceId: process.env.VITE_STRIPE_STARTER_PRICE_ID || 'price_starter_monthly',
     features: [
       { name: '2 Online Stores', included: true },
       { name: '30 Products per Store', included: true },
@@ -102,7 +102,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     price: 79,
     interval: 'month',
     currency: 'usd',
-    stripePriceId: 'price_professional_monthly',
+    stripePriceId: process.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID || 'price_professional_monthly',
     popular: true,
     badge: 'Most Popular',
     features: [
@@ -134,7 +134,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     price: 199,
     interval: 'month',
     currency: 'usd',
-    stripePriceId: 'price_enterprise_monthly',
+    stripePriceId: process.env.VITE_STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_monthly',
     badge: 'Best Value',
     features: [
       { name: '20 Online Stores', included: true },
