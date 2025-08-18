@@ -2,25 +2,36 @@ import React, { useState } from 'react'
 import { useLocation } from 'wouter'
 import { useAuth } from '../contexts/AuthContext'
 import { useStore } from '../contexts/StoreContext'
-import { useProducts } from '../hooks/useProducts'
+import { useProductsNew } from '../hooks/useProductsNew'
 import { useOrders } from '../hooks/useOrders'
 import { useCustomers } from '../hooks/useCustomers'
 import { useTrialLimits } from '../hooks/useTrialLimits'
-import ProductForm from '../components/ProductForm'
-import ProductList from '../components/ProductList'
-import OrderList from '../components/OrderList'
-import CustomerList from '../components/CustomerList'
+import { CreateProductModal } from '../components/CreateProductModal'
+import { ViewProductModal } from '../components/ViewProductModal'
+import { EditProductModal } from '../components/EditProductModal'
+import { CreateOrderModalProfessional } from '../components/CreateOrderModalProfessional'
+import { ViewOrderModal } from '../components/ViewOrderModal'
+import { EditOrderModal } from '../components/EditOrderModal'
+import { CreateCustomerModal } from '../components/CreateCustomerModal'
+import { ViewCustomerModal } from '../components/ViewCustomerModal'
+import { EditCustomerModal } from '../components/EditCustomerModal'
+import { ProductListNew } from '../components/ProductListNew'
+import { OrderListNew } from '../components/OrderListNew'
+import { CustomerListNew } from '../components/CustomerListNew'
 import AnalyticsDashboard from '../components/AnalyticsDashboard'
 import EnhancedAnalyticsDashboard from '../components/EnhancedAnalyticsDashboard'
 import { StripeSettings } from '../components/settings/StripeSettings'
+import { FinancialYearSettings } from '../components/settings/FinancialYearSettings'
 import { SubscriptionUpgrade } from '../components/settings/SubscriptionUpgrade'
 import { useSubscription } from '../hooks/useSubscription'
+import { useRealAnalytics } from '../hooks/useRealAnalytics'
 import DocumentationRouter from '../components/documentation/DocumentationRouter'
 import { GenieMascot, GenieLogotype } from '../components/ui/GenieMascot'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
-import type { Product } from '../lib/supabase'
+import type { Product } from '../types/product'
+import { supabase } from '../lib/supabase'
 
 const StoreOwnerDashboard: React.FC = () => {
   const [, setLocation] = useLocation()
@@ -38,19 +49,32 @@ const StoreOwnerDashboard: React.FC = () => {
     isLoading: productsLoading, 
     createProduct, 
     updateProduct, 
-    deleteProduct 
-  } = useProducts(currentStore?.id || '')
+    deleteProduct,
+    toggleProductStatus,
+    refetch,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    isToggling
+  } = useProductsNew(currentStore?.id || '')
   
   const { 
     orders, 
     isLoading: ordersLoading, 
+    createOrder,
+    createProfessionalOrder,
+    updateOrder,
     updateOrderStatus,
+    deleteOrder,
     getOrderStats 
   } = useOrders(currentStore?.id || '')
   
   const { 
     customers, 
     isLoading: customersLoading,
+    createCustomer,
+    updateCustomer,
+    deleteCustomer,
     getCustomerStats 
   } = useCustomers(currentStore?.id || '')
   
@@ -58,6 +82,7 @@ const StoreOwnerDashboard: React.FC = () => {
   const { subscription, isTrialUser, createCheckoutSession } = useSubscription()
   
   // Analytics data
+  const analytics = useRealAnalytics(currentStore?.id || '')
   
   const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false)
   const [newStoreName, setNewStoreName] = useState('')
@@ -69,8 +94,19 @@ const StoreOwnerDashboard: React.FC = () => {
   }>({ isOpen: false, page: null })
   
   // Product management state
-  const [isProductFormOpen, setIsProductFormOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>()
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false)
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  
+  // Order management state
+  const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false)
+  const [viewingOrder, setViewingOrder] = useState<any>(null)
+  const [editingOrder, setEditingOrder] = useState<any>(null)
+  
+  // Customer management state
+  const [isCreateCustomerOpen, setIsCreateCustomerOpen] = useState(false)
+  const [viewingCustomer, setViewingCustomer] = useState<any>(null)
+  const [editingCustomer, setEditingCustomer] = useState<any>(null)
 
   const handleCreateStore = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,18 +136,16 @@ const StoreOwnerDashboard: React.FC = () => {
   }
 
   // Product management handlers
-  const handleCreateProduct = async (productData: any) => {
-    try {
-      await createProduct.mutateAsync(productData)
-    } catch (error) {
-      console.error('Error creating product:', error)
-    }
+  const handleProductCreated = () => {
+    console.log('✅ Product created successfully - refreshing list')
+    // The TanStack Query will automatically refresh due to cache invalidation in the hook
+    refetch()
   }
 
   const handleUpdateProduct = async (productData: any) => {
     if (!editingProduct) return
     try {
-      await updateProduct.mutateAsync({ id: editingProduct.id, ...productData })
+      await updateProduct({ id: editingProduct.id, ...productData })
     } catch (error) {
       console.error('Error updating product:', error)
     }
@@ -119,7 +153,7 @@ const StoreOwnerDashboard: React.FC = () => {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      await deleteProduct.mutateAsync(productId)
+      await deleteProduct(productId)
     } catch (error) {
       console.error('Error deleting product:', error)
     }
@@ -127,15 +161,143 @@ const StoreOwnerDashboard: React.FC = () => {
 
   const handleToggleProductActive = async (productId: string, isActive: boolean) => {
     try {
-      await updateProduct.mutateAsync({ id: productId, is_active: isActive })
+      await toggleProductStatus({ productId, isActive })
     } catch (error) {
       console.error('Error toggling product status:', error)
     }
   }
 
+  const handleViewProduct = (product: Product) => {
+    console.log('👁️ View product:', product.name)
+    setViewingProduct(product)
+  }
+
   const handleEditProduct = (product: Product) => {
+    console.log('✏️ Edit product:', product.name)
     setEditingProduct(product)
-    setIsProductFormOpen(true)
+  }
+
+  const handleCloseViewProduct = () => {
+    setViewingProduct(null)
+  }
+
+  const handleCloseEditProduct = () => {
+    setEditingProduct(null)
+  }
+
+  // Order management handlers
+  const handleAddOrder = () => {
+    console.log('📝 Opening create order modal')
+    setIsCreateOrderOpen(true)
+  }
+
+  const handleCreateProfessionalOrder = async (orderData: any) => {
+    try {
+      console.log('🚀 Creating professional order:', orderData)
+      await createProfessionalOrder.mutateAsync(orderData)
+      console.log('✅ Professional order created successfully')
+      // TODO: Show success message with payment link info
+    } catch (error) {
+      console.error('❌ Error creating professional order:', error)
+      throw error
+    }
+  }
+
+  const handleCloseCreateOrder = () => {
+    setIsCreateOrderOpen(false)
+  }
+
+  const handleViewOrder = (order: any) => {
+    console.log('👁️ View order:', order.order_number)
+    setViewingOrder(order)
+  }
+
+  const handleEditOrder = (order: any) => {
+    console.log('✏️ Edit order:', order.order_number)
+    setEditingOrder(order)
+  }
+
+  const handleUpdateOrder = async (orderData: any) => {
+    if (!editingOrder) return
+    try {
+      await updateOrder.mutateAsync(orderData)
+    } catch (error) {
+      console.error('Error updating order:', error)
+      throw error
+    }
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await deleteOrder.mutateAsync(orderId)
+    } catch (error) {
+      console.error('Error deleting order:', error)
+    }
+  }
+
+  const handleCloseViewOrder = () => {
+    setViewingOrder(null)
+  }
+
+  const handleCloseEditOrder = () => {
+    setEditingOrder(null)
+  }
+
+  // Customer management handlers
+  const handleAddCustomer = () => {
+    console.log('👤 Opening create customer modal')
+    setIsCreateCustomerOpen(true)
+  }
+
+  const handleCreateCustomer = async (customerData: any) => {
+    try {
+      console.log('🚀 Creating customer:', customerData)
+      await createCustomer.mutateAsync(customerData)
+      console.log('✅ Customer created successfully')
+    } catch (error) {
+      console.error('❌ Error creating customer:', error)
+      throw error
+    }
+  }
+
+  const handleCloseCreateCustomer = () => {
+    setIsCreateCustomerOpen(false)
+  }
+
+  const handleViewCustomer = (customer: any) => {
+    console.log('👁️ View customer:', customer.first_name, customer.last_name)
+    setViewingCustomer(customer)
+  }
+
+  const handleEditCustomer = (customer: any) => {
+    console.log('✏️ Edit customer:', customer.first_name, customer.last_name)
+    setEditingCustomer(customer)
+  }
+
+  const handleUpdateCustomer = async (customerData: any) => {
+    if (!editingCustomer) return
+    try {
+      await updateCustomer.mutateAsync(customerData)
+    } catch (error) {
+      console.error('Error updating customer:', error)
+      throw error
+    }
+  }
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    try {
+      await deleteCustomer.mutateAsync(customerId)
+    } catch (error) {
+      console.error('Error deleting customer:', error)
+    }
+  }
+
+  const handleCloseViewCustomer = () => {
+    setViewingCustomer(null)
+  }
+
+  const handleCloseEditCustomer = () => {
+    setEditingCustomer(null)
   }
 
   const handleAddProduct = () => {
@@ -143,13 +305,13 @@ const StoreOwnerDashboard: React.FC = () => {
       alert(getProductLimitMessage())
       return
     }
-    setEditingProduct(undefined)
-    setIsProductFormOpen(true)
+    console.log('🎯 Opening create product modal')
+    setIsCreateProductOpen(true)
   }
 
-  const handleCloseProductForm = () => {
-    setIsProductFormOpen(false)
-    setEditingProduct(undefined)
+  const handleCloseCreateProduct = () => {
+    console.log('🚪 Closing create product modal')
+    setIsCreateProductOpen(false)
   }
 
   // Order management handlers
@@ -191,8 +353,8 @@ const StoreOwnerDashboard: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-3">
-                <GenieLogotype size="md" />
-                <h1 className="text-2xl font-bold text-[#9B51E0]">Sell Us Genie Admin</h1>
+                <GenieMascot mood="happy" size="md" showBackground={true} />
+                <h1 className="text-2xl font-bold text-[#9B51E0]">Sell Us Genie</h1>
               </div>
               
               {/* Store Selector */}
@@ -366,33 +528,58 @@ const StoreOwnerDashboard: React.FC = () => {
                     Add Product
                   </button>
                 </div>
-                <ProductList
+                
+                <ProductListNew
                   products={products}
                   isLoading={productsLoading}
+                  onView={handleViewProduct}
                   onEdit={handleEditProduct}
                   onDelete={handleDeleteProduct}
                   onToggleActive={handleToggleProductActive}
+                  isDeleting={isDeleting}
+                  isToggling={isToggling}
                 />
               </Tabs.Content>
 
               <Tabs.Content value="orders" className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Orders</h3>
+                  <button 
+                    onClick={handleAddOrder}
+                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors"
+                  >
+                    Add Order
+                  </button>
                 </div>
-                <OrderList
+                <OrderListNew
                   orders={orders}
                   isLoading={ordersLoading}
-                  onUpdateStatus={handleUpdateOrderStatus}
+                  onView={handleViewOrder}
+                  onEdit={handleEditOrder}
+                  onDelete={handleDeleteOrder}
+                  onStatusChange={handleUpdateOrderStatus}
+                  isDeleting={deleteOrder.isPending}
+                  isUpdating={updateOrderStatus.isPending}
                 />
               </Tabs.Content>
 
               <Tabs.Content value="customers" className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Customers</h3>
+                  <button 
+                    onClick={handleAddCustomer}
+                    className="px-4 py-2 bg-[#9B51E0] text-white hover:bg-[#8A47D0] rounded-lg font-medium transition-colors"
+                  >
+                    Add Customer
+                  </button>
                 </div>
-                <CustomerList
+                <CustomerListNew
                   customers={customers}
                   isLoading={customersLoading}
+                  onView={handleViewCustomer}
+                  onEdit={handleEditCustomer}
+                  onDelete={handleDeleteCustomer}
+                  isDeleting={deleteCustomer.isPending}
                 />
               </Tabs.Content>
 
@@ -408,30 +595,63 @@ const StoreOwnerDashboard: React.FC = () => {
                   </div>
                   <div className="bg-[#1E1E1E] rounded-lg p-8 text-center">
                     <div className="max-w-md mx-auto">
-                      <div className="w-16 h-16 bg-[#3A3A3A] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-[#9B51E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#9B51E0] to-[#FF7F00] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <h4 className="text-lg font-medium text-white mb-2">
-                        Visual Page Builder
+                      <h4 className="text-xl font-bold text-white mb-2">
+                        🎨 NEW: Webflow-Style Visual Builder
                       </h4>
-                      <p className="text-[#A0A0A0] mb-6">
-                        Create beautiful, responsive pages with our drag-and-drop page builder. 
-                        Design landing pages, product collections, and more.
+                      <p className="text-[#A0A0A0] mb-4">
+                        Design like a pro with our advanced visual page builder featuring:
                       </p>
+                      <div className="text-left text-sm text-[#A0A0A0] mb-6 space-y-1">
+                        <div className="flex items-center">
+                          <span className="text-green-400 mr-2">✓</span>
+                          Drag & drop elements
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-green-400 mr-2">✓</span>
+                          Advanced styling controls
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-green-400 mr-2">✓</span>
+                          Responsive design tools
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-green-400 mr-2">✓</span>
+                          Animations & interactions
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-green-400 mr-2">✓</span>
+                          CMS & dynamic content
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-green-400 mr-2">✓</span>
+                          Clean code export
+                        </div>
+                      </div>
                       <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <button
-                          onClick={() => window.open('/admin/page-builder', '_blank')}
-                          className="bg-[#9B51E0] text-white px-4 py-2 rounded-lg hover:bg-[#A051E0] transition-colors font-medium"
+                          onClick={() => setLocation('/admin/page-builder')}
+                          className="bg-gradient-to-r from-[#9B51E0] to-[#FF7F00] text-white px-6 py-3 rounded-lg hover:from-[#A051E0] hover:to-[#FF8C00] transition-all duration-200 font-medium shadow-lg transform hover:scale-105"
                         >
-                          Open Page Builder
+                          🚀 Launch Builder
                         </button>
                         <button
-                          onClick={() => window.open('/admin/page-builder/new', '_blank')}
-                          className="bg-[#2A2A2A] text-[#A0A0A0] px-4 py-2 rounded-lg hover:bg-[#3A3A3A] transition-colors font-medium"
+                          onClick={() => setLocation('/admin/page-builder/new')}
+                          className="bg-[#2A2A2A] text-white px-6 py-3 rounded-lg hover:bg-[#3A3A3A] transition-colors font-medium border border-[#3A3A3A]"
                         >
                           Create New Page
+                        </button>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-[#3A3A3A]">
+                        <button
+                          onClick={() => window.open('/admin/page-builder-legacy', '_blank')}
+                          className="text-xs text-[#A0A0A0] hover:text-white transition-colors"
+                        >
+                          Use Legacy Builder →
                         </button>
                       </div>
                     </div>
@@ -570,6 +790,11 @@ const StoreOwnerDashboard: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Financial Year Settings */}
+                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                  <FinancialYearSettings storeId={currentStore.id} />
+                </div>
+
                 {/* Stripe Payment Settings */}
                 <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                   <StripeSettings storeId={currentStore.id} />
@@ -687,11 +912,20 @@ const StoreOwnerDashboard: React.FC = () => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-white">Getting Started</h3>
-                        <p className="text-sm text-[#A0A0A0]">Complete your store setup in 5 easy steps</p>
+                        <p className="text-sm text-[#A0A0A0]">Complete your store setup in 6 easy steps</p>
                       </div>
                     </div>
                     <div className="text-sm text-[#A0A0A0]">
-                      {products.length > 0 && orders.length > 0 ? '5/5' : products.length > 0 ? '3/5' : currentStore ? '2/5' : '1/5'} Complete
+                      {(() => {
+                        let completed = 1 // Account setup is always complete
+                        if (currentStore) completed += 1 // Store setup
+                        if (analytics?.orderStats?.financialYear?.isConfigured) completed += 1 // Financial year
+                        if (products.length > 0) completed += 1 // Products added
+                        // Payment setup - we'll count it as done if they have orders (implies payment is set up)
+                        if (orders.length > 0) completed += 1 // Payment setup implied by having orders
+                        if (orders.length > 0) completed += 1 // First sale
+                        return `${completed}/6`
+                      })()} Complete
                     </div>
                   </div>
 
@@ -724,7 +958,34 @@ const StoreOwnerDashboard: React.FC = () => {
                       <div className="text-green-400 text-sm font-medium">Complete</div>
                     </div>
 
-                    {/* Step 3: Add Products */}
+                    {/* Step 3: Configure Financial Year */}
+                    <div className={`flex items-center p-4 bg-[#1E1E1E] rounded-lg ${!analytics?.orderStats?.financialYear?.isConfigured ? 'border border-[#9B51E0]/30' : ''}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${analytics?.orderStats?.financialYear?.isConfigured ? 'bg-green-500/20' : 'bg-[#9B51E0]/20'}`}>
+                        {analytics?.orderStats?.financialYear?.isConfigured ? (
+                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <span className="text-[#9B51E0] text-sm font-bold">3</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-white">Set Financial Year Period</div>
+                        <div className="text-sm text-[#A0A0A0]">Configure your business financial year for accurate reporting</div>
+                      </div>
+                      {analytics?.orderStats?.financialYear?.isConfigured ? (
+                        <div className="text-green-400 text-sm font-medium">Complete</div>
+                      ) : (
+                        <button 
+                          onClick={() => setActiveTab('settings')}
+                          className="px-4 py-2 bg-[#9B51E0] text-white text-sm rounded-lg hover:bg-[#A051E0] transition-colors"
+                        >
+                          Configure
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Step 4: Add Products */}
                     <div className={`flex items-center p-4 bg-[#1E1E1E] rounded-lg ${products.length === 0 ? 'border border-[#9B51E0]/30' : ''}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${products.length > 0 ? 'bg-green-500/20' : 'bg-[#9B51E0]/20'}`}>
                         {products.length > 0 ? (
@@ -732,7 +993,7 @@ const StoreOwnerDashboard: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         ) : (
-                          <span className="text-[#9B51E0] text-sm font-bold">3</span>
+                          <span className="text-[#9B51E0] text-sm font-bold">4</span>
                         )}
                       </div>
                       <div className="flex-1">
@@ -751,10 +1012,10 @@ const StoreOwnerDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Step 4: Payment Setup */}
+                    {/* Step 5: Payment Setup */}
                     <div className="flex items-center p-4 bg-[#1E1E1E] rounded-lg">
                       <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center mr-4">
-                        <span className="text-yellow-400 text-sm font-bold">4</span>
+                        <span className="text-yellow-400 text-sm font-bold">5</span>
                       </div>
                       <div className="flex-1">
                         <div className="font-medium text-white">Configure Payment Processing</div>
@@ -768,7 +1029,7 @@ const StoreOwnerDashboard: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Step 5: First Sale */}
+                    {/* Step 6: First Sale */}
                     <div className="flex items-center p-4 bg-[#1E1E1E] rounded-lg">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${orders.length > 0 ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
                         {orders.length > 0 ? (
@@ -776,7 +1037,7 @@ const StoreOwnerDashboard: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         ) : (
-                          <span className="text-yellow-400 text-sm font-bold">5</span>
+                          <span className="text-yellow-400 text-sm font-bold">6</span>
                         )}
                       </div>
                       <div className="flex-1">
@@ -1291,13 +1552,71 @@ const StoreOwnerDashboard: React.FC = () => {
         </Dialog.Portal>
       </Dialog.Root>
 
-      {/* Product Form Dialog */}
-      <ProductForm
-        isOpen={isProductFormOpen}
-        onClose={handleCloseProductForm}
-        onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
+      {/* Create Product Modal */}
+      <CreateProductModal
+        isOpen={isCreateProductOpen}
+        onClose={handleCloseCreateProduct}
+        onSuccess={handleProductCreated}
+      />
+
+      {/* View Product Modal */}
+      <ViewProductModal
+        product={viewingProduct}
+        isOpen={!!viewingProduct}
+        onClose={handleCloseViewProduct}
+      />
+
+      {/* Edit Product Modal */}
+      <EditProductModal
         product={editingProduct}
-        isLoading={createProduct.isPending || updateProduct.isPending}
+        isOpen={!!editingProduct}
+        onClose={handleCloseEditProduct}
+        onSuccess={handleProductCreated}
+      />
+
+      {/* Create Professional Order Modal */}
+      <CreateOrderModalProfessional
+        isOpen={isCreateOrderOpen}
+        onClose={handleCloseCreateOrder}
+        onSuccess={handleCreateProfessionalOrder}
+      />
+
+      {/* Create Customer Modal */}
+      <CreateCustomerModal
+        isOpen={isCreateCustomerOpen}
+        onClose={handleCloseCreateCustomer}
+        onSuccess={handleCreateCustomer}
+      />
+
+      {/* View Order Modal */}
+      <ViewOrderModal
+        isOpen={!!viewingOrder}
+        onClose={handleCloseViewOrder}
+        order={viewingOrder}
+        customerInfo={viewingOrder?.customers}
+      />
+
+      {/* Edit Order Modal */}
+      <EditOrderModal
+        isOpen={!!editingOrder}
+        onClose={handleCloseEditOrder}
+        onSuccess={handleUpdateOrder}
+        order={editingOrder}
+      />
+
+      {/* View Customer Modal */}
+      <ViewCustomerModal
+        isOpen={!!viewingCustomer}
+        onClose={handleCloseViewCustomer}
+        customer={viewingCustomer}
+      />
+
+      {/* Edit Customer Modal */}
+      <EditCustomerModal
+        isOpen={!!editingCustomer}
+        onClose={handleCloseEditCustomer}
+        onSuccess={handleUpdateCustomer}
+        customer={editingCustomer}
       />
     </div>
   )

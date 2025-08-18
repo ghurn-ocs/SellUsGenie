@@ -4,6 +4,14 @@ import { AnalyticsCalculator } from '../services/analyticsService'
 import { useOrders } from './useOrders'
 import { useCustomers } from './useCustomers'
 import { useProducts } from './useProducts'
+import { 
+  getCurrentFinancialYear, 
+  getFinancialYearProgress, 
+  formatFinancialYearPeriod,
+  getFinancialYearLabel,
+  DEFAULT_FINANCIAL_YEAR,
+  type FinancialYearSettings 
+} from '../lib/financialYear'
 
 export const useRealAnalytics = (storeId: string) => {
   const { orders } = useOrders(storeId)
@@ -83,20 +91,115 @@ export const useRealAnalytics = (storeId: string) => {
     staleTime: 5 * 60 * 1000
   })
 
+  // Fetch financial year settings for the store
+  const { data: financialYearSettings } = useQuery({
+    queryKey: ['financial-year-settings', storeId],
+    queryFn: async () => {
+      if (!storeId) return DEFAULT_FINANCIAL_YEAR
+      
+      const { data, error } = await supabase
+        .from('stores')
+        .select('financial_year_start_month, financial_year_start_day')
+        .eq('id', storeId)
+        .single()
+
+      if (error || !data) {
+        console.warn('Could not fetch financial year settings, using default:', error)
+        return DEFAULT_FINANCIAL_YEAR
+      }
+
+      return {
+        startMonth: data.financial_year_start_month || 1,
+        startDay: data.financial_year_start_day || 1
+      } as FinancialYearSettings
+    },
+    enabled: !!storeId,
+    staleTime: 10 * 60 * 1000 // 10 minutes (settings don't change often)
+  })
+
+  // Filter orders by payment status for accurate revenue calculations
+  const paidOrders = orders.filter(order => 
+    order.status === 'paid' || 
+    order.status === 'delivered' || 
+    order.status === 'processing' || 
+    order.status === 'shipped'
+  )
+  
   // Calculate comprehensive analytics
   const analytics = {
     orderStats: {
       totalOrders: orders.length,
-      totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
+      totalRevenue: paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
       pendingOrders: orders.filter(order => order.status === 'pending').length,
       completedOrders: orders.filter(order => order.status === 'delivered').length,
       processingOrders: orders.filter(order => order.status === 'processing').length,
-      averageOrderValue: orders.length > 0 ? orders.reduce((sum, order) => sum + order.total, 0) / orders.length : 0,
+      shippedOrders: orders.filter(order => order.status === 'shipped').length,
+      paidOrders: orders.filter(order => order.status === 'paid').length,
+      toBePaidOrders: orders.filter(order => order.status === 'to_be_paid').length,
+      unpaidRevenue: orders.filter(order => order.status === 'to_be_paid').reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
+      averageOrderValue: paidOrders.length > 0 ? paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0) / paidOrders.length : 0,
       monthlyRevenue: {},
       dailyOrders: {},
-      cogs: orders.reduce((sum, order) => sum + order.total, 0) * 0.4, // 40% COGS estimate
-      grossProfit: orders.reduce((sum, order) => sum + order.total, 0) * 0.6,
-      profitMargin: 60 // 60% margin with 40% COGS
+      cogs: paidOrders.reduce((sum, order) => {
+        // TODO: Calculate actual COGS from order_items when available
+        // For now, use product COGS data if available, otherwise estimate
+        const orderTotal = order.total_amount || order.total || 0
+        return sum + orderTotal * 0.4 // Fallback to 40% estimate
+      }, 0),
+      grossProfit: paidOrders.reduce((sum, order) => {
+        const orderTotal = order.total_amount || order.total || 0
+        return sum + orderTotal * 0.6 // Fallback to 60% profit
+      }, 0),
+      profitMargin: 60, // Fallback estimate (TODO: Calculate from actual COGS when order_items include cost data)
+      
+      // Financial Year Analytics
+      financialYear: (() => {
+        if (!financialYearSettings) {
+          return {
+            isConfigured: false,
+            message: 'Financial year period not configured'
+          }
+        }
+
+        const currentFY = getCurrentFinancialYear(financialYearSettings)
+        const progress = getFinancialYearProgress(financialYearSettings)
+        
+        // Filter orders within current financial year
+        const financialYearOrders = orders.filter(order => {
+          const orderDate = new Date(order.created_at)
+          return orderDate >= currentFY.startDate && orderDate <= currentFY.endDate
+        })
+        
+        const financialYearPaidOrders = financialYearOrders.filter(order => 
+          order.status === 'paid' || 
+          order.status === 'delivered' || 
+          order.status === 'processing' || 
+          order.status === 'shipped'
+        )
+
+        const financialYearRevenue = financialYearPaidOrders.reduce((sum, order) => 
+          sum + (order.total_amount || order.total || 0), 0
+        )
+        
+        const financialYearUnpaidRevenue = financialYearOrders
+          .filter(order => order.status === 'to_be_paid')
+          .reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0)
+
+        return {
+          isConfigured: true,
+          period: currentFY,
+          label: getFinancialYearLabel(currentFY),
+          formattedPeriod: formatFinancialYearPeriod(currentFY),
+          progress: Math.round(progress),
+          totalOrders: financialYearOrders.length,
+          paidRevenue: financialYearRevenue,
+          unpaidRevenue: financialYearUnpaidRevenue,
+          totalPotentialRevenue: financialYearRevenue + financialYearUnpaidRevenue,
+          averageOrderValue: financialYearPaidOrders.length > 0 
+            ? financialYearRevenue / financialYearPaidOrders.length 
+            : 0
+        }
+      })()
     },
 
     customerStats: {
@@ -104,14 +207,14 @@ export const useRealAnalytics = (storeId: string) => {
       customersWithOrders: customers.filter(customer => 
         customer.orders && customer.orders.length > 0
       ).length,
-      totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
+      totalRevenue: orders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
       newCustomers: {},
       returningCustomers: customers.filter(customer => 
         customer.orders && customer.orders.length > 1
       ).length,
       customerAcquisitionCost: 0, // No marketing spend data available
       averageLifetimeValue: customers.length > 0 ? 
-        orders.reduce((sum, order) => sum + order.total, 0) / customers.length : 0,
+        orders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0) / customers.length : 0,
       retentionRate: customers.length > 0 ? 
         (customers.filter(customer => customer.orders && customer.orders.length > 1).length / customers.length) * 100 : 0,
       churnRate: (() => {

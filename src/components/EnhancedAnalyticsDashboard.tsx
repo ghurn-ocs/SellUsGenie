@@ -81,13 +81,28 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
             <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#A0A0A0]">Total Revenue</p>
+                  <p className="text-sm font-medium text-[#A0A0A0]">Paid Revenue</p>
                   <p className="text-2xl font-bold text-white">{formatCurrency(orderStats.totalRevenue)}</p>
-                  <p className="text-sm text-[#A0A0A0]">{orderStats.totalOrders} total orders</p>
+                  <p className="text-sm text-green-400">From completed orders</p>
                 </div>
                 <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-[#A0A0A0]">Pending Revenue</p>
+                  <p className="text-2xl font-bold text-white">{formatCurrency(orderStats.unpaidRevenue)}</p>
+                  <p className="text-sm text-yellow-400">Awaiting payment</p>
+                </div>
+                <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
@@ -145,18 +160,26 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
               <h3 className="text-lg font-semibold text-white mb-4">Revenue Breakdown</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#A0A0A0]">Gross Revenue</span>
-                  <span className="text-white font-medium">{formatCurrency(orderStats.totalRevenue)}</span>
+                  <span className="text-[#A0A0A0]">Paid Revenue</span>
+                  <span className="text-green-400 font-medium">{formatCurrency(orderStats.totalRevenue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#A0A0A0]">Cost of Goods Sold</span>
-                  <span className="text-red-400 font-medium">-{formatCurrency(orderStats.cogs)}</span>
+                  <span className="text-[#A0A0A0]">Pending Revenue</span>
+                  <span className="text-yellow-400 font-medium">{formatCurrency(orderStats.unpaidRevenue)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#A0A0A0]">Total Potential Revenue</span>
+                  <span className="text-white font-medium">{formatCurrency(orderStats.totalRevenue + orderStats.unpaidRevenue)}</span>
                 </div>
                 <div className="border-t border-[#3A3A3A] pt-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-white font-medium">Net Profit</span>
-                    <span className="text-green-400 font-bold">{formatCurrency(orderStats.grossProfit)}</span>
+                    <span className="text-[#A0A0A0]">Cost of Goods Sold</span>
+                    <span className="text-red-400 font-medium">-{formatCurrency(orderStats.cogs)}</span>
                   </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-medium">Net Profit (Paid Orders)</span>
+                  <span className="text-green-400 font-bold">{formatCurrency(orderStats.grossProfit)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#A0A0A0]">Profit Margin</span>
@@ -166,27 +189,113 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
             </div>
 
             <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Key Performance Indicators</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Order Status Overview</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-[#1E1E1E] rounded-lg">
                   <p className="text-2xl font-bold text-white">{orderStats.totalOrders}</p>
                   <p className="text-sm text-[#A0A0A0]">Total Orders</p>
                 </div>
                 <div className="text-center p-3 bg-[#1E1E1E] rounded-lg">
+                  <p className="text-2xl font-bold text-green-400">{orderStats.paidOrders + orderStats.completedOrders + orderStats.processingOrders + orderStats.shippedOrders}</p>
+                  <p className="text-sm text-[#A0A0A0]">Paid Orders</p>
+                </div>
+                <div className="text-center p-3 bg-[#1E1E1E] rounded-lg">
+                  <p className="text-2xl font-bold text-yellow-400">{orderStats.toBePaidOrders}</p>
+                  <p className="text-sm text-[#A0A0A0]">Awaiting Payment</p>
+                </div>
+                <div className="text-center p-3 bg-[#1E1E1E] rounded-lg">
                   <p className="text-2xl font-bold text-white">{formatCurrency(orderStats.averageOrderValue)}</p>
                   <p className="text-sm text-[#A0A0A0]">Avg Order Value</p>
-                </div>
-                <div className="text-center p-3 bg-[#1E1E1E] rounded-lg">
-                  <p className="text-2xl font-bold text-white">{customerStats.totalCustomers}</p>
-                  <p className="text-sm text-[#A0A0A0]">Total Customers</p>
-                </div>
-                <div className="text-center p-3 bg-[#1E1E1E] rounded-lg">
-                  <p className="text-2xl font-bold text-white">{formatPercentage(websiteStats.conversionRate)}</p>
-                  <p className="text-sm text-[#A0A0A0]">Conversion Rate</p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Financial Year Analytics */}
+          {orderStats.financialYear && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white flex items-center space-x-3">
+                <svg className="w-6 h-6 text-[#9B51E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Financial Year Analytics</span>
+              </h2>
+
+              {!orderStats.financialYear.isConfigured ? (
+                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                  <div className="text-center py-8">
+                    <svg className="w-12 h-12 text-[#A0A0A0] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-white mb-2">Configure Financial Year</h3>
+                    <p className="text-[#A0A0A0] mb-4">Set your financial year period in Settings to see detailed financial year analytics.</p>
+                    <p className="text-sm text-[#666]">{orderStats.financialYear.message}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Financial Year Overview */}
+                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{orderStats.financialYear.label}</h3>
+                        <p className="text-[#A0A0A0] text-sm">{orderStats.financialYear.formattedPeriod}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-[#A0A0A0]">Progress</p>
+                        <p className="text-2xl font-bold text-[#9B51E0]">{orderStats.financialYear.progress}%</p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mb-6">
+                      <div className="flex justify-between text-sm text-[#A0A0A0] mb-2">
+                        <span>Financial Year Progress</span>
+                        <span>{orderStats.financialYear.progress}% complete</span>
+                      </div>
+                      <div className="w-full h-2 bg-[#1E1E1E] rounded-full">
+                        <div 
+                          className="h-2 bg-gradient-to-r from-[#9B51E0] to-[#A051E0] rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(orderStats.financialYear.progress, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Financial Year Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="text-center p-4 bg-[#1E1E1E] rounded-lg">
+                        <p className="text-2xl font-bold text-green-400">{formatCurrency(orderStats.financialYear.paidRevenue)}</p>
+                        <p className="text-sm text-[#A0A0A0]">Paid Revenue (FY)</p>
+                        <p className="text-xs text-[#666] mt-1">Actual earned revenue</p>
+                      </div>
+                      <div className="text-center p-4 bg-[#1E1E1E] rounded-lg">
+                        <p className="text-2xl font-bold text-yellow-400">{formatCurrency(orderStats.financialYear.unpaidRevenue)}</p>
+                        <p className="text-sm text-[#A0A0A0]">Pending Revenue (FY)</p>
+                        <p className="text-xs text-[#666] mt-1">Awaiting payment</p>
+                      </div>
+                      <div className="text-center p-4 bg-[#1E1E1E] rounded-lg">
+                        <p className="text-2xl font-bold text-white">{formatCurrency(orderStats.financialYear.totalPotentialRevenue)}</p>
+                        <p className="text-sm text-[#A0A0A0]">Total Potential (FY)</p>
+                        <p className="text-xs text-[#666] mt-1">If all orders paid</p>
+                      </div>
+                    </div>
+
+                    {/* Additional FY Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      <div className="text-center p-4 bg-[#1E1E1E] rounded-lg">
+                        <p className="text-xl font-bold text-blue-400">{orderStats.financialYear.totalOrders}</p>
+                        <p className="text-sm text-[#A0A0A0]">Total Orders (FY)</p>
+                      </div>
+                      <div className="text-center p-4 bg-[#1E1E1E] rounded-lg">
+                        <p className="text-xl font-bold text-purple-400">{formatCurrency(orderStats.financialYear.averageOrderValue)}</p>
+                        <p className="text-sm text-[#A0A0A0]">Avg Order Value (FY)</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </Tabs.Content>
 
         <Tabs.Content value="website" className="space-y-6 mt-6">
