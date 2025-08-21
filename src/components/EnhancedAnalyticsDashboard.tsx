@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import * as Tabs from '@radix-ui/react-tabs'
 import { useRealAnalytics } from '../hooks/useRealAnalytics'
 import { useSubscription } from '../hooks/useSubscription'
 import { useStore } from '../contexts/StoreContext'
@@ -53,41 +52,63 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
         </div>
       </div>
 
-      <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
-        <Tabs.List className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg">
-          <Tabs.Trigger
-            value="business"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+      <div className="mb-8">
+        <div className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg border border-[#3A3A3A] shadow-sm">
+          <button
+            onClick={() => setActiveTab('business')}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'business'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
+            }`}
           >
             Business Metrics
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="website"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+          </button>
+          <button
+            onClick={() => setActiveTab('website')}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'website'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
+            }`}
           >
             Website Performance
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="customers"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+          </button>
+          <button
+            onClick={() => setActiveTab('customers')}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'customers'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
+            }`}
           >
             Customer Analytics
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="products"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+          </button>
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'products'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
+            }`}
           >
             Product Analytics
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="subscription"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+          </button>
+          <button
+            onClick={() => setActiveTab('subscription')}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'subscription'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
+            }`}
           >
             Subscription Usage
-          </Tabs.Trigger>
-        </Tabs.List>
+          </button>
+        </div>
+      </div>
 
-        <Tabs.Content value="business" className="space-y-6 mt-6">
+        {activeTab === 'business' && (
+        <div className="space-y-6 mt-6">
           {/* Sales and Revenue Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
@@ -308,9 +329,11 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
               )}
             </div>
           )}
-        </Tabs.Content>
+        </div>
+        )}
 
-        <Tabs.Content value="website" className="space-y-6 mt-6">
+        {activeTab === 'website' && (
+        <div className="space-y-6 mt-6">
           {/* Website Performance Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
@@ -419,9 +442,11 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
               </div>
             </div>
           </div>
-        </Tabs.Content>
+        </div>
+        )}
 
-        <Tabs.Content value="customers" className="space-y-6 mt-6">
+        {activeTab === 'customers' && (
+        <div className="space-y-6 mt-6">
           {/* Customer Analytics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
@@ -536,9 +561,11 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
               </div>
             </div>
           </div>
-        </Tabs.Content>
+        </div>
+        )}
 
-        <Tabs.Content value="products" className="space-y-6 mt-6">
+        {activeTab === 'products' && (
+        <div className="space-y-6 mt-6">
           {/* Product Analytics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
@@ -633,9 +660,11 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
               )}
             </div>
           </div>
-        </Tabs.Content>
+        </div>
+        )}
 
-        <Tabs.Content value="subscription" className="space-y-6 mt-6">
+        {activeTab === 'subscription' && (
+        <div className="space-y-6 mt-6">
           {/* Subscription Overview */}
           <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
             <div className="flex items-center justify-between mb-6">
@@ -881,8 +910,8 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
               </div>
             )}
           </div>
-        </Tabs.Content>
-      </Tabs.Root>
+        </div>
+        )}
     </div>
   )
 }

@@ -12,19 +12,23 @@ import { Menu, X, ChevronRight } from 'lucide-react'
 interface EnhancedStoreFrontProps {
   storeId: string
   storeName: string
+  customizations?: any
 }
 
-type ViewMode = 'home' | 'products' | 'privacy' | 'returns' | 'about'
+type ViewMode = 'home' | 'products' | 'privacy' | 'returns' | 'about' | 'contact' | 'terms'
 
 interface StorePolicy {
   privacy_policy?: string
   returns_policy?: string
   about_us?: string
+  terms_of_service?: string
+  contact_us?: string
 }
 
 export const EnhancedStoreFront: React.FC<EnhancedStoreFrontProps> = ({ 
   storeId, 
-  storeName 
+  storeName,
+  customizations
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('home')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -60,13 +64,17 @@ export const EnhancedStoreFront: React.FC<EnhancedStoreFrontProps> = ({
 
   const navigation = [
     { name: 'Home', mode: 'home' as ViewMode },
-    { name: 'All Products', mode: 'products' as ViewMode },
+    { name: 'Products', mode: 'products' as ViewMode },
+    { name: 'About', mode: 'about' as ViewMode },
+    { name: 'Contact Us', mode: 'contact' as ViewMode },
   ]
 
   const footerLinks = [
+    { name: 'Terms of Service', mode: 'terms' as ViewMode },
     { name: 'Privacy Policy', mode: 'privacy' as ViewMode },
     { name: 'Returns Policy', mode: 'returns' as ViewMode },
     { name: 'About Us', mode: 'about' as ViewMode },
+    { name: 'Contact Us', mode: 'contact' as ViewMode },
   ]
 
   // Policy page views
@@ -106,6 +114,30 @@ export const EnhancedStoreFront: React.FC<EnhancedStoreFrontProps> = ({
     )
   }
 
+  if (viewMode === 'contact') {
+    return (
+      <PolicyPage
+        storeId={storeId}
+        storeName={storeName}
+        policyType="contact"
+        content={policies?.contact_us || ''}
+        onBack={() => setViewMode('home')}
+      />
+    )
+  }
+
+  if (viewMode === 'terms') {
+    return (
+      <PolicyPage
+        storeId={storeId}
+        storeName={storeName}
+        policyType="terms"
+        content={policies?.terms_of_service || ''}
+        onBack={() => setViewMode('home')}
+      />
+    )
+  }
+
   // Products page view
   if (viewMode === 'products') {
     return (
@@ -125,8 +157,21 @@ export const EnhancedStoreFront: React.FC<EnhancedStoreFrontProps> = ({
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-primary-600">{storeName}</h1>
+              <div className="flex items-center space-x-4">
+                {customizations?.branding?.logo && (
+                  <img 
+                    src={customizations.branding.logo} 
+                    alt={`${customizations?.branding?.storeName || storeName} logo`}
+                    className="h-10 w-auto object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                    }}
+                  />
+                )}
+                <h1 className="text-2xl font-bold text-primary-600">
+                  {customizations?.branding?.storeName || storeName}
+                </h1>
               </div>
               
               {/* Desktop Navigation */}
@@ -185,10 +230,30 @@ export const EnhancedStoreFront: React.FC<EnhancedStoreFrontProps> = ({
         {/* Hero Section */}
         <section className="bg-primary-600 text-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl font-bold mb-4">Welcome to {storeName}</h1>
+            {customizations?.branding?.logo && (
+              <div className="mb-6">
+                <img 
+                  src={customizations.branding.logo} 
+                  alt={`${customizations?.branding?.storeName || storeName} logo`}
+                  className="h-16 w-auto object-contain mx-auto"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
+            <h1 className="text-4xl font-bold mb-4">
+              {customizations?.hero?.title || `Welcome to ${customizations?.branding?.storeName || storeName}`}
+            </h1>
             <p className="text-xl text-primary-100 mb-8">
-              Discover amazing products with fast, secure checkout
+              {customizations?.hero?.subtitle || 'Discover amazing products with fast, secure checkout'}
             </p>
+            {customizations?.hero?.ctaText && (
+              <button className="px-6 py-3 bg-white text-primary-600 rounded-lg font-medium hover:bg-primary-50 transition-colors">
+                {customizations.hero.ctaText}
+              </button>
+            )}
           </div>
         </section>
 
@@ -303,8 +368,25 @@ export const EnhancedStoreFront: React.FC<EnhancedStoreFrontProps> = ({
         <footer className="bg-gray-900 text-white py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
-              <h3 className="text-lg font-medium mb-4">{storeName}</h3>
-              <p className="text-gray-400 mb-6">Your trusted online store</p>
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                {customizations?.branding?.logo && (
+                  <img 
+                    src={customizations.branding.logo} 
+                    alt={`${customizations?.branding?.storeName || storeName} logo`}
+                    className="h-8 w-auto object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                    }}
+                  />
+                )}
+                <h3 className="text-lg font-medium">
+                  {customizations?.branding?.storeName || storeName}
+                </h3>
+              </div>
+              <p className="text-gray-400 mb-6">
+                {customizations?.branding?.tagline || 'Your trusted online store'}
+              </p>
               
               {/* Policy Links */}
               <div className="flex flex-wrap justify-center gap-6 mb-6">

@@ -1,5 +1,6 @@
-import React from 'react'
-import { Type, Image, Phone, Mail, Globe, Upload } from 'lucide-react'
+import React, { useState } from 'react'
+import { Type, Image, Phone, Mail, Globe, Upload, X, Check, AlertCircle } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 import type { StoreFrontTemplate, StoreFrontLayout } from '../../types/storefront'
 
 interface CustomizationPanelProps {
@@ -17,6 +18,10 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   customizations: propCustomizations,
   onCustomizationsChange
 }) => {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
+
   // Initialize customizations from props or default values
   const customizations = propCustomizations || {
     hero: {
@@ -98,6 +103,63 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
       }
     }
     onCustomizationsChange(updated)
+  }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadError(null)
+    setUploadSuccess(null)
+    setIsUploading(true)
+
+    try {
+      // Validate file type
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Please upload a PNG, JPG, SVG, or WebP image file')
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        throw new Error('Image file must be smaller than 5MB')
+      }
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `logo-${Date.now()}.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('store-images')
+        .upload(`logos/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('store-images')
+        .getPublicUrl(data.path)
+
+      // Update customization
+      updateCustomization('branding', 'logo', publicUrl)
+      setUploadSuccess('Logo uploaded successfully!')
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setUploadSuccess(null), 3000)
+
+    } catch (error: any) {
+      console.error('Logo upload error:', error)
+      setUploadError(error.message || 'Failed to upload logo')
+    } finally {
+      setIsUploading(false)
+      // Reset the input
+      event.target.value = ''
+    }
   }
 
   return (
@@ -204,13 +266,58 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 placeholder="https://example.com/logo.png"
                 className="flex-1 px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
               />
-              <button className="px-3 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors">
-                <Upload className="w-4 h-4" />
-              </button>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                  onChange={handleLogoUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isUploading}
+                />
+                <button 
+                  type="button"
+                  disabled={isUploading}
+                  className="px-3 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploading ? (
+                    <div className="w-4 h-4 border-2 border-[#A0A0A0] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
+            {uploadError && (
+              <div className="flex items-center space-x-1 mt-1">
+                <AlertCircle className="w-3 h-3 text-red-400" />
+                <p className="text-xs text-red-400">{uploadError}</p>
+              </div>
+            )}
+            {uploadSuccess && (
+              <div className="flex items-center space-x-1 mt-1">
+                <Check className="w-3 h-3 text-green-400" />
+                <p className="text-xs text-green-400">{uploadSuccess}</p>
+              </div>
+            )}
             <p className="text-xs text-[#A0A0A0] mt-1">
-              Recommended size: 200x60px, PNG or SVG format
+              Recommended size: 200x60px, PNG, JPG, SVG, or WebP format (max 5MB)
             </p>
+            {customizations.branding?.logo && (
+              <div className="mt-2">
+                <p className="text-xs text-[#A0A0A0] mb-1">Preview:</p>
+                <div className="p-2 bg-white rounded border">
+                  <img 
+                    src={customizations.branding.logo} 
+                    alt="Logo preview"
+                    className="max-h-16 max-w-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

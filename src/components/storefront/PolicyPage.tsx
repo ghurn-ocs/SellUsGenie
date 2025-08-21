@@ -4,7 +4,7 @@ import { ArrowLeft, FileText } from 'lucide-react'
 interface PolicyPageProps {
   storeId: string
   storeName: string
-  policyType: 'privacy' | 'returns' | 'about'
+  policyType: 'privacy' | 'returns' | 'about' | 'contact' | 'terms'
   content: string
   onBack: () => void
 }
@@ -19,7 +19,9 @@ export const PolicyPage: React.FC<PolicyPageProps> = ({
   const titles = {
     privacy: 'Privacy Policy',
     returns: 'Returns Policy',
-    about: 'About Us'
+    about: 'About Us',
+    contact: 'Contact Us',
+    terms: 'Terms of Service'
   }
 
   const defaultContent = {
@@ -72,7 +74,64 @@ Founded with a commitment to excellence, we strive to bring you the best product
 To provide customers with an outstanding shopping experience from browsing to delivery.
 
 ## Contact Us
-We'd love to hear from you! Reach out with any questions or feedback.`
+We'd love to hear from you! Reach out with any questions or feedback.`,
+
+    contact: `# Contact Us
+
+We're here to help! Get in touch with ${storeName} for any questions, concerns, or feedback.
+
+## Get in Touch
+- **Email**: Contact us at our support email
+- **Phone**: Call us during business hours
+- **Response Time**: We typically respond within 24 hours
+
+## Business Hours
+- Monday - Friday: 9:00 AM - 6:00 PM
+- Saturday: 10:00 AM - 4:00 PM
+- Sunday: Closed
+
+## Customer Support
+Our friendly customer support team is ready to assist you with:
+- Order questions and tracking
+- Product information
+- Returns and exchanges
+- Technical support
+- General inquiries
+
+## Visit Our Store
+If you have a physical location, we'd love to see you in person!
+
+We value your feedback and strive to provide the best customer experience possible.`,
+
+    terms: `# Terms of Service
+
+Last updated: ${new Date().toLocaleDateString()}
+
+Welcome to ${storeName}. These terms and conditions outline the rules and regulations for the use of our website and services.
+
+## Acceptance of Terms
+By accessing and using this website, you accept and agree to be bound by the terms and conditions of this agreement.
+
+## Use License
+Permission is granted to temporarily download one copy of the materials on ${storeName}'s website for personal, non-commercial transitory viewing only.
+
+## Disclaimer
+The materials on ${storeName}'s website are provided on an 'as is' basis. ${storeName} makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
+
+## Limitations
+In no event shall ${storeName} or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on ${storeName}'s website.
+
+## Accuracy of Materials
+The materials appearing on ${storeName}'s website could include technical, typographical, or photographic errors. ${storeName} does not warrant that any of the materials on its website are accurate, complete, or current.
+
+## Links
+${storeName} has not reviewed all of the sites linked to our website and is not responsible for the contents of any such linked site.
+
+## Modifications
+${storeName} may revise these terms of service for its website at any time without notice. By using this website, you are agreeing to be bound by the then current version of these terms of service.
+
+## Contact Information
+If you have any questions about these Terms of Service, please contact us.`
   }
 
   const displayContent = content || defaultContent[policyType]

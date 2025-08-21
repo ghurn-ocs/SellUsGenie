@@ -12,13 +12,14 @@ interface StorePolicy {
   store_id: string
   privacy_policy?: string
   returns_policy?: string
+  terms_policy?: string
   about_us?: string
   updated_at?: string
 }
 
 export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'privacy' | 'returns' | 'about'>('privacy')
+  const [activeTab, setActiveTab] = useState<'privacy' | 'returns' | 'terms' | 'about'>('privacy')
   const [unsavedChanges, setUnsavedChanges] = useState<Record<string, boolean>>({})
 
   // Fetch existing policies
@@ -39,6 +40,7 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
         store_id: storeId,
         privacy_policy: '',
         returns_policy: '',
+        terms_policy: '',
         about_us: ''
       }
     }
@@ -93,6 +95,7 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
   const tabs = [
     { id: 'privacy' as const, label: 'Privacy Policy', field: 'privacy_policy' as keyof StorePolicy },
     { id: 'returns' as const, label: 'Returns Policy', field: 'returns_policy' as keyof StorePolicy },
+    { id: 'terms' as const, label: 'Terms & Conditions', field: 'terms_policy' as keyof StorePolicy },
     { id: 'about' as const, label: 'About Us', field: 'about_us' as keyof StorePolicy }
   ]
 
@@ -169,6 +172,7 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
                 <p className="text-xs text-[#A0A0A0] mb-3">
                   {tab.id === 'privacy' && 'Include information about data collection, usage, cookies, and user rights.'}
                   {tab.id === 'returns' && 'Cover return timeframes, condition requirements, refund process, and shipping costs.'}
+                  {tab.id === 'terms' && 'Define the legal terms and conditions for using your store and services.'}
                   {tab.id === 'about' && 'Tell your story, mission, values, and what makes your business unique.'}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -186,6 +190,14 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
                       <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Item Condition</span>
                       <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Refund Process</span>
                       <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Shipping Costs</span>
+                    </>
+                  )}
+                  {tab.id === 'terms' && (
+                    <>
+                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">User Agreement</span>
+                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Payment Terms</span>
+                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Liability</span>
+                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Prohibited Uses</span>
                     </>
                   )}
                   {tab.id === 'about' && (

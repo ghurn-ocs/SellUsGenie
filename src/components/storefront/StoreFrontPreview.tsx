@@ -129,6 +129,17 @@ export const StoreFrontPreview: React.FC<StoreFrontPreviewProps> = ({
       >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {customizations?.branding?.logo && (
+              <img 
+                src={customizations.branding.logo} 
+                alt={`${customizations?.branding?.storeName || storeName} logo`}
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                }}
+              />
+            )}
             <h1 
               className="text-xl font-bold" 
               style={{ color: colors.primary }}
@@ -170,6 +181,19 @@ export const StoreFrontPreview: React.FC<StoreFrontPreviewProps> = ({
           style={{ backgroundColor: colors.primary }}
         >
           <div className="max-w-4xl">
+            {customizations?.branding?.logo && (
+              <div className="mb-6">
+                <img 
+                  src={customizations.branding.logo} 
+                  alt={`${customizations?.branding?.storeName || storeName} logo`}
+                  className="h-16 w-auto object-contain mx-auto"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {heroTitle}
             </h1>
@@ -293,12 +317,25 @@ export const StoreFrontPreview: React.FC<StoreFrontPreviewProps> = ({
         <div className="max-w-7xl mx-auto px-4">
           <div className={`grid ${layout.config.footer.columns === 4 ? 'grid-cols-4' : layout.config.footer.columns === 3 ? 'grid-cols-3' : layout.config.footer.columns === 2 ? 'grid-cols-2' : 'grid-cols-1'} gap-8`}>
             <div>
-              <h3 
-                className="font-semibold mb-2"
-                style={{ color: colors.primary }}
-              >
-                {customizations?.branding?.storeName || storeName}
-              </h3>
+              <div className="flex items-center space-x-2 mb-2">
+                {customizations?.branding?.logo && (
+                  <img 
+                    src={customizations.branding.logo} 
+                    alt={`${customizations?.branding?.storeName || storeName} logo`}
+                    className="h-6 w-auto object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                    }}
+                  />
+                )}
+                <h3 
+                  className="font-semibold"
+                  style={{ color: colors.primary }}
+                >
+                  {customizations?.branding?.storeName || storeName}
+                </h3>
+              </div>
               <p 
                 className="text-sm"
                 style={{ color: colors.textSecondary }}

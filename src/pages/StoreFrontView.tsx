@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRoute } from 'wouter'
 import { useStoreFront, applyColorScheme } from '../hooks/useStoreFront'
-import { FunctionalStoreFront } from '../components/storefront/FunctionalStoreFront'
+import { EnhancedStoreFront } from '../components/storefront/EnhancedStoreFront'
 import { supabase } from '../lib/supabase'
 
 interface Store {
@@ -96,9 +96,7 @@ export const StoreFrontView: React.FC = () => {
   }
 
   return (
-    <FunctionalStoreFront
-      layout={currentLayout}
-      colorScheme={currentColorScheme}
+    <EnhancedStoreFront
       storeId={store.id}
       storeName={store.store_name}
       customizations={currentTemplate.customizations}

@@ -8,6 +8,7 @@ interface ProductListProps {
   onEdit: (product: Product) => void
   onDelete: (productId: string) => void
   onToggleActive: (productId: string, isActive: boolean) => void
+  onToggleFeatured: (productId: string, isFeatured: boolean) => void
 }
 
 const ProductList: React.FC<ProductListProps> = ({
@@ -15,7 +16,8 @@ const ProductList: React.FC<ProductListProps> = ({
   isLoading,
   onEdit,
   onDelete,
-  onToggleActive
+  onToggleActive,
+  onToggleFeatured
 }) => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
@@ -87,6 +89,11 @@ const ProductList: React.FC<ProductListProps> = ({
                   }`}>
                     {product.is_active ? 'Active' : 'Inactive'}
                   </span>
+                  {product.is_featured && (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                      ⭐ Featured
+                    </span>
+                  )}
                 </div>
                 
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">
@@ -107,6 +114,18 @@ const ProductList: React.FC<ProductListProps> = ({
             </div>
             
             <div className="flex items-center space-x-2">
+              <button
+                onClick={() => onToggleFeatured(product.id, !product.is_featured)}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  product.is_featured
+                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                aria-label={`${product.is_featured ? 'Remove from featured' : 'Add to featured'} product ${product.name}`}
+              >
+                {product.is_featured ? '⭐ Featured' : '☆ Feature'}
+              </button>
+              
               <button
                 onClick={() => onToggleActive(product.id, !product.is_active)}
                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${

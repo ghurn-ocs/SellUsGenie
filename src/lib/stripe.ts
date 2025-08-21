@@ -4,10 +4,10 @@ import { loadStripe } from '@stripe/stripe-js'
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 
 if (!stripePublishableKey) {
-  throw new Error('Missing Stripe publishable key')
+  console.warn('Stripe publishable key not found. Payment functionality will be disabled.')
 }
 
-export const stripePromise = loadStripe(stripePublishableKey)
+export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null)
 
 export const STRIPE_CONFIG = {
   currency: 'usd',

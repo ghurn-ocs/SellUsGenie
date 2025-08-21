@@ -11,6 +11,7 @@ interface ProductListNewProps {
   onEdit: (product: Product) => void
   onDelete: (productId: string) => void
   onToggleActive: (productId: string, isActive: boolean) => void
+  onToggleFeatured: (productId: string, isFeatured: boolean) => void
   isDeleting?: boolean
   isToggling?: boolean
 }
@@ -22,6 +23,7 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
   onEdit,
   onDelete,
   onToggleActive,
+  onToggleFeatured,
   isDeleting = false,
   isToggling = false
 }) => {
@@ -119,6 +121,11 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
                   >
                     {product.is_active ? 'Active' : 'Inactive'}
                   </span>
+                  {product.is_featured && (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                      ⭐ Featured
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-sm text-[#A0A0A0] mb-3 line-clamp-2">
@@ -197,6 +204,27 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
                 title={product.is_active ? 'Deactivate product' : 'Activate product'}
               >
                 {product.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
+
+              {/* Toggle Featured Status */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('⭐ Toggle featured clicked for product:', product.name, product.id)
+                  onToggleFeatured(product.id, !product.is_featured)
+                }}
+                disabled={isToggling}
+                className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                  product.is_featured
+                    ? 'text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300'
+                    : 'text-gray-400 hover:bg-gray-500/20 hover:text-gray-300'
+                }`}
+                title={product.is_featured ? 'Remove from featured' : 'Add to featured'}
+              >
+                <span className="text-sm font-medium">
+                  {product.is_featured ? '⭐' : '☆'}
+                </span>
               </button>
 
               {/* Edit Button */}

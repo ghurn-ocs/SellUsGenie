@@ -1,5 +1,5 @@
-// Nurture Dashboard Component
-// Main dashboard for customer nurture program with leads, campaigns, and analytics
+// Marketing Dashboard Component
+// Main dashboard for marketing program with leads, campaigns, and analytics
 
 import React, { useState } from 'react'
 import { useStore } from '../../contexts/StoreContext'
@@ -40,7 +40,7 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
   if (!currentStore) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Please select a store to view nurture dashboard.</p>
+        <p className="text-[#A0A0A0]">Please select a store to view marketing dashboard.</p>
       </div>
     )
   }
@@ -50,67 +50,67 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer Nurture</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-white">Marketing</h1>
+          <p className="text-[#A0A0A0] mt-1">
             Manage leads, recover abandoned carts, and nurture customer relationships
           </p>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b border-[#3A3A3A]">
-        <nav className="-mb-px flex space-x-8">
+      <div className="mb-8">
+        <div className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg border border-[#3A3A3A] shadow-sm">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
               activeTab === 'overview'
-                ? 'border-[#9B51E0] text-[#9B51E0]'
-                : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
             }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab('leads')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
               activeTab === 'leads'
-                ? 'border-[#9B51E0] text-[#9B51E0]'
-                : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
             }`}
           >
             Leads
           </button>
           <button
             onClick={() => setActiveTab('campaigns')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
               activeTab === 'campaigns'
-                ? 'border-[#9B51E0] text-[#9B51E0]'
-                : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
             }`}
           >
             Email Campaigns
           </button>
           <button
             onClick={() => setActiveTab('abandoned')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
               activeTab === 'abandoned'
-                ? 'border-[#9B51E0] text-[#9B51E0]'
-                : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
             }`}
           >
             Abandoned Carts
           </button>
           <button
             onClick={() => setActiveTab('segments')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
               activeTab === 'segments'
-                ? 'border-[#9B51E0] text-[#9B51E0]'
-                : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666]'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
             }`}
           >
             Customer Segments
           </button>
-        </nav>
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -193,9 +193,9 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
               <div className="w-16 h-16 bg-[#9B51E0]/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-8 h-8 text-[#9B51E0]" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Customer Nurture & Email Marketing</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Marketing & Email Automation</h3>
               <p className="text-[#A0A0A0] mb-6 max-w-2xl mx-auto">
-                Turn visitors into customers with our comprehensive nurture system featuring professional email templates, 
+                Turn visitors into customers with our comprehensive marketing system featuring professional email templates, 
                 customer segmentation, and abandoned cart recovery.
               </p>
               

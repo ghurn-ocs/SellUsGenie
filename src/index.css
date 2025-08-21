@@ -27,19 +27,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-
-  body {
-    margin: 0;
-    min-width: 320px;
-    min-height: 100vh;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
 }
 
+/* Temporarily disabled - will re-implement with inline styles */
+/* Customer Portal Standard Layout Classes */
+
 @layer components {
+  /* Standard Components */
   .btn-primary {
     @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
   }
@@ -52,7 +46,41 @@
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 
+  /* Custom scrollbar for delivery areas */
+  .delivery-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #93c5fd #dbeafe;
+  }
+  
+  .delivery-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .delivery-scroll::-webkit-scrollbar-track {
+    background: #dbeafe;
+    border-radius: 3px;
+  }
+  
+  .delivery-scroll::-webkit-scrollbar-thumb {
+    background: #93c5fd;
+    border-radius: 3px;
+  }
+  
+  .delivery-scroll::-webkit-scrollbar-thumb:hover {
+    background: #60a5fa;
+  }
+
   .card {
     @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
   }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
 }

@@ -157,24 +157,24 @@ export const StripeSettings: React.FC<StripeSettingsProps> = ({ storeId }) => {
       </div>
 
       <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
-        <Tabs.List className="flex justify-center space-x-1 bg-[#2A2A2A] p-1 rounded-lg">
+        <Tabs.List className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg border border-[#3A3A3A] shadow-sm w-full">
           <Tabs.Trigger
             value="api-keys"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+            className="flex items-center justify-center space-x-2 flex-1 px-4 py-3 text-sm font-medium rounded-md transition-colors whitespace-nowrap data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-[#4A4A4A] data-[state=inactive]:text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]"
           >
             <Key className="w-4 h-4 mr-2" />
             API Keys
           </Tabs.Trigger>
           <Tabs.Trigger
             value="webhooks"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+            className="flex items-center justify-center space-x-2 flex-1 px-4 py-3 text-sm font-medium rounded-md transition-colors whitespace-nowrap data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-[#4A4A4A] data-[state=inactive]:text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]"
           >
             <Webhook className="w-4 h-4 mr-2" />
             Webhooks
           </Tabs.Trigger>
           <Tabs.Trigger
             value="testing"
-            className="flex-1 px-3 py-2 text-sm font-medium rounded-md data-[state=active]:bg-[#1E1E1E] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-sm text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+            className="flex items-center justify-center space-x-2 flex-1 px-4 py-3 text-sm font-medium rounded-md transition-colors whitespace-nowrap data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-[#4A4A4A] data-[state=inactive]:text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]"
           >
             <TestTube className="w-4 h-4 mr-2" />
             Testing

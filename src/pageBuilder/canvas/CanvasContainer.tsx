@@ -87,7 +87,7 @@ const CanvasErrorFallback: React.FC<{
           Reload Page
         </button>
       </div>
-      {process.env.NODE_ENV === 'development' && (
+      {import.meta.env.DEV && (
         <details className="mt-4 text-left">
           <summary className="cursor-pointer text-sm text-red-600">
             Error Details (Development)
@@ -235,7 +235,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
           />
           
           {/* Canvas Overlay - Keyboard shortcuts help */}
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <div className="absolute top-4 right-4 bg-black bg-opacity-75 text-white text-xs p-2 rounded pointer-events-none">
               <div className="space-y-1">
                 <div><kbd>Ctrl+Z</kbd> Undo</div>
