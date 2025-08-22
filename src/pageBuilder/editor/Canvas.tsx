@@ -11,6 +11,7 @@ import {
   useSensors,
   closestCenter,
   DragOverlay,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -103,6 +104,30 @@ export const Canvas: React.FC<CanvasProps> = ({
     const dragData = active.data.current as DragItem;
 
     console.log('Drag end:', { activeId, overId, dragData });
+
+    // Handle section reordering
+    if (activeId.startsWith('section-') && overId.startsWith('section-')) {
+      const activeSectionId = activeId.replace('section-', '');
+      const overSectionId = overId.replace('section-', '');
+      
+      if (activeSectionId !== overSectionId) {
+        const newDocument = { ...document };
+        const activeSectionIndex = newDocument.sections.findIndex(s => s.id === activeSectionId);
+        const overSectionIndex = newDocument.sections.findIndex(s => s.id === overSectionId);
+        
+        if (activeSectionIndex !== -1 && overSectionIndex !== -1) {
+          const reorderedSections = arrayMove(newDocument.sections, activeSectionIndex, overSectionIndex);
+          newDocument.sections = reorderedSections;
+          onDocumentChange(newDocument);
+          console.log('✅ Sections reordered:', { from: activeSectionIndex, to: overSectionIndex });
+        }
+      }
+      
+      setActiveDragItem(null);
+      setDragOverSection(null);
+      setDragOverRow(null);
+      return;
+    }
 
     // Handle widget reordering within the same row
     if (activeId.startsWith('widget-') && overId.startsWith('widget-')) {
@@ -320,43 +345,12 @@ export const Canvas: React.FC<CanvasProps> = ({
     onWidgetSelect(newWidgetId);
   }, [document, onDocumentChange, onWidgetSelect]);
 
-  const renderContent = () => (
-    <div className="min-h-screen p-8">
-      {/* Page content area with grid guides */}
-      <div className="relative">
-        {/* Grid guides with page boundary */}
-        <GridGuides />
-        
-        {/* Page content positioned inside the grid guides */}
-        <div className="absolute top-8 left-8 right-8 bottom-8">
-          <SortableContext
-            items={document.sections.map(s => `section-${s.id}`)}
-            strategy={verticalListSortingStrategy}
-          >
-            {document.sections.map((section) => (
-              <CanvasSection
-                key={section.id}
-                section={section}
-                isSelected={selectedSectionId === section.id}
-                onSelect={() => onSectionSelect(section.id)}
-                onDeselect={() => onSectionSelect(null)}
-                isPreviewMode={isPreviewMode}
-                selectedWidgetId={selectedWidgetId}
-                onWidgetSelect={onWidgetSelect}
-                selectedRowId={selectedRowId}
-                onRowSelect={onRowSelect}
-                onWidgetUpdate={handleWidgetUpdate}
-                onWidgetDelete={handleWidgetDelete}
-                onWidgetDuplicate={handleWidgetDuplicate}
-                dragOverSection={dragOverSection}
-                dragOverRow={dragOverRow}
-              />
-            ))}
-          </SortableContext>
-        </div>
-      </div>
-    </div>
-  );
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'canvas-drop-zone',
+    data: {
+      type: 'canvas',
+    },
+  });
 
   const renderDragOverlay = () => (
     <DragOverlay>
@@ -384,26 +378,69 @@ export const Canvas: React.FC<CanvasProps> = ({
     </DragOverlay>
   );
 
-  if (disableDndContext) {
-    return (
-      <div className="flex-1 bg-gray-50 overflow-auto">
-        {renderContent()}
-      </div>
-    );
-  }
-
+  // Always disable local DndContext when used within EnhancedPageBuilder
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        {renderContent()}
-        {renderDragOverlay()}
-      </DndContext>
+      <div ref={setNodeRef} className={`min-h-screen p-8 ${isOver ? 'bg-blue-50' : ''}`}>
+        {/* Page content area with grid guides */}
+        <div className="relative">
+          {/* Grid guides with page boundary */}
+          <GridGuides />
+          
+          {/* Page content positioned inside the grid guides */}
+          <div className="absolute top-8 left-8 right-8 bottom-8">
+            <SortableContext
+              items={document.sections.map(s => `section-${s.id}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              {document.sections.map((section) => (
+                <CanvasSection
+                  key={section.id}
+                  section={section}
+                  isSelected={selectedSectionId === section.id}
+                  onSelect={() => onSectionSelect(section.id)}
+                  onDeselect={() => onSectionSelect(null)}
+                  isPreviewMode={isPreviewMode}
+                  selectedWidgetId={selectedWidgetId}
+                  onWidgetSelect={onWidgetSelect}
+                  selectedRowId={selectedRowId}
+                  onRowSelect={onRowSelect}
+                  onWidgetUpdate={handleWidgetUpdate}
+                  onWidgetDelete={handleWidgetDelete}
+                  onWidgetDuplicate={handleWidgetDuplicate}
+                  dragOverSection={dragOverSection}
+                  dragOverRow={dragOverRow}
+                />
+              ))}
+            </SortableContext>
+            
+            {/* Section ordering help */}
+            {!isPreviewMode && document.sections.length > 1 && (
+              <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-800 mb-2">💡 Section Ordering</h4>
+                <p className="text-sm text-blue-700">
+                  Drag the section headers (⋮⋮ icon) to reorder sections on your page. 
+                  The order determines how they appear vertically on your storefront.
+                </p>
+                <div className="mt-2 text-xs text-blue-600">
+                  💭 Tip: Hero sections typically go first, followed by featured products, then delivery areas or footer content.
+                </div>
+              </div>
+            )}
+            
+            {/* Empty state */}
+            {document.sections.length === 0 && !isPreviewMode && (
+              <div className="text-center py-16 text-gray-500">
+                <h3 className="text-lg font-medium mb-2">No sections added yet</h3>
+                <p className="mb-4">Drag widgets from the sidebar to create your first section</p>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-white">
+                  <p className="text-sm">Drop widgets here to get started</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

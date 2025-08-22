@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { useRealAnalytics } from '../hooks/useRealAnalytics'
 import { useSubscription } from '../hooks/useSubscription'
 import { useStore } from '../contexts/StoreContext'
+import { Button } from './ui/Button'
+import { TabSection } from './ui/TabSection'
 
 interface BusinessAnalyticsProps {
   storeId: string
@@ -33,77 +35,52 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Advanced Analytics</h2>
+    <TabSection
+      title="Advanced Analytics"
+      description="Comprehensive business insights and performance metrics. Track your store's growth, customer behavior, and operational efficiency across multiple dimensions."
+      items={[
+        { key: 'business', label: 'Business Metrics' },
+        { key: 'website', label: 'Website Performance' },
+        { key: 'customers', label: 'Customer Analytics' },
+        { key: 'products', label: 'Product Analytics' },
+        { key: 'subscription', label: 'Subscription Usage' }
+      ]}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    >
+      {/* Action buttons moved to content area */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h4 className="text-lg font-medium text-white mb-1">
+            {activeTab === 'business' && 'Business Performance'}
+            {activeTab === 'website' && 'Website Analytics'}
+            {activeTab === 'customers' && 'Customer Insights'}
+            {activeTab === 'products' && 'Product Performance'}
+            {activeTab === 'subscription' && 'Account Usage'}
+          </h4>
+          <p className="text-sm text-[#A0A0A0]">
+            {activeTab === 'business' && 'Revenue, orders, and growth metrics'}
+            {activeTab === 'website' && 'Traffic, conversion, and user experience data'}
+            {activeTab === 'customers' && 'Customer acquisition, retention, and behavior analysis'}
+            {activeTab === 'products' && 'Product sales, inventory, and performance insights'}
+            {activeTab === 'subscription' && 'Plan usage, limits, and account status overview'}
+          </p>
+        </div>
         <div className="flex items-center space-x-2">
-          <button 
-            className="px-3 py-1 text-sm bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors"
+          <Button 
+            variant="ghost"
+            size="sm"
             aria-label="Export analytics data"
           >
             Export Data
-          </button>
-          <button 
-            className="px-3 py-1 text-sm bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
+          </Button>
+          <Button 
+            variant="primary"
+            size="sm"
             aria-label="Schedule analytics report"
           >
             Schedule Report
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg border border-[#3A3A3A] shadow-sm">
-          <button
-            onClick={() => setActiveTab('business')}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-              activeTab === 'business'
-                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
-                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
-            }`}
-          >
-            Business Metrics
-          </button>
-          <button
-            onClick={() => setActiveTab('website')}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-              activeTab === 'website'
-                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
-                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
-            }`}
-          >
-            Website Performance
-          </button>
-          <button
-            onClick={() => setActiveTab('customers')}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-              activeTab === 'customers'
-                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
-                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
-            }`}
-          >
-            Customer Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-              activeTab === 'products'
-                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
-                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
-            }`}
-          >
-            Product Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab('subscription')}
-            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-              activeTab === 'subscription'
-                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
-                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
-            }`}
-          >
-            Subscription Usage
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -912,7 +889,7 @@ const EnhancedAnalyticsDashboard: React.FC<BusinessAnalyticsProps> = ({ storeId 
           </div>
         </div>
         )}
-    </div>
+    </TabSection>
   )
 }
 

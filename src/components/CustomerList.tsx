@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Customer, Order } from '../lib/supabase'
+import { Card } from './ui/Card'
 
 interface CustomerWithOrders extends Customer {
   orders?: Pick<Order, 'id' | 'order_number' | 'total' | 'status' | 'created_at'>[]
@@ -32,7 +33,7 @@ const CustomerList: React.FC<CustomerListProps> = ({
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6 animate-pulse">
+          <div key={i} className="card-base p-6 animate-pulse">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-[#3A3A3A] rounded-full"></div>
               <div className="flex-1 space-y-2">
@@ -86,7 +87,7 @@ const CustomerList: React.FC<CustomerListProps> = ({
     <div className="space-y-6">
       {/* Customer Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-4">
+        <div className="card-base p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[#A0A0A0]">Total Customers</p>
@@ -100,7 +101,7 @@ const CustomerList: React.FC<CustomerListProps> = ({
           </div>
         </div>
         
-        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-4">
+        <div className="card-base p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[#A0A0A0]">Total Revenue</p>
@@ -114,7 +115,7 @@ const CustomerList: React.FC<CustomerListProps> = ({
           </div>
         </div>
         
-        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-4">
+        <div className="card-base p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[#A0A0A0]">Avg. Customer Value</p>
@@ -128,7 +129,7 @@ const CustomerList: React.FC<CustomerListProps> = ({
           </div>
         </div>
         
-        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-4">
+        <div className="card-base p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[#A0A0A0]">Total Orders</p>
@@ -151,7 +152,7 @@ const CustomerList: React.FC<CustomerListProps> = ({
         const lastOrder = getCustomerLastOrder(customer)
 
         return (
-          <div key={customer.id} className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+          <div key={customer.id} className="card-base p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-[#9B51E0]/20 rounded-full flex items-center justify-center">

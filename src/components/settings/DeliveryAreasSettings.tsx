@@ -21,6 +21,108 @@ import { useDeliveryAreas } from '../../hooks/useDeliveryAreas'
 import type { DeliveryAreaFormData, OperatingHours, DeliveryArea } from '../../types/deliveryAreas'
 import { DEFAULT_OPERATING_HOURS } from '../../types/deliveryAreas'
 
+// Google Maps singleton loader
+class GoogleMapsLoader {
+  private static instance: GoogleMapsLoader
+  private loaded = false
+  private loading = false
+  private callbacks: Array<(success: boolean) => void> = []
+
+  private constructor() {}
+
+  public static getInstance(): GoogleMapsLoader {
+    if (!GoogleMapsLoader.instance) {
+      GoogleMapsLoader.instance = new GoogleMapsLoader
+    }
+    return GoogleMapsLoader.instance
+  }
+
+  public isLoaded(): boolean {
+    return this.loaded && window.google?.maps?.drawing
+  }
+
+  public async load(): Promise<boolean> {
+    // If already loaded, return true
+    if (this.isLoaded()) {
+      return true
+    }
+
+    // If currently loading, wait for completion
+    if (this.loading) {
+      return new Promise((resolve) => {
+        this.callbacks.push(resolve)
+      })
+    }
+
+    // Check if API key exists
+    if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+      console.error('Google Maps API key is missing')
+      return false
+    }
+
+    // Start loading
+    this.loading = true
+
+    return new Promise((resolve) => {
+      // Remove any existing scripts to prevent duplicates
+      const existingScripts = document.querySelectorAll('script[src*="maps.googleapis.com"]')
+      existingScripts.forEach(script => script.remove())
+
+      // Clean up global state
+      delete (window as any).initGoogleMaps
+      delete (window as any).googleMapsLoading
+
+      // Create callback function
+      const callbackName = `googleMapsCallback_${Date.now()}`
+      ;(window as any)[callbackName] = () => {
+        // Wait for drawing library to be available
+        let attempts = 0
+        const maxAttempts = 50
+        const checkDrawing = () => {
+          if (window.google?.maps?.drawing) {
+            this.loaded = true
+            this.loading = false
+            console.log('✅ Google Maps loaded successfully')
+            resolve(true)
+            this.callbacks.forEach(callback => callback(true))
+            this.callbacks = []
+            // Clean up callback
+            delete (window as any)[callbackName]
+          } else if (attempts < maxAttempts) {
+            attempts++
+            setTimeout(checkDrawing, 50)
+          } else {
+            this.loading = false
+            console.error('❌ Google Maps Drawing library failed to load')
+            resolve(false)
+            this.callbacks.forEach(callback => callback(false))
+            this.callbacks = []
+            delete (window as any)[callbackName]
+          }
+        }
+        checkDrawing()
+      }
+
+      // Create and load script
+      const script = document.createElement('script')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=drawing,places&callback=${callbackName}`
+      script.async = true
+      script.defer = true
+      
+      script.onerror = () => {
+        this.loading = false
+        console.error('❌ Failed to load Google Maps script')
+        resolve(false)
+        this.callbacks.forEach(callback => callback(false))
+        this.callbacks = []
+        delete (window as any)[callbackName]
+      }
+      
+      document.head.appendChild(script)
+    })
+  }
+}
+
 const deliveryAreaSchema = z.object({
   name: z.string().min(1, 'Area name is required'),
   description: z.string().optional(),
@@ -46,10 +148,12 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
   const [mapLoaded, setMapLoaded] = useState(false)
   const [currentMap, setCurrentMap] = useState<google.maps.Map | null>(null)
   const [drawingManager, setDrawingManager] = useState<google.maps.drawing.DrawingManager | null>(null)
+  const [currentOverlay, setCurrentOverlay] = useState<google.maps.Polygon | google.maps.Circle | null>(null)
   const mapRef = useRef<HTMLDivElement>(null)
   const [selectedCoordinates, setSelectedCoordinates] = useState<any>(null)
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const mapsLoader = GoogleMapsLoader.getInstance()
 
   const {
     deliveryAreas,
@@ -93,6 +197,7 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
   // Get user's current location
   const getUserLocation = () => {
     if (navigator.geolocation) {
+      setLocationError(null)
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userPos = {
@@ -100,18 +205,16 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
             lng: position.coords.longitude
           }
           setUserLocation(userPos)
-          setLocationError(null)
-          console.log('User location obtained:', userPos)
+          console.log('✅ User location obtained:', userPos)
         },
         (error) => {
-          console.log('Geolocation error:', error.message)
+          console.log('⚠️ Geolocation error:', error.message)
           setLocationError('Could not get your location. Using default location.')
-          // Fallback to San Francisco
-          setUserLocation({ lat: 37.7749, lng: -122.4194 })
+          setUserLocation({ lat: 37.7749, lng: -122.4194 }) // San Francisco fallback
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 8000,
           maximumAge: 300000 // 5 minutes
         }
       )
@@ -123,59 +226,18 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
 
   // Load Google Maps API
   useEffect(() => {
-    const loadGoogleMaps = async () => {
-      // Check if Google Maps is already loaded
-      if (window.google && window.google.maps && window.google.maps.drawing) {
-        setMapLoaded(true)
-        return
+    const initializeMaps = async () => {
+      console.log('🔄 Initializing Google Maps...')
+      const success = await mapsLoader.load()
+      setMapLoaded(success)
+      if (success) {
+        console.log('✅ Google Maps ready for use')
+      } else {
+        console.error('❌ Failed to load Google Maps')
       }
-
-      if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-        console.error('Google Maps API key is missing. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file')
-        return
-      }
-
-      // Check if script is already loading/loaded
-      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
-      if (existingScript) {
-        // Script exists, wait for it to load
-        const checkLoaded = () => {
-          if (window.google && window.google.maps && window.google.maps.drawing) {
-            setMapLoaded(true)
-          } else {
-            setTimeout(checkLoaded, 100)
-          }
-        }
-        checkLoaded()
-        return
-      }
-
-      const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=drawing,places&loading=async`
-      script.async = true
-      script.defer = true
-      
-      script.onload = () => {
-        // Poll for drawing library to be available
-        const checkDrawingLibrary = () => {
-          if (window.google && window.google.maps && window.google.maps.drawing) {
-            console.log('Google Maps with Drawing Library loaded successfully')
-            setMapLoaded(true)
-          } else {
-            setTimeout(checkDrawingLibrary, 50)
-          }
-        }
-        checkDrawingLibrary()
-      }
-      
-      script.onerror = (error) => {
-        console.error('Failed to load Google Maps API:', error)
-      }
-      
-      document.head.appendChild(script)
     }
 
-    loadGoogleMaps()
+    initializeMaps()
   }, [])
 
   // Get user location when modal opens
@@ -185,258 +247,311 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
     }
   }, [isCreateModalOpen, editingArea])
 
+  // Clean up map resources when modal closes
+  useEffect(() => {
+    if (!isCreateModalOpen && !editingArea && currentMap) {
+      console.log('🧹 Cleaning up map resources on modal close')
+      if (currentOverlay) {
+        currentOverlay.setMap(null)
+        setCurrentOverlay(null)
+      }
+      if (drawingManager) {
+        drawingManager.setMap(null)
+        setDrawingManager(null)
+      }
+      google.maps.event.clearInstanceListeners(currentMap)
+      setCurrentMap(null)
+      setSelectedCoordinates(null)
+    }
+  }, [isCreateModalOpen, editingArea])
+
+  // Handle area type changes - cleanup map when switching to non-map types
+  useEffect(() => {
+    if (currentMap && areaType !== 'circle' && areaType !== 'polygon') {
+      console.log('🧹 Cleaning up map for non-map area type')
+      if (currentOverlay) {
+        currentOverlay.setMap(null)
+        setCurrentOverlay(null)
+      }
+      if (drawingManager) {
+        drawingManager.setMap(null)
+        setDrawingManager(null)
+      }
+      google.maps.event.clearInstanceListeners(currentMap)
+      setCurrentMap(null)
+      setSelectedCoordinates(null)
+    }
+  }, [areaType, currentMap, currentOverlay, drawingManager])
+
   // Initialize map when modal opens and Google Maps is loaded
   useEffect(() => {
-    if (mapLoaded && (isCreateModalOpen || editingArea) && mapRef.current && !currentMap && window.google?.maps?.drawing && userLocation) {
+    if (!mapLoaded || (!isCreateModalOpen && !editingArea) || !mapRef.current) {
+      return
+    }
+
+    // Only initialize for map-based area types and if no map exists
+    if ((areaType !== 'circle' && areaType !== 'polygon') || currentMap) {
+      return
+    }
+
+    const initializeMap = async () => {
       try {
-        console.log('Initializing Google Maps with location:', userLocation)
+        console.log('🗺️ Initializing Google Maps...')
         
-        // Determine initial center - use existing coordinates if editing, otherwise user location
-        let initialCenter = userLocation
+        // Determine initial center and zoom
+        let initialCenter = userLocation || { lat: 37.7749, lng: -122.4194 } // San Francisco fallback
         let initialZoom = 12
         
         if (editingArea && selectedCoordinates) {
           if (selectedCoordinates.type === 'circle' && selectedCoordinates.center) {
             initialCenter = selectedCoordinates.center
-            initialZoom = 14
-          } else if (selectedCoordinates.type === 'polygon' && selectedCoordinates.coordinates && selectedCoordinates.coordinates.length > 0) {
-            // Calculate center of polygon
+            initialZoom = 13
+          } else if (selectedCoordinates.type === 'polygon' && selectedCoordinates.coordinates?.length > 0) {
             const lats = selectedCoordinates.coordinates.map((coord: any) => coord.lat)
             const lngs = selectedCoordinates.coordinates.map((coord: any) => coord.lng)
             initialCenter = {
               lat: lats.reduce((a: number, b: number) => a + b, 0) / lats.length,
               lng: lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length
             }
-            initialZoom = 14
+            initialZoom = 13
           }
         }
         
         // Create map instance
-        const map = new google.maps.Map(mapRef.current, {
+        const map = new google.maps.Map(mapRef.current!, {
           center: initialCenter,
           zoom: initialZoom,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           streetViewControl: false,
           mapTypeControl: true,
           fullscreenControl: true,
-          zoomControl: true
+          zoomControl: true,
+          styles: [
+            {
+              featureType: 'poi.business',
+              stylers: [{ visibility: 'off' }]
+            }
+          ]
         })
 
-        // Wait for map to be fully initialized
-        google.maps.event.addListenerOnce(map, 'idle', () => {
-          console.log('Map initialized, creating drawing manager...')
-          
-          try {
-            const drawing = new google.maps.drawing.DrawingManager({
-              drawingMode: null, // Start with no drawing mode
-              drawingControl: true,
-              drawingControlOptions: {
-                position: google.maps.ControlPosition.TOP_CENTER,
-                drawingModes: [
-                  google.maps.drawing.OverlayType.CIRCLE,
-                  google.maps.drawing.OverlayType.POLYGON
-                ]
-              },
-              polygonOptions: {
-                fillColor: '#9B51E0',
-                fillOpacity: 0.3,
-                strokeWeight: 2,
-                strokeColor: '#9B51E0',
-                editable: true,
-                draggable: true
-              },
-              circleOptions: {
-                fillColor: '#9B51E0',
-                fillOpacity: 0.3,
-                strokeWeight: 2,
-                strokeColor: '#9B51E0',
-                editable: true,
-                draggable: true
-              }
-            })
+        // Wait for map to be ready
+        await new Promise<void>((resolve) => {
+          google.maps.event.addListenerOnce(map, 'idle', resolve)
+        })
 
-            drawing.setMap(map)
-            console.log('Drawing manager created successfully')
+        console.log('🎨 Creating drawing manager...')
+        
+        // Create drawing manager with default drawing mode based on area type
+        const defaultDrawingMode = areaType === 'polygon' 
+          ? google.maps.drawing.OverlayType.POLYGON 
+          : google.maps.drawing.OverlayType.CIRCLE
 
-            // Handle shape completion
-            google.maps.event.addListener(drawing, 'overlaycomplete', (event: any) => {
-              console.log('Shape completed:', event.type)
-              
-              // Remove previous overlays
-              if (event.overlay) {
-                // Clear drawing mode after completion
-                drawing.setDrawingMode(null)
-                
-                if (event.type === 'polygon') {
-                  const paths = event.overlay.getPath().getArray()
-                  const coordinates = paths.map((path: google.maps.LatLng) => ({
-                    lat: path.lat(),
-                    lng: path.lng()
-                  }))
-                  setSelectedCoordinates({ type: 'polygon', coordinates })
-                  setValue('area_type', 'polygon')
-                  console.log('Polygon coordinates saved:', coordinates)
-                } else if (event.type === 'circle') {
-                  const center = event.overlay.getCenter()
-                  const radius = event.overlay.getRadius()
-                  const coordinatesData = {
-                    type: 'circle',
-                    center: { lat: center.lat(), lng: center.lng() },
-                    radius
-                  }
-                  setSelectedCoordinates(coordinatesData)
-                  setValue('area_type', 'circle')
-                  console.log('Circle coordinates saved:', coordinatesData)
-                }
-              }
-            })
-
-            setCurrentMap(map)
-            setDrawingManager(drawing)
-
-            // Add a user location marker if available
-            if (userLocation && !editingArea) {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              const marker = new google.maps.Marker({
-                position: userLocation,
-                map: map,
-                title: 'Your Location',
-                icon: {
-                  path: google.maps.SymbolPath.CIRCLE,
-                  scale: 8,
-                  fillColor: '#4285F4',
-                  fillOpacity: 1,
-                  strokeColor: '#ffffff',
-                  strokeWeight: 2
-                }
-              })
-            }
-
-            // If editing and has existing coordinates, display them
-            if (editingArea && selectedCoordinates) {
-              if (selectedCoordinates.type === 'polygon' && selectedCoordinates.coordinates) {
-                const paths = selectedCoordinates.coordinates.map((coord: any) => 
-                  new google.maps.LatLng(coord.lat, coord.lng)
-                )
-                const polygon = new google.maps.Polygon({
-                  paths: paths,
-                  fillColor: '#9B51E0',
-                  fillOpacity: 0.3,
-                  strokeWeight: 2,
-                  strokeColor: '#9B51E0',
-                  editable: true,
-                  draggable: true
-                })
-                polygon.setMap(map)
-                
-                // Add event listeners to capture coordinate changes when editing polygon
-                const updatePolygonCoordinates = () => {
-                  const path = polygon.getPath()
-                  const coordinates = path.getArray().map((point: google.maps.LatLng) => ({
-                    lat: point.lat(),
-                    lng: point.lng()
-                  }))
-                  const updatedCoordinates = {
-                    type: 'polygon',
-                    coordinates
-                  }
-                  console.log('🔄 Polygon coordinates updated:', updatedCoordinates)
-                  setSelectedCoordinates(updatedCoordinates)
-                }
-                
-                console.log('🎯 Setting up polygon event listeners for editing...')
-                
-                // Listen for path changes (when vertices are moved or added/removed)
-                const path = polygon.getPath()
-                google.maps.event.addListener(path, 'set_at', () => {
-                  console.log('📍 Polygon vertex moved')
-                  updatePolygonCoordinates()
-                })
-                google.maps.event.addListener(path, 'insert_at', () => {
-                  console.log('➕ Polygon vertex added')
-                  updatePolygonCoordinates()
-                })
-                google.maps.event.addListener(path, 'remove_at', () => {
-                  console.log('➖ Polygon vertex removed')  
-                  updatePolygonCoordinates()
-                })
-                
-                console.log('✅ Polygon event listeners attached successfully')
-                
-                // Center map on polygon
-                const bounds = new google.maps.LatLngBounds()
-                paths.forEach((point: google.maps.LatLng) => bounds.extend(point))
-                map.fitBounds(bounds)
-              } else if (selectedCoordinates.type === 'circle' && selectedCoordinates.center) {
-                const circle = new google.maps.Circle({
-                  center: new google.maps.LatLng(selectedCoordinates.center.lat, selectedCoordinates.center.lng),
-                  radius: selectedCoordinates.radius,
-                  fillColor: '#9B51E0',
-                  fillOpacity: 0.3,
-                  strokeWeight: 2,
-                  strokeColor: '#9B51E0',
-                  editable: true,
-                  draggable: true
-                })
-                circle.setMap(map)
-                
-                // Add event listeners to capture coordinate changes when editing
-                const updateCircleCoordinates = () => {
-                  const center = circle.getCenter()
-                  const radius = circle.getRadius()
-                  if (center) {
-                    const updatedCoordinates = {
-                      type: 'circle',
-                      center: { lat: center.lat(), lng: center.lng() },
-                      radius
-                    }
-                    console.log('🔄 Circle coordinates updated:', updatedCoordinates)
-                    setSelectedCoordinates(updatedCoordinates)
-                  }
-                }
-                
-                console.log('🎯 Setting up circle event listeners for editing...')
-                
-                // Listen for center changes (when dragged)
-                google.maps.event.addListener(circle, 'center_changed', () => {
-                  console.log('📍 Circle center changed event fired')
-                  updateCircleCoordinates()
-                })
-                
-                // Listen for radius changes (when resized)
-                google.maps.event.addListener(circle, 'radius_changed', () => {
-                  console.log('📏 Circle radius changed event fired')
-                  updateCircleCoordinates()
-                })
-                
-                console.log('✅ Circle event listeners attached successfully')
-                
-                // Center map on circle
-                map.setCenter(circle.getCenter()!)
-                map.setZoom(12)
-              }
-            }
-          } catch (drawingError) {
-            console.error('Error creating drawing manager:', drawingError)
+        const drawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: editingArea ? null : defaultDrawingMode,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: [
+              google.maps.drawing.OverlayType.CIRCLE,
+              google.maps.drawing.OverlayType.POLYGON
+            ]
+          },
+          polygonOptions: {
+            fillColor: '#9B51E0',
+            fillOpacity: 0.25,
+            strokeWeight: 3,
+            strokeColor: '#9B51E0',
+            editable: true,
+            draggable: true
+          },
+          circleOptions: {
+            fillColor: '#9B51E0',
+            fillOpacity: 0.25,
+            strokeWeight: 3,
+            strokeColor: '#9B51E0',
+            editable: true,
+            draggable: true
           }
         })
 
+        drawingManager.setMap(map)
+
+        // Handle overlay completion
+        const handleOverlayComplete = (event: google.maps.drawing.OverlayCompleteEvent) => {
+          console.log('✅ Shape completed:', event.type)
+          
+          // Remove previous overlay if exists
+          if (currentOverlay) {
+            currentOverlay.setMap(null)
+          }
+          
+          // Store new overlay
+          setCurrentOverlay(event.overlay as google.maps.Polygon | google.maps.Circle)
+          
+          // Clear drawing mode
+          drawingManager.setDrawingMode(null)
+          
+          // Extract coordinates
+          if (event.type === google.maps.drawing.OverlayType.POLYGON) {
+            const polygon = event.overlay as google.maps.Polygon
+            const coordinates = polygon.getPath().getArray().map(point => ({
+              lat: point.lat(),
+              lng: point.lng()
+            }))
+            setSelectedCoordinates({ type: 'polygon', coordinates })
+            setValue('area_type', 'polygon')
+            
+            // Add edit listeners
+            const updateCoordinates = () => {
+              const updatedCoords = polygon.getPath().getArray().map(point => ({
+                lat: point.lat(),
+                lng: point.lng()
+              }))
+              setSelectedCoordinates({ type: 'polygon', coordinates: updatedCoords })
+            }
+            
+            const path = polygon.getPath()
+            google.maps.event.addListener(path, 'set_at', updateCoordinates)
+            google.maps.event.addListener(path, 'insert_at', updateCoordinates)
+            google.maps.event.addListener(path, 'remove_at', updateCoordinates)
+            
+          } else if (event.type === google.maps.drawing.OverlayType.CIRCLE) {
+            const circle = event.overlay as google.maps.Circle
+            const center = circle.getCenter()!
+            const radius = circle.getRadius()
+            const coordinates = {
+              type: 'circle',
+              center: { lat: center.lat(), lng: center.lng() },
+              radius
+            }
+            setSelectedCoordinates(coordinates)
+            setValue('area_type', 'circle')
+            
+            // Add edit listeners
+            const updateCoordinates = () => {
+              const newCenter = circle.getCenter()!
+              const newRadius = circle.getRadius()
+              setSelectedCoordinates({
+                type: 'circle',
+                center: { lat: newCenter.lat(), lng: newCenter.lng() },
+                radius: newRadius
+              })
+            }
+            
+            google.maps.event.addListener(circle, 'center_changed', updateCoordinates)
+            google.maps.event.addListener(circle, 'radius_changed', updateCoordinates)
+          }
+        }
+        
+        google.maps.event.addListener(drawingManager, 'overlaycomplete', handleOverlayComplete)
+        
+        setCurrentMap(map)
+        setDrawingManager(drawingManager)
+        
+        // Add user location marker if available
+        if (userLocation && !editingArea) {
+          new google.maps.Marker({
+            position: userLocation,
+            map,
+            title: 'Your Location',
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: '#4285F4',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2
+            }
+          })
+        }
+        
+        // Render existing coordinates if editing
+        if (editingArea && selectedCoordinates) {
+          let overlay: google.maps.Polygon | google.maps.Circle
+          
+          if (selectedCoordinates.type === 'polygon' && selectedCoordinates.coordinates) {
+            const paths = selectedCoordinates.coordinates.map((coord: any) => 
+              new google.maps.LatLng(coord.lat, coord.lng)
+            )
+            
+            overlay = new google.maps.Polygon({
+              paths,
+              fillColor: '#9B51E0',
+              fillOpacity: 0.25,
+              strokeWeight: 3,
+              strokeColor: '#9B51E0',
+              editable: true,
+              draggable: true
+            })
+            
+            overlay.setMap(map)
+            
+            // Add edit listeners
+            const updateCoordinates = () => {
+              const updatedCoords = (overlay as google.maps.Polygon).getPath().getArray().map(point => ({
+                lat: point.lat(),
+                lng: point.lng()
+              }))
+              setSelectedCoordinates({ type: 'polygon', coordinates: updatedCoords })
+            }
+            
+            const path = (overlay as google.maps.Polygon).getPath()
+            google.maps.event.addListener(path, 'set_at', updateCoordinates)
+            google.maps.event.addListener(path, 'insert_at', updateCoordinates)
+            google.maps.event.addListener(path, 'remove_at', updateCoordinates)
+            
+            // Fit map to polygon
+            const bounds = new google.maps.LatLngBounds()
+            paths.forEach((point: google.maps.LatLng) => bounds.extend(point))
+            map.fitBounds(bounds)
+            
+          } else if (selectedCoordinates.type === 'circle' && selectedCoordinates.center) {
+            overlay = new google.maps.Circle({
+              center: selectedCoordinates.center,
+              radius: selectedCoordinates.radius,
+              fillColor: '#9B51E0',
+              fillOpacity: 0.25,
+              strokeWeight: 3,
+              strokeColor: '#9B51E0',
+              editable: true,
+              draggable: true
+            })
+            
+            overlay.setMap(map)
+            
+            // Add edit listeners
+            const updateCoordinates = () => {
+              const center = (overlay as google.maps.Circle).getCenter()!
+              const radius = (overlay as google.maps.Circle).getRadius()
+              setSelectedCoordinates({
+                type: 'circle',
+                center: { lat: center.lat(), lng: center.lng() },
+                radius
+              })
+            }
+            
+            google.maps.event.addListener(overlay, 'center_changed', updateCoordinates)
+            google.maps.event.addListener(overlay, 'radius_changed', updateCoordinates)
+            
+            map.setCenter(selectedCoordinates.center)
+          }
+          
+          setCurrentOverlay(overlay!)
+        }
+        
+        console.log('✅ Map initialized successfully')
+        
       } catch (error) {
-        console.error('Error initializing map:', error)
+        console.error('❌ Error initializing map:', error)
       }
     }
-  }, [mapLoaded, isCreateModalOpen, editingArea, setValue, selectedCoordinates, userLocation])
 
-  // Cleanup map when modal closes
-  useEffect(() => {
-    if (!isCreateModalOpen && !editingArea && currentMap) {
-      console.log('Cleaning up map resources')
-      // Clear the map
-      setCurrentMap(null)
-      setDrawingManager(null)
-      setSelectedCoordinates(null)
+    // Only initialize map for map-based area types
+    if (areaType === 'circle' || areaType === 'polygon') {
+      initializeMap()
     }
-  }, [isCreateModalOpen, editingArea, currentMap])
+  }, [mapLoaded, isCreateModalOpen, editingArea, areaType, userLocation])
+
 
   const onSubmit = async (data: DeliveryAreaFormData) => {
     try {
@@ -502,12 +617,31 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
   }
 
   const closeModal = () => {
+    console.log('🚪 Closing modal and cleaning up...')
+    
+    // Clean up map resources first
+    if (currentOverlay) {
+      currentOverlay.setMap(null)
+      setCurrentOverlay(null)
+    }
+    if (drawingManager) {
+      drawingManager.setMap(null)
+      setDrawingManager(null)
+    }
+    if (currentMap) {
+      // Clear all overlays and listeners
+      google.maps.event.clearInstanceListeners(currentMap)
+      setCurrentMap(null)
+    }
+    
+    // Reset component state
     setIsCreateModalOpen(false)
     setEditingArea(null)
-    reset()
     setSelectedCoordinates(null)
-    setCurrentMap(null)
-    setDrawingManager(null)
+    setLocationError(null)
+    reset()
+    
+    console.log('✅ Modal cleanup complete')
   }
 
   return (
@@ -626,7 +760,7 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
                 {editingArea ? 'Edit Delivery Area' : 'Create Delivery Area'}
               </Dialog.Title>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Left Column - Form Fields */}
                   <div className="space-y-6">

@@ -30,6 +30,7 @@ import { StoreAddressSettings } from '../components/settings/StoreAddressSetting
 import { CustomDomainSettings } from '../components/settings/CustomDomainSettings'
 import { PolicySettings } from '../components/settings/PolicySettings'
 import { IntegrationsSettings } from '../components/settings/IntegrationsSettings'
+import { PageBuilderSettings } from '../components/settings/PageBuilderSettings'
 import { SettingsSubTabs, SettingsSubTabContent } from '../components/settings/SettingsSubTabs'
 import { StoreFrontCustomizer } from '../components/storefront/StoreFrontCustomizer'
 import { useSubscription } from '../hooks/useSubscription'
@@ -38,6 +39,9 @@ import { useRealAnalytics } from '../hooks/useRealAnalytics'
 import { useAnalyticsTracker } from '../lib/analyticsTracker'
 import DocumentationRouter from '../components/documentation/DocumentationRouter'
 import { GenieMascot, GenieLogotype } from '../components/ui/GenieMascot'
+import { TabNav } from '../components/ui/TabNav'
+import { TabSection, TertiaryTabContainer } from '../components/ui/TabSection'
+import { Building2 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
@@ -105,6 +109,7 @@ const StoreOwnerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview')
   const [productsSubTab, setProductsSubTab] = useState('products')
   const [settingsSubTab, setSettingsSubTab] = useState('general')
+  const [businessTertiaryTab, setBusinessTertiaryTab] = useState('financial')
   const [documentationModal, setDocumentationModal] = useState<{
     isOpen: boolean
     page: 'getting-started' | 'tutorials' | 'api' | null
@@ -573,41 +578,16 @@ const StoreOwnerDashboard: React.FC = () => {
               </Tabs.Content>
 
               <Tabs.Content value="products" className="space-y-6">
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">Products & Inventory</h3>
-                  </div>
-                  
-                  {/* Enhanced Sub-Navigation */}
-                  <div className="relative">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-[#9B51E0]/20 via-[#9B51E0]/40 to-[#9B51E0]/20"></div>
-                    <div className="border-b border-[#3A3A3A] mb-6 relative">
-                      <nav className="-mb-px flex space-x-8">
-                        <button
-                          onClick={() => setProductsSubTab('products')}
-                          className={`py-3 px-2 border-b-2 font-medium text-sm transition-all duration-200 relative ${
-                            productsSubTab === 'products'
-                              ? 'border-[#9B51E0] text-[#9B51E0] bg-[#9B51E0]/5'
-                              : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666] hover:bg-[#1E1E1E]/50'
-                          }`}
-                        >
-                          <div className="absolute inset-x-0 -top-px h-px bg-[#9B51E0]/30 opacity-0 transition-opacity duration-300"></div>
-                          Products
-                        </button>
-                        <button
-                          onClick={() => setProductsSubTab('inventory')}
-                          className={`py-3 px-2 border-b-2 font-medium text-sm transition-all duration-200 relative ${
-                            productsSubTab === 'inventory'
-                              ? 'border-[#9B51E0] text-[#9B51E0] bg-[#9B51E0]/5'
-                              : 'border-transparent text-[#A0A0A0] hover:text-[#E0E0E0] hover:border-[#666] hover:bg-[#1E1E1E]/50'
-                          }`}
-                        >
-                          <div className="absolute inset-x-0 -top-px h-px bg-[#9B51E0]/30 opacity-0 transition-opacity duration-300"></div>
-                          Inventory Management
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
+                <TabSection
+                  title="Products & Inventory Management"
+                  description="Manage your product catalog, inventory levels, and stock settings. Track product performance and maintain accurate inventory records across your store."
+                  items={[
+                    { key: 'products', label: 'Products' },
+                    { key: 'inventory', label: 'Inventory Management' }
+                  ]}
+                  activeTab={productsSubTab}
+                  onTabChange={setProductsSubTab}
+                >
                 
                 {/* Products Sub-tab Content */}
                 {productsSubTab === 'products' && (
@@ -791,7 +771,7 @@ const StoreOwnerDashboard: React.FC = () => {
                     </div>
                   </div>
                 )}
-                </div>
+                </TabSection>
               </Tabs.Content>
 
               <Tabs.Content value="orders" className="space-y-6">
@@ -1103,14 +1083,49 @@ const StoreOwnerDashboard: React.FC = () => {
 
                   {/* Business Tab */}
                   <SettingsSubTabContent value="business">
-                    {/* Financial Year Settings */}
-                    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                      <FinancialYearSettings storeId={currentStore.id} />
-                    </div>
+                    <div className="space-y-6">
+                      {/* Header */}
+                      <div className="flex items-center space-x-3">
+                        <Building2 className="w-6 h-6 text-[#9B51E0]" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">Business Settings</h3>
+                          <p className="text-sm text-[#A0A0A0]">
+                            Configure your store's business information and financial settings
+                          </p>
+                        </div>
+                      </div>
 
-                    {/* Store Address Settings */}
-                    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                      <StoreAddressSettings storeId={currentStore.id} />
+                      {/* Category Filter */}
+                      <div className="flex space-x-1 bg-[#1E1E1E] p-1 rounded-lg border border-[#3A3A3A]">
+                        {[
+                          { id: 'financial', label: 'Financial Year' },
+                          { id: 'address', label: 'Store Address' }
+                        ].map((category) => (
+                          <button
+                            key={category.id}
+                            onClick={() => setBusinessTertiaryTab(category.id)}
+                            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                              businessTertiaryTab === category.id
+                                ? 'bg-[#9B51E0] text-white'
+                                : 'text-[#A0A0A0] hover:text-white hover:bg-[#3A3A3A]'
+                            }`}
+                          >
+                            {category.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Content */}
+                      {businessTertiaryTab === 'financial' && (
+                        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                          <FinancialYearSettings storeId={currentStore.id} />
+                        </div>
+                      )}
+                      {businessTertiaryTab === 'address' && (
+                        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                          <StoreAddressSettings storeId={currentStore.id} />
+                        </div>
+                      )}
                     </div>
                   </SettingsSubTabContent>
 
@@ -1141,6 +1156,10 @@ const StoreOwnerDashboard: React.FC = () => {
                   
                   <SettingsSubTabContent value="integrations">
                     <IntegrationsSettings storeId={currentStore.id} />
+                  </SettingsSubTabContent>
+                  
+                  <SettingsSubTabContent value="pagebuilder">
+                    <PageBuilderSettings storeId={currentStore.id} />
                   </SettingsSubTabContent>
                 </SettingsSubTabs>
               </Tabs.Content>

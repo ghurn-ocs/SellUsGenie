@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useRoute } from 'wouter'
 import { useStoreFront, applyColorScheme } from '../hooks/useStoreFront'
 import { EnhancedStoreFront } from '../components/storefront/EnhancedStoreFront'
+import { PageBuilderRenderer } from '../components/storefront/PageBuilderRenderer'
 import { supabase } from '../lib/supabase'
 
 interface Store {
@@ -16,6 +17,7 @@ export const StoreFrontView: React.FC = () => {
   const [store, setStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [usePageBuilder, setUsePageBuilder] = useState<boolean | null>(null)
 
   const storeSlug = params?.storeSlug
 
@@ -96,10 +98,22 @@ export const StoreFrontView: React.FC = () => {
   }
 
   return (
-    <EnhancedStoreFront
-      storeId={store.id}
-      storeName={store.store_name}
-      customizations={currentTemplate.customizations}
-    />
+    <>
+      <PageBuilderRenderer
+        storeId={store.id}
+        storeName={store.store_name}
+        className="min-h-screen"
+        onFallbackNeeded={() => setUsePageBuilder(false)}
+      />
+      
+      {/* Fallback to legacy storefront if page builder content is not available */}
+      {usePageBuilder === false && (
+        <EnhancedStoreFront
+          storeId={store.id}
+          storeName={store.store_name}
+          customizations={currentTemplate?.customizations || {}}
+        />
+      )}
+    </>
   )
 }

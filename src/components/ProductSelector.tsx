@@ -80,6 +80,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             onFocus={() => setShowProductList(searchTerm.length > 0)}
             className="w-full pl-10 pr-4 py-2 border border-[#3A3A3A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent bg-[#1E1E1E] text-white placeholder-[#666]"
             placeholder="Search products by name or SKU..."
+            aria-label="Search for products by name or SKU"
           />
         </div>
 
@@ -98,6 +99,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                     onClick={() => handleAddProduct(product)}
                     disabled={isProductSelected(product.id)}
                     className="w-full p-3 text-left hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                    aria-label={`Add ${product.name} to order - $${product.price}`}
                   >
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">

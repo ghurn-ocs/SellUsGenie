@@ -3,8 +3,9 @@
 
 import React, { useState } from 'react'
 import { useStore } from '../../contexts/StoreContext'
+import { useCustomers } from '../../hooks/useCustomers'
+import { useOrders } from '../../hooks/useOrders'
 import { useEmailMarketingOverview, useEmailCampaigns, useEmailSegments } from '../../hooks/useEmailMarketing'
-// import { useNurture } from '../../hooks/useNurture' // TODO: Implement when nurture data structure is ready
 import { LeadsTab } from './LeadsTab'
 import { CampaignsTab } from './CampaignsTab'
 import { IncompleteOrdersTab } from './IncompleteOrdersTab'
@@ -18,24 +19,46 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
   const [activeTab, setActiveTab] = useState('overview')
   
   // Data hooks
+  const { customers } = useCustomers(currentStore?.id || '')
+  const { orders } = useOrders(currentStore?.id || '')
   const { data: marketingOverview } = useEmailMarketingOverview(currentStore?.id || '')
   const { data: campaigns = [] } = useEmailCampaigns(currentStore?.id || '')
   const { data: segments = [] } = useEmailSegments(currentStore?.id || '')
   
-  // Calculate metrics (using mock data for now until nurture hook is fully implemented)
-  const totalLeads = 0 // Will be: nurtureData?.leads?.length || 0
+  // Calculate real metrics from actual data
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  
+  // Total leads = customers without completed orders (potential customers)
+  const totalLeads = customers.filter(customer => 
+    !customer.orders || customer.orders.length === 0
+  ).length
+  
   const activeCampaigns = campaigns.filter(c => c.status === 'sending' || c.status === 'scheduled').length
-  const abandonedCarts = 0 // Will be: nurtureData?.incompleteOrders?.length || 0
-  const conversions = 0 // Will be: nurtureData?.conversions?.length || 0
+  
+  // Abandoned carts = orders with 'pending' status (started but not completed)
+  const abandonedCarts = orders.filter(order => order.status === 'pending').length
+  
+  // Conversions = customers who made their first purchase this week
+  const conversions = customers.filter(customer => {
+    if (!customer.orders || customer.orders.length === 0) return false
+    const firstOrderDate = new Date(Math.min(...customer.orders.map((order: any) => new Date(order.created_at).getTime())))
+    return firstOrderDate >= oneWeekAgo
+  }).length
   
   // Calculate recoverable value from abandoned carts
-  const recoverableValue = 0 // Will be calculated from actual data
+  const recoverableValue = orders
+    .filter(order => order.status === 'pending')
+    .reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0)
   
   // Calculate recovery rate
   const recoveryRate = abandonedCarts > 0 ? (conversions / abandonedCarts) * 100 : 0
   
-  // Get new leads this week
-  const newLeadsThisWeek = 0 // Will be calculated from actual lead data
+  // New leads this week = customers created in the last 7 days without orders
+  const newLeadsThisWeek = customers.filter(customer => {
+    const createdDate = new Date(customer.created_at)
+    const hasNoOrders = !customer.orders || customer.orders.length === 0
+    return createdDate >= oneWeekAgo && hasNoOrders
+  }).length
 
   if (!currentStore) {
     return (

@@ -4,17 +4,28 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  DragOverlay,
+} from '@dnd-kit/core';
 import { 
   Monitor, Tablet, Smartphone, Eye, EyeOff, Save, Share, 
-  Undo, Redo, Settings, Layers, Template, Code, Zap,
+  Undo, Redo, Settings, Layers, Layout, Code, Zap,
   Clock, Users, Globe, BarChart3, FileText, Download
 } from 'lucide-react';
-import type { PageDocument, User, PageRepository, Breakpoint } from '../types';
+import type { PageDocument, User, PageRepository, Breakpoint, DragItem } from '../types';
 import { InMemoryPageRepository } from '../data/PageRepository';
 import { Canvas } from './Canvas';
 import { WidgetLibrary } from './WidgetLibrary';
 import { PropertiesPanel } from './PropertiesPanel';
 import { ResponsiveEditor } from '../components/ResponsiveEditor';
+import { LayersPanel } from '../components/LayersPanel';
+import { SEOPanel } from '../components/SEOPanel';
+import { SettingsPanel } from '../components/SettingsPanel';
 import { TemplateMarketplace } from '../templates/TemplateMarketplace';
 import type { WidgetBase } from '../types';
 
@@ -70,6 +81,17 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
   
   // Auto-save
   const [autoSaveInterval, setAutoSaveInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Drag and drop state
+  const [activeDragItem, setActiveDragItem] = useState<DragItem | null>(null);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 3, // Reduced distance for better responsiveness
+      },
+    })
+  );
 
   // Load page on mount
   useEffect(() => {
@@ -299,6 +321,157 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    console.log('🚀 DRAG START:', { id: active.id, data: active.data.current });
+    setActiveDragItem(active.data.current);
+  };
+
+  const handleDragOver = (event: any) => {
+    const { over } = event;
+    console.log('👆 DRAG OVER:', { over_id: over?.id, over_data: over?.data?.current });
+  };
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    
+    console.log('🎯 EnhancedPageBuilder handleDragEnd DETAILED:', { 
+      active_id: active?.id, 
+      over_id: over?.id,
+      active_data: active?.data?.current,
+      over_data: over?.data?.current,
+      event: event
+    });
+    
+    if (!over) {
+      console.log('❌ No drop target found - widget will return to sidebar');
+      setActiveDragItem(null);
+      return;
+    }
+    
+    if (!document) {
+      console.log('❌ No document found');
+      setActiveDragItem(null);
+      return;
+    }
+
+    const dragItem = active.data.current as DragItem;
+    const dropTarget = over.data.current;
+
+    console.log('Drag item:', dragItem);
+    console.log('Drop target:', dropTarget);
+
+    // Handle dropping a new widget from the widget library
+    if (dragItem?.type === 'new-widget' && dragItem.widgetType) {
+      console.log('Creating new widget:', dragItem.widgetType);
+      
+      const newWidget = {
+        id: `widget_${Date.now()}`,
+        type: dragItem.widgetType,
+        props: {},
+        styles: {},
+      };
+
+      const newDocument = { ...document };
+      
+      // Handle different drop scenarios
+      if (dropTarget?.type === 'canvas' || over.id === 'canvas-drop-zone') {
+        console.log('✅ CANVAS DROP DETECTED - Creating widget on canvas');
+        console.log('📊 Current document sections:', newDocument.sections.length);
+        
+        // If canvas is empty, create first section and row
+        if (newDocument.sections.length === 0) {
+          const newRow = {
+            id: `row_${Date.now()}`,
+            widgets: [newWidget]
+          };
+
+          const newSection = {
+            id: `section_${Date.now()}`,
+            title: 'New Section',
+            rows: [newRow],
+            background: {},
+            padding: 'p-4'
+          };
+
+          newDocument.sections = [newSection];
+        } else {
+          // Add to the first row of the first section
+          if (newDocument.sections[0].rows.length === 0) {
+            newDocument.sections[0].rows.push({
+              id: `row_${Date.now()}`,
+              widgets: [newWidget]
+            });
+          } else {
+            newDocument.sections[0].rows[0].widgets.push(newWidget);
+          }
+        }
+        
+        console.log('🎉 SUCCESS: Added widget to canvas, new sections:', newDocument.sections.length);
+        console.log('🎉 New widget created:', newWidget);
+        handleDocumentChange(newDocument);
+        setSelectedWidgetId(newWidget.id);
+        console.log('🎉 Widget drop completed successfully!');
+      } else if (dropTarget?.type === 'section') {
+        console.log('Dropping on section:', dropTarget.id);
+        
+        const section = newDocument.sections.find(s => s.id === dropTarget.id);
+        if (section) {
+          if (section.rows.length === 0) {
+            section.rows.push({
+              id: `row_${Date.now()}`,
+              widgets: [newWidget]
+            });
+          } else {
+            section.rows[0].widgets.push(newWidget);
+          }
+          
+          handleDocumentChange(newDocument);
+          setSelectedWidgetId(newWidget.id);
+        }
+      } else if (dropTarget?.type === 'row') {
+        console.log('Dropping on row:', dropTarget.id);
+        
+        newDocument.sections = newDocument.sections.map(section => ({
+          ...section,
+          rows: section.rows.map(row => 
+            row.id === dropTarget.id 
+              ? { ...row, widgets: [...row.widgets, newWidget] }
+              : row
+          )
+        }));
+        
+        handleDocumentChange(newDocument);
+        setSelectedWidgetId(newWidget.id);
+      } else {
+        console.log('Unknown drop target, creating new section');
+        
+        // Create new section and row for unknown drop targets
+        const newRow = {
+          id: `row_${Date.now()}`,
+          widgets: [newWidget]
+        };
+
+        const newSection = {
+          id: `section_${Date.now()}`,
+          title: '',
+          rows: [newRow]
+        };
+
+        const newDocument = {
+          ...document,
+          sections: [...document.sections, newSection]
+        };
+
+        handleDocumentChange(newDocument);
+        setSelectedWidgetId(newWidget.id);
+      }
+    }
+
+    setActiveDragItem(null);
+  };
+
   const renderTopBar = () => (
     <div className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
@@ -440,61 +613,246 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
       </div>
 
       {/* Panel content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 ${activeDragItem ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {leftPanelMode === 'widgets' && <WidgetLibrary />}
-        {leftPanelMode === 'properties' && document && (
+        {leftPanelMode === 'properties' && (
           <PropertiesPanel
-            document={document}
+            document={document || { 
+              id: pageId, 
+              title: 'New Page', 
+              slug: '/', 
+              sections: [],
+              settings: { seoTitle: '', seoDescription: '', customCSS: '' },
+              version: 1,
+              status: 'draft',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }}
             selectedWidgetId={selectedWidgetId}
             selectedSectionId={selectedSectionId}
             selectedRowId={selectedRowId}
             onDocumentChange={handleDocumentChange}
             onWidgetUpdate={(widgetId: string, updates: Partial<WidgetBase>) => {
               const newDocument = { ...document };
-              newDocument.sections = newDocument.sections.map(section => ({
-                ...section,
-                rows: section.rows.map(row => ({
-                  ...row,
-                  widgets: row.widgets.map(widget => 
-                    widget.id === widgetId ? { ...widget, ...updates } : widget
-                  )
-                }))
-              }));
-              handleDocumentChange(newDocument);
+              if (document) {
+                newDocument.sections = newDocument.sections.map(section => ({
+                  ...section,
+                  rows: section.rows.map(row => ({
+                    ...row,
+                    widgets: row.widgets.map(widget => 
+                      widget.id === widgetId ? { ...widget, ...updates } : widget
+                    )
+                  }))
+                }));
+                handleDocumentChange(newDocument);
+              }
             }}
           />
         )}
-        {leftPanelMode === 'responsive' && document && selectedWidgetId && (
-          <div className="p-4">
-            <ResponsiveEditor
-              styles={document.sections.flatMap(s => s.rows.flatMap(r => r.widgets)).find(w => w.id === selectedWidgetId)?.styles || {}}
-              onStylesChange={(styles) => {
-                const widget = document.sections.flatMap(s => s.rows.flatMap(r => r.widgets)).find(w => w.id === selectedWidgetId);
-                if (widget) {
-                  const newDocument = { ...document };
-                  newDocument.sections = newDocument.sections.map(section => ({
-                    ...section,
-                    rows: section.rows.map(row => ({
-                      ...row,
-                      widgets: row.widgets.map(w => 
-                        w.id === selectedWidgetId ? { ...w, styles } : w
-                      )
-                    }))
-                  }));
-                  handleDocumentChange(newDocument);
-                }
-              }}
-              currentBreakpoint={currentBreakpoint}
-              onBreakpointChange={handleBreakpointChange}
-            />
+        {leftPanelMode === 'responsive' && (
+          <div className="h-full flex flex-col bg-white">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span>Responsive</span>
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <div className="text-xs text-gray-500">
+                    Current: {currentBreakpoint.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Design for different screen sizes
+              </p>
+            </div>
+
+            {/* Breakpoint Selector */}
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Breakpoints</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: 'sm', label: 'Mobile', icon: '📱', size: '< 640px' },
+                  { key: 'md', label: 'Tablet', icon: '📟', size: '640px+' },
+                  { key: 'lg', label: 'Desktop', icon: '💻', size: '1024px+' },
+                  { key: 'xl', label: 'Large', icon: '🖥️', size: '1280px+' }
+                ].map(({ key, label, icon, size }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleBreakpointChange(key as any)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      currentBreakpoint === key
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    }`}
+                  >
+                    <div className="text-lg mb-1">{icon}</div>
+                    <div className="text-xs font-medium">{label}</div>
+                    <div className="text-xs text-gray-500">{size}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content based on selection */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {selectedWidgetId && document ? (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">Widget Responsive Settings</h3>
+                  <ResponsiveEditor
+                    styles={document.sections.flatMap(s => s.rows.flatMap(r => r.widgets)).find(w => w.id === selectedWidgetId)?.styles || {}}
+                    onStylesChange={(styles) => {
+                      const widget = document.sections.flatMap(s => s.rows.flatMap(r => r.widgets)).find(w => w.id === selectedWidgetId);
+                      if (widget) {
+                        const newDocument = { ...document };
+                        newDocument.sections = newDocument.sections.map(section => ({
+                          ...section,
+                          rows: section.rows.map(row => ({
+                            ...row,
+                            widgets: row.widgets.map(w => 
+                              w.id === selectedWidgetId ? { ...w, styles } : w
+                            )
+                          }))
+                        }));
+                        handleDocumentChange(newDocument);
+                      }
+                    }}
+                    currentBreakpoint={currentBreakpoint}
+                    onBreakpointChange={handleBreakpointChange}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="text-center py-8">
+                    <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <h3 className="text-sm font-medium text-gray-900 mb-1">Responsive Design</h3>
+                    <p className="text-xs text-gray-500 mb-4">Select an element to customize responsive behavior</p>
+                    
+                    {/* Quick responsive tips */}
+                    <div className="text-left space-y-3 max-w-sm mx-auto">
+                      <div className="flex items-start space-x-2 text-xs">
+                        <span className="text-blue-500">📱</span>
+                        <div>
+                          <div className="font-medium text-gray-700">Mobile First</div>
+                          <div className="text-gray-500">Design starts with mobile layout</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2 text-xs">
+                        <span className="text-green-500">📏</span>
+                        <div>
+                          <div className="font-medium text-gray-700">Breakpoints</div>
+                          <div className="text-gray-500">Switch between screen sizes above</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-2 text-xs">
+                        <span className="text-purple-500">🎯</span>
+                        <div>
+                          <div className="font-medium text-gray-700">Element-Specific</div>
+                          <div className="text-gray-500">Select widgets to customize per breakpoint</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Page-level responsive settings */}
+                  <div className="border-t border-gray-200 pt-4">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">Page Layout</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Container Width
+                        </label>
+                        <select className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                          <option value="full">Full Width</option>
+                          <option value="container">Container (1200px)</option>
+                          <option value="narrow">Narrow (800px)</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Sidebar Behavior
+                        </label>
+                        <select className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                          <option value="stack">Stack on Mobile</option>
+                          <option value="hide">Hide on Mobile</option>
+                          <option value="collapse">Collapsible</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+        )}
+        {leftPanelMode === 'layers' && (
+          <LayersPanel
+            document={document || { 
+              id: pageId, 
+              title: 'New Page', 
+              slug: '/', 
+              sections: [],
+              settings: { seoTitle: '', seoDescription: '', customCSS: '' },
+              version: 1
+            }}
+            selectedWidgetId={selectedWidgetId}
+            selectedSectionId={selectedSectionId}
+            selectedRowId={selectedRowId}
+            onWidgetSelect={setSelectedWidgetId}
+            onSectionSelect={setSelectedSectionId}
+            onRowSelect={setSelectedRowId}
+            onDocumentChange={handleDocumentChange}
+          />
+        )}
+        {leftPanelMode === 'seo' && (
+          <SEOPanel
+            document={document || { 
+              id: pageId, 
+              title: 'New Page', 
+              slug: '/', 
+              sections: [],
+              settings: { seoTitle: '', seoDescription: '', customCSS: '' },
+              version: 1
+            }}
+            onDocumentChange={handleDocumentChange}
+          />
+        )}
+        {leftPanelMode === 'settings' && (
+          <SettingsPanel
+            document={document || { 
+              id: pageId, 
+              title: 'New Page', 
+              slug: '/', 
+              sections: [],
+              settings: { seoTitle: '', seoDescription: '', customCSS: '' },
+              version: 1
+            }}
+            onDocumentChange={handleDocumentChange}
+          />
         )}
       </div>
     </div>
   );
 
   const renderMainContent = () => {
-    if (!document) return null;
+    const defaultDocument = {
+      id: pageId,
+      title: 'New Page',
+      slug: '/',
+      sections: [],
+      settings: { seoTitle: '', seoDescription: '', customCSS: '' },
+      version: 1,
+      status: 'draft' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
     return (
       <div className="flex-1 relative overflow-hidden">
@@ -507,7 +865,7 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
         )}
         
         <Canvas
-          document={document}
+          document={document || defaultDocument}
           onDocumentChange={handleDocumentChange}
           selectedWidgetId={selectedWidgetId}
           onWidgetSelect={setSelectedWidgetId}
@@ -516,6 +874,7 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
           selectedRowId={selectedRowId}
           onRowSelect={setSelectedRowId}
           isPreviewMode={viewMode === 'preview'}
+          disableDndContext={true}
         />
       </div>
     );
@@ -529,7 +888,7 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
           className="p-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
           title="Browse Templates"
         >
-          <Template className="w-5 h-5" />
+          <Layout className="w-5 h-5" />
         </button>
         
         <div className="w-px h-6 bg-gray-300" />
@@ -569,23 +928,46 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {renderTopBar()}
-      
-      <div className="flex-1 flex overflow-hidden">
-        {viewMode !== 'preview' && renderLeftPanel()}
-        {renderMainContent()}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="h-screen flex flex-col bg-gray-50">
+        {renderTopBar()}
+        
+        <div className="flex-1 flex overflow-hidden">
+          {viewMode !== 'preview' && renderLeftPanel()}
+          {renderMainContent()}
+        </div>
+
+        {renderFloatingActions()}
+
+        {/* Template Marketplace */}
+        {showTemplateMarketplace && (
+          <TemplateMarketplace
+            onSelectTemplate={handleTemplateSelect}
+            onClose={() => setShowTemplateMarketplace(false)}
+          />
+        )}
       </div>
-
-      {renderFloatingActions()}
-
-      {/* Template Marketplace */}
-      {showTemplateMarketplace && (
-        <TemplateMarketplace
-          onSelectTemplate={handleTemplateSelect}
-          onClose={() => setShowTemplateMarketplace(false)}
-        />
-      )}
-    </div>
+      
+      {/* Drag Overlay for visual feedback */}
+      <DragOverlay>
+        {activeDragItem ? (
+          <div className="opacity-75 transform rotate-2 shadow-2xl">
+            {activeDragItem.type === 'new-widget' ? (
+              <div className="bg-white border-2 border-dashed border-primary-500 rounded-lg p-4 shadow-lg">
+                <div className="text-primary-600 font-medium">
+                  Adding {activeDragItem.widgetType} Widget
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 };

@@ -125,6 +125,19 @@ export const useRealAnalytics = (storeId: string) => {
     order.status === 'shipped'
   )
   
+  // Calculate monthly and daily stats
+  const monthlyRevenue = paidOrders.reduce((acc, order) => {
+    const month = new Date(order.created_at).toISOString().slice(0, 7) // YYYY-MM
+    acc[month] = (acc[month] || 0) + (order.total_amount || order.total || 0)
+    return acc
+  }, {} as Record<string, number>)
+
+  const dailyOrders = orders.reduce((acc, order) => {
+    const day = new Date(order.created_at).toISOString().slice(0, 10) // YYYY-MM-DD
+    acc[day] = (acc[day] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
   // Calculate comprehensive analytics
   const analytics = {
     orderStats: {
@@ -138,8 +151,8 @@ export const useRealAnalytics = (storeId: string) => {
       toBePaidOrders: orders.filter(order => order.status === 'to_be_paid').length,
       unpaidRevenue: orders.filter(order => order.status === 'to_be_paid').reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
       averageOrderValue: paidOrders.length > 0 ? paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0) / paidOrders.length : 0,
-      monthlyRevenue: {},
-      dailyOrders: {},
+      monthlyRevenue,
+      dailyOrders,
       cogs: paidOrders.reduce((sum, order) => {
         // TODO: Calculate actual COGS from order_items when available
         // For now, use product COGS data if available, otherwise estimate
@@ -207,8 +220,14 @@ export const useRealAnalytics = (storeId: string) => {
       customersWithOrders: customers.filter(customer => 
         customer.orders && customer.orders.length > 0
       ).length,
-      totalRevenue: orders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
-      newCustomers: {},
+      totalRevenue: paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
+      newCustomers: customers.reduce((acc, customer) => {
+        if (customer.created_at) {
+          const month = new Date(customer.created_at).toISOString().slice(0, 7)
+          acc[month] = (acc[month] || 0) + 1
+        }
+        return acc
+      }, {} as Record<string, number>),
       returningCustomers: customers.filter(customer => 
         customer.orders && customer.orders.length > 1
       ).length,
@@ -237,7 +256,7 @@ export const useRealAnalytics = (storeId: string) => {
     productStats: {
       totalProducts: products.length,
       activeProducts: products.filter(p => p.is_active).length,
-      bestSellingProducts: productAnalyticsData ? 
+      bestSellingProducts: productAnalyticsData && Object.keys(productAnalyticsData).length > 0 ? 
         Object.entries(productAnalyticsData)
           .map(([productId, data]: [string, any]) => {
             const product = products.find(p => p.id === productId)
@@ -252,10 +271,53 @@ export const useRealAnalytics = (storeId: string) => {
           })
           .filter(Boolean)
           .sort((a: any, b: any) => b.sales - a.sales)
-          .slice(0, 5) : [],
-      categoryPerformance: {},
-      returnRate: 0, // No return data available
-      inventoryTurnover: 0 // No inventory movement data available
+          .slice(0, 5) : 
+        // Fallback: use products with sales data from orders
+        products
+          .map(product => {
+            // Calculate sales from orders (this is basic but functional)
+            const productOrders = paidOrders.filter((order: any) => 
+              order.order_items?.some((item: any) => item.product_id === product.id)
+            )
+            const totalSales = productOrders.reduce((sum, order) => {
+              const items = order.order_items?.filter((item: any) => item.product_id === product.id) || []
+              return sum + items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 1), 0)
+            }, 0)
+            const revenue = productOrders.reduce((sum, order) => {
+              const items = order.order_items?.filter((item: any) => item.product_id === product.id) || []
+              return sum + items.reduce((itemSum: number, item: any) => itemSum + (item.price || product.price) * (item.quantity || 1), 0)
+            }, 0)
+            
+            return {
+              id: product.id,
+              name: product.name,
+              sales: totalSales,
+              revenue,
+              views: 0, // No view tracking yet
+              conversions: totalSales
+            }
+          })
+          .filter(p => p.sales > 0)
+          .sort((a, b) => b.sales - a.sales)
+          .slice(0, 5),
+      categoryPerformance: products.reduce((acc, product) => {
+        const category = product.category || 'Uncategorized'
+        if (!acc[category]) {
+          acc[category] = { products: 0, revenue: 0 }
+        }
+        acc[category].products++
+        // Calculate revenue from orders for this product
+        const productOrders = paidOrders.filter((order: any) => 
+          order.order_items?.some((item: any) => item.product_id === product.id)
+        )
+        acc[category].revenue += productOrders.reduce((sum, order) => {
+          const items = order.order_items?.filter((item: any) => item.product_id === product.id) || []
+          return sum + items.reduce((itemSum: number, item: any) => itemSum + (item.price || product.price) * (item.quantity || 1), 0)
+        }, 0)
+        return acc
+      }, {} as Record<string, { products: number; revenue: number }>),
+      returnRate: 0, // No return data available yet
+      inventoryTurnover: 0 // No inventory movement data available yet
     },
 
     websiteStats: {

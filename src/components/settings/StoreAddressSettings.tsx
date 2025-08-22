@@ -118,7 +118,7 @@ export const StoreAddressSettings: React.FC<StoreAddressSettingsProps> = ({ stor
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div>
       <div className="flex items-center mb-6">
         <MapPin className="w-6 h-6 text-[#9B51E0] mr-3" />
         <div>

@@ -29,6 +29,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = () => {
                 <button 
                   onClick={() => navigate('/')}
                   className="text-2xl font-bold text-[#9B51E0] hover:text-[#A051E0] transition-colors"
+                  aria-label="Go to home page"
                 >
                   Sell Us Genie™
                 </button>
@@ -36,13 +37,14 @@ const FeaturesPage: React.FC<FeaturesPageProps> = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button onClick={() => navigate('/')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Home</button>
+              <button onClick={() => navigate('/')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10" aria-label="Navigate to home page">Home</button>
               <span className="text-[#9B51E0] font-semibold border border-[#9B51E0] px-3 py-1.5 rounded-lg bg-[#9B51E0]/10">Features</span>
-              <button onClick={() => navigate('/#pricing')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Pricing</button>
-              <button onClick={() => navigate('/why-not')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Why Not Others?</button>
+              <button onClick={() => navigate('/#pricing')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10" aria-label="View pricing information">Pricing</button>
+              <button onClick={() => navigate('/why-not')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10" aria-label="Learn why to choose SellUsGenie over competitors">Why Not Others?</button>
               <button 
                 onClick={handleGetStarted}
                 className="bg-[#9B51E0] text-white px-4 py-2 rounded-lg hover:bg-[#8A47D0] transition-colors font-medium"
+                aria-label="Sign up and get started with SellUsGenie"
               >
                 Get Started
               </button>
@@ -66,12 +68,14 @@ const FeaturesPage: React.FC<FeaturesPageProps> = () => {
             <button 
               onClick={handleGetStarted}
               className="bg-[#9B51E0] text-white px-8 py-4 rounded-lg hover:bg-[#8A47D0] transition-colors font-semibold text-lg"
+              aria-label="Start your free trial and create your online store"
             >
               Start Your Store Now - Free Trial
             </button>
             <button 
               onClick={() => navigate('/#pricing')}
               className="bg-transparent border-2 border-[#9B51E0] text-[#9B51E0] px-8 py-4 rounded-lg hover:bg-[#9B51E0] hover:text-white transition-colors font-semibold text-lg"
+              aria-label="View detailed pricing plans and features"
             >
               View Pricing Plans
             </button>

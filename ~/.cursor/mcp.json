@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "mcp-server-playwright",
+      "args": []
+    },
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": ["--allowed-schemes", "file"]
+    },
+    "xcodebuild": {
+      "command": "xcodebuildmcp",
+      "args": []
+    },
+    "context7": {
+      "command": "context7-mcp",
+      "args": []
+    },
+    "firecrawl": {
+      "command": "firecrawl-mcp",
+      "args": []
+    },
+    "notion": {
+      "command": "notion-mcp-server",
+      "args": []
+    }
+  }
+}
+

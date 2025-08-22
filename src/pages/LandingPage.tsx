@@ -1,12 +1,11 @@
 import React from 'react'
-import { useLocation } from 'wouter'
 import { useAuth } from '../contexts/AuthContext'
 import { GenieMascot } from '../components/ui/GenieMascot'
+import { Navigation } from '../components/ui/Navigation'
 
 interface LandingPageProps {}
 
 const LandingPage: React.FC<LandingPageProps> = () => {
-  const [, navigate] = useLocation()
   const { signInWithGoogle, signInWithApple } = useAuth()
 
   const handleGoogleSignIn = async () => {
@@ -27,38 +26,7 @@ const LandingPage: React.FC<LandingPageProps> = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1E1E1E] to-[#121212]">
-      {/* Navigation */}
-      <nav className="bg-[#1E1E1E] shadow-lg border-b border-[#2A2A2A]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <GenieMascot mood="happy" size="md" showBackground={true} />
-              <div>
-                <h1 className="text-2xl font-bold text-[#9B51E0]">Sell Us Genie™</h1>
-                <p className="text-xs text-[#A0A0A0] italic">Where wishes are real!</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button onClick={() => navigate('/features')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Features</button>
-              <a href="#pricing" className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Pricing</a>
-              <button onClick={() => navigate('/why-not')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Why Not Others?</button>
-              <button onClick={() => navigate('/contact')} className="text-[#E0E0E0] hover:text-[#9B51E0] transition-colors border border-[#9B51E0] px-3 py-1.5 rounded-lg hover:bg-[#9B51E0]/10">Contact</button>
-              <button 
-                onClick={handleGoogleSignIn}
-                className="bg-[#9B51E0] text-white px-4 py-2 rounded-lg hover:bg-[#8A47D0] transition-colors font-medium"
-              >
-                Sign In to Store
-              </button>
-              <button 
-                onClick={handleGoogleSignIn}
-                className="bg-[#FF7F00] text-white px-4 py-2 rounded-lg hover:bg-[#FF8C00] transition-colors font-medium"
-              >
-                Start Free Trial
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation variant="landing" showAuthButtons={true} />
 
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">

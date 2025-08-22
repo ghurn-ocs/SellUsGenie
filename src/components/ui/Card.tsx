@@ -1,14 +1,36 @@
 import React from 'react'
 
-interface CardProps {
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'base' | 'elevated' | 'interactive'
   className?: string
   children: React.ReactNode
 }
 
-export const Card: React.FC<CardProps> = ({ className = '', children }) => {
-  return (
-    <div className={`bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] ${className}`}>
-      {children}
-    </div>
-  )
-}
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ variant = 'base', className = '', children, ...props }, ref) => {
+    const variantClasses = {
+      'base': 'card-base',
+      'elevated': 'card-elevated',
+      'interactive': 'card-interactive',
+    }
+
+    const classes = [
+      variantClasses[variant],
+      className
+    ].filter(Boolean).join(' ')
+
+    return (
+      <div
+        className={classes}
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+)
+
+Card.displayName = 'Card'
+
+export { Card }

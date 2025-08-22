@@ -1,10 +1,23 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides comprehensive guidance to Claude Code (claude.ai/code) when working with the SellUsGenie project.
+
+## 🚨 CRITICAL SESSION STARTUP REQUIREMENTS
+
+**MANDATORY**: At the start of EVERY new Claude Code session, you MUST:
+
+1. **Read Planning**: `Project-Orchestration/planning.md` - Current sprint goals, priorities, and project status
+2. **Check Tasks**: `Project-Orchestration/tasks.md` - Active tasks, blockers, and completion tracking
+3. **Review PRD**: `Project-Orchestration/SellUsGenie-PRD.md` - Full project requirements and context
+4. **Task Management**: 
+   - Mark completed tasks immediately with ✅ and date
+   - Add new discovered tasks during work
+   - Update task priorities based on current needs
+   - Move completed tasks to "Recently Completed" section
 
 ## Project Overview
 
-SellUsGenie is a multi-tenant e-commerce platform built with React, TypeScript, and Supabase. It allows store owners to create and manage multiple stores under a single account with unified billing. The platform features OAuth authentication (Google/Apple), comprehensive store management, and an advanced page builder system.
+SellUsGenie is a comprehensive multi-tenant e-commerce platform that enables store owners to create and manage multiple online stores from a single unified dashboard. Built with React, TypeScript, and Supabase, the platform combines enterprise-grade features with user-friendly interfaces to democratize e-commerce for small and medium businesses.
 
 ## Development Commands
 
@@ -153,11 +166,142 @@ Before using image upload features, you must set up Supabase storage buckets:
 
 See `STORAGE_SETUP.md` for detailed instructions.
 
+## 🎯 PROJECT-SPECIFIC DEVELOPMENT RULES
+
+### Multi-Tenant Architecture (CRITICAL)
+- **NEVER** write queries without proper RLS (Row Level Security) policies
+- **ALWAYS** include store_id or store_owner_id in data operations
+- **VERIFY** data isolation by testing with multiple stores
+- **VALIDATE** that users can only access their own store data
+
+### Feature Development Workflow
+1. **Check PRD alignment**: Ensure feature matches requirements in SellUsGenie-PRD.md
+2. **Update tasks.md**: Add/update relevant tasks before starting work
+3. **Follow user stories**: Reference specific user stories from PRD
+4. **Test multi-tenant**: Verify feature works across different stores
+5. **Document completion**: Update planning.md with progress
+
+### Code Quality Standards
+- **TypeScript Strict Mode**: Required for all new code
+- **Accessibility First**: WCAG 2.1 AA compliance mandatory
+- **Mobile Responsive**: All features must work on mobile devices
+- **Performance Budget**: < 3s initial page load, < 200ms API responses
+- **Security Review**: All auth-related changes require security validation
+
+### Testing Requirements
+- **E2E Tests**: Playwright tests for critical user journeys
+- **Multi-Store Testing**: Verify data isolation across tenants
+- **Cross-Browser**: Test on Chrome, Firefox, Safari, Edge
+- **Mobile Testing**: Verify on iOS and Android viewports
+
+### Page Builder Specific Rules
+- **Widget System**: All widgets must be extensible and reusable
+- **Responsive Design**: Support mobile, tablet, desktop breakpoints
+- **Performance**: Lazy load widgets and optimize rendering
+- **Accessibility**: Ensure drag-and-drop works with keyboard navigation
+
+### E-commerce Specific Rules
+- **PCI Compliance**: Never store payment data locally (use Stripe)
+- **Inventory Accuracy**: Real-time stock level validation required
+- **Order Processing**: Implement proper order state management
+- **Payment Security**: Validate all payment flows thoroughly
+
 ## Development Guidelines
 
+### Core Principles
 - Follow existing TypeScript patterns and interfaces
 - Use existing hooks and contexts for data operations
-- Maintain multi-tenant data isolation
+- Maintain multi-tenant data isolation at ALL times
 - Test changes with the automated test suite
 - Ensure responsive design with Tailwind classes
 - Follow accessibility best practices with Radix UI
+- Prioritize user experience and performance
+
+### Architecture Patterns
+- **State Management**: TanStack Query for server state, React Context for UI state
+- **Component Structure**: Atomic design principles with reusable components
+- **Data Fetching**: Custom hooks with proper error handling and loading states
+- **Form Handling**: React Hook Form with Zod validation schemas
+- **Real-time Updates**: Supabase subscriptions for live data synchronization
+
+## 📝 PROJECT WORKFLOWS & PROCESSES
+
+### Session Management
+- **Start every session** by reading planning.md, tasks.md, and relevant PRD sections
+- **Update task status** immediately when completing work
+- **Document decisions** that affect project direction or architecture
+- **Communicate blockers** by updating tasks.md with blocked status
+
+### Feature Development Lifecycle
+1. **Research Phase**: Review PRD user stories and acceptance criteria
+2. **Planning Phase**: Break down work into tasks and update tasks.md
+3. **Implementation Phase**: Follow coding standards and test continuously
+4. **Validation Phase**: Test multi-tenant functionality and performance
+5. **Documentation Phase**: Update relevant docs and mark tasks complete
+
+### Quality Assurance Process
+- **Before pushing code**: Run `npm run test` and fix any failures
+- **Before marking tasks complete**: Verify acceptance criteria met
+- **Before major features**: Run E2E tests with `npm run test:e2e`
+- **Regular maintenance**: Keep dependencies updated and security patches applied
+
+### Communication Protocol
+- **Task Updates**: Use tasks.md for all task status communication
+- **Architecture Decisions**: Document in planning.md under "Architecture Decisions"
+- **Risk Identification**: Add to planning.md under "Risk Monitoring"
+- **Sprint Planning**: Update planning.md with current sprint focus
+
+### Emergency Procedures
+- **Production Issues**: Prioritize data integrity and user security
+- **Security Vulnerabilities**: Immediate attention, update tasks as CRITICAL
+- **Data Loss Risk**: Stop work, assess impact, document in planning.md
+- **Performance Degradation**: Profile, identify bottlenecks, create tasks
+
+## 🔧 USER STORY REFERENCE GUIDE
+
+### Current Sprint User Stories (Reference PRD Section 4)
+- **STORE-001**: Store creation with custom domain
+- **STORE-002**: Quick store switching interface
+- **PRODUCT-001**: Product management with images
+- **CUSTOMER-001**: Customer shopping experience
+- **DELIVERY-001**: Geographic delivery area definition
+
+### Acceptance Criteria Standards
+- All user stories must have clear acceptance criteria
+- Features must work across all supported browsers
+- Multi-tenant data isolation must be verified
+- Mobile responsiveness is mandatory
+- Accessibility compliance (WCAG 2.1 AA) required
+
+## 🚨 CRITICAL SESSION REMINDERS
+
+**MANDATORY ACTIONS FOR EVERY CLAUDE CODE SESSION:**
+1. **Read planning.md first** - Understand current sprint and priorities
+2. **Check tasks.md before starting work** - Avoid duplicate effort and understand blockers
+3. **Mark completed tasks immediately** - Maintain project visibility and progress tracking
+4. **Add new discovered tasks** - Ensure comprehensive task tracking during implementation
+5. **Follow PRD user stories** - Ensure all features align with business requirements
+6. **Test multi-tenant functionality** - Every feature touching data must be tested across stores
+7. **Maintain security-first mindset** - Especially for authentication and data access patterns
+8. **Document architectural decisions** - Any changes affecting future development must be documented
+
+## 📋 TASK MANAGEMENT RULES
+
+### Task Creation Standards
+- Use consistent naming: `[AREA-###]: Description`
+- Include acceptance criteria in task descriptions
+- Link to relevant PRD sections when applicable
+- Set appropriate priority levels (Critical 🔥, High 🚀, Medium 📋, Future 🎯)
+
+### Task Completion Protocol
+1. Mark completed tasks with ✅ and completion date
+2. Move to "Recently Completed" section in tasks.md
+3. Add any follow-up tasks discovered during implementation
+4. Update related documentation if the task affected architecture or processes
+5. Run relevant tests before marking task as complete
+
+### Priority Guidelines
+- **Critical 🔥**: Blocks other work, affects security, or impacts data integrity
+- **High 🚀**: Required for current sprint goals or critical user-facing features  
+- **Medium 📋**: Important but can be delayed one sprint if necessary
+- **Future 🎯**: Nice-to-have features or longer-term strategic work

@@ -3,6 +3,8 @@ import React, { useState } from 'react'
 import { Edit3, Trash2, Eye, EyeOff, Package, DollarSign, BarChart3, ExternalLink } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import type { Product } from '../types/product'
+import { Card } from './ui/Card'
+import { Button } from './ui/Button'
 
 interface ProductListNewProps {
   products: Product[]
@@ -202,6 +204,7 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
                     : 'text-gray-400 hover:bg-gray-500/20 hover:text-gray-300'
                 }`}
                 title={product.is_active ? 'Deactivate product' : 'Activate product'}
+                aria-label={product.is_active ? `Deactivate ${product.name}` : `Activate ${product.name}`}
               >
                 {product.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
@@ -221,6 +224,7 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
                     : 'text-gray-400 hover:bg-gray-500/20 hover:text-gray-300'
                 }`}
                 title={product.is_featured ? 'Remove from featured' : 'Add to featured'}
+                aria-label={product.is_featured ? `Remove ${product.name} from featured` : `Add ${product.name} to featured`}
               >
                 <span className="text-sm font-medium">
                   {product.is_featured ? '⭐' : '☆'}
@@ -237,6 +241,7 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
                 }}
                 className="p-2 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 rounded-lg transition-colors"
                 title="Edit product"
+                aria-label={`Edit ${product.name}`}
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -252,6 +257,7 @@ export const ProductListNew: React.FC<ProductListNewProps> = ({
                 disabled={isDeleting}
                 className="p-2 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-lg transition-colors disabled:opacity-50"
                 title="Delete product"
+                aria-label={`Delete ${product.name}`}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
