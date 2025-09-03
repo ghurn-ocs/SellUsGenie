@@ -704,4 +704,4 @@ const ElementsPanel: React.FC<ElementsPanelProps> = ({ className }) => {
   );
 };
 
-export default ElementsPanel;
+export { ElementsPanel };

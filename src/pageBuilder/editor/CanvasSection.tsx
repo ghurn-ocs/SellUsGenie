@@ -23,6 +23,9 @@ interface CanvasSectionProps {
   onWidgetUpdate: (widgetId: string, updates: Partial<WidgetBase>) => void;
   onWidgetDelete: (widgetId: string) => void;
   onWidgetDuplicate: (widgetId: string) => void;
+  onRowAdd: (sectionId: string) => void;
+  onRowDelete: (sectionId: string, rowId: string) => void;
+  onSectionDelete: (sectionId: string) => void;
   dragOverSection: string | null;
   dragOverRow: string | null;
 }
@@ -40,6 +43,9 @@ export const CanvasSection: React.FC<CanvasSectionProps> = ({
   onWidgetUpdate,
   onWidgetDelete,
   onWidgetDuplicate,
+  onRowAdd,
+  onRowDelete,
+  onSectionDelete,
   dragOverSection,
   dragOverRow,
 }) => {
@@ -101,12 +107,20 @@ export const CanvasSection: React.FC<CanvasSectionProps> = ({
           </div>
           <div className="flex items-center space-x-1">
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRowAdd(section.id);
+              }}
               className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"
               title="Add row"
             >
               +
             </button>
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSectionDelete(section.id);
+              }}
               className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
               title="Delete section"
             >
@@ -141,6 +155,7 @@ export const CanvasSection: React.FC<CanvasSectionProps> = ({
             onWidgetUpdate={onWidgetUpdate}
             onWidgetDelete={onWidgetDelete}
             onWidgetDuplicate={onWidgetDuplicate}
+            onRowDelete={() => onRowDelete(section.id, row.id)}
             isDragOver={dragOverRow === `row-${row.id}`}
           />
         ))}

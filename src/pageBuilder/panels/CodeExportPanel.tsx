@@ -810,4 +810,4 @@ ${JSON.stringify(generatedCode.manifest, null, 2)}
   );
 };
 
-export default CodeExportPanel;
+export { CodeExportPanel };

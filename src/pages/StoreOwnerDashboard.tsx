@@ -47,10 +47,12 @@ import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
 import type { Product } from '../types/product'
 import { supabase } from '../lib/supabase'
+import { useModal } from '../contexts/ModalContext'
 
 const StoreOwnerDashboard: React.FC = () => {
   const [, setLocation] = useLocation()
   const { user, signOut } = useAuth()
+  const modal = useModal()
   const { 
     stores, 
     currentStore, 
@@ -353,9 +355,12 @@ const StoreOwnerDashboard: React.FC = () => {
     setEditingCustomer(null)
   }
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!canCreateProduct) {
-      alert(getProductLimitMessage())
+      await modal.showWarning(
+        'Product Limit Reached',
+        getProductLimitMessage()
+      )
       return
     }
     console.log('🎯 Opening create product modal')
@@ -535,16 +540,16 @@ const StoreOwnerDashboard: React.FC = () => {
                   Marketing
                 </Tabs.Trigger>
                 <Tabs.Trigger
-                  value="storefront"
-                  className="flex items-center justify-center space-x-2 flex-1 px-4 py-3 text-sm font-medium rounded-md transition-colors whitespace-nowrap data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-[#4A4A4A] data-[state=inactive]:text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]"
-                >
-                  Store Front
-                </Tabs.Trigger>
-                <Tabs.Trigger
                   value="analytics"
                   className="flex items-center justify-center space-x-2 flex-1 px-4 py-3 text-sm font-medium rounded-md transition-colors whitespace-nowrap data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-[#4A4A4A] data-[state=inactive]:text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]"
                 >
                   Analytics
+                </Tabs.Trigger>
+                <Tabs.Trigger
+                  value="storefront"
+                  className="flex items-center justify-center space-x-2 flex-1 px-4 py-3 text-sm font-medium rounded-md transition-colors whitespace-nowrap data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-[#9B51E0] data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-[#4A4A4A] data-[state=inactive]:text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]"
+                >
+                  Page Builder
                 </Tabs.Trigger>
                 <Tabs.Trigger
                   value="settings"
@@ -825,12 +830,52 @@ const StoreOwnerDashboard: React.FC = () => {
                 <NurtureDashboard />
               </Tabs.Content>
 
-              <Tabs.Content value="storefront" className="space-y-0">
-                <StoreFrontCustomizer 
-                  storeId={currentStore?.id || ''} 
-                  storeName={currentStore?.store_name || 'Your Store'}
-                  storeSlug={currentStore?.store_slug}
-                />
+              <Tabs.Content value="storefront" className="space-y-6">
+                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-white">Page Builder</h3>
+                    <button
+                      onClick={() => window.open('/admin/page-builder', '_blank')}
+                      className="px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
+                    >
+                      Launch Page Builder
+                    </button>
+                  </div>
+                  <div className="bg-[#1E1E1E] rounded-lg p-8 text-center">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#9B51E0] to-[#FF7F00] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-xl font-bold text-white mb-4">Advanced Visual Page Builder</h4>
+                      <p className="text-[#A0A0A0] mb-6">
+                        Create stunning, professional pages with our drag-and-drop visual editor. 
+                        Build custom layouts, add interactive widgets, and publish seamlessly to your store.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 text-left">
+                        <div className="bg-[#2A2A2A] rounded-lg p-4">
+                          <h5 className="text-sm font-semibold text-white mb-2">Features</h5>
+                          <ul className="text-xs text-[#A0A0A0] space-y-1">
+                            <li>• Drag & drop interface</li>
+                            <li>• Custom widgets</li>
+                            <li>• Responsive design</li>
+                            <li>• Live preview</li>
+                          </ul>
+                        </div>
+                        <div className="bg-[#2A2A2A] rounded-lg p-4">
+                          <h5 className="text-sm font-semibold text-white mb-2">Built-in Widgets</h5>
+                          <ul className="text-xs text-[#A0A0A0] space-y-1">
+                            <li>• Hero sections</li>
+                            <li>• Product listings</li>
+                            <li>• Navigation menus</li>
+                            <li>• Shopping cart</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </Tabs.Content>
               <Tabs.Content value="page-builder" className="space-y-6">
                 <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
@@ -1595,8 +1640,16 @@ const StoreOwnerDashboard: React.FC = () => {
 
                     <button 
                       className="flex items-center justify-center space-x-3 p-4 border border-[#3A3A3A] rounded-lg hover:bg-red-500/10 border-red-500/20 transition-colors group"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to sign out?')) {
+                      onClick={async () => {
+                        const confirmed = await modal.showConfirmation({
+                          title: 'Sign Out',
+                          message: 'Are you sure you want to sign out of your account?\n\nYou\'ll need to sign in again to access your stores and data.',
+                          type: 'info',
+                          confirmText: 'Sign Out',
+                          cancelText: 'Stay Signed In'
+                        });
+                        
+                        if (confirmed) {
                           handleSignOut()
                         }
                       }}

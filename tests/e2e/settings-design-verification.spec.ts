@@ -26,7 +26,7 @@ test.describe('Settings Page Design Standard Verification', () => {
             if (rules.some(rule => rule.cssText && rule.cssText.includes(className))) {
               return true
             }
-          } catch (e) {
+          } catch {
             // Skip if can't access stylesheet
           }
         }

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { X, Plus, Minus, Trash2, ShoppingBag, MapPin, AlertCircle } from 'lucide-react'
 import { useCart } from '../../contexts/CartContext'
 import { DeliveryAreaDisplay, type DeliveryCheckResult } from '../DeliveryAreaDisplay'
+import { useModal } from '../../contexts/ModalContext'
 import * as Dialog from '@radix-ui/react-dialog'
 
 interface CartSidebarProps {}
@@ -9,6 +10,7 @@ interface CartSidebarProps {}
 export const CartSidebar: React.FC<CartSidebarProps> = () => {
   const [deliveryInfo, setDeliveryInfo] = useState<DeliveryCheckResult | null>(null)
   const [showDeliveryCheck, setShowDeliveryCheck] = useState(false)
+  const modal = useModal()
 
   const {
     cartItems,
@@ -51,7 +53,10 @@ export const CartSidebar: React.FC<CartSidebarProps> = () => {
   const handleCheckout = async () => {
     // Check if delivery info is available and delivery is not available
     if (deliveryInfo && !deliveryInfo.available) {
-      alert('Delivery is not available to your location. Please check our delivery areas or contact us for assistance.')
+      await modal.showWarning(
+        'Delivery Not Available',
+        'We\'re sorry, but delivery is not currently available to your location. Please check our delivery areas in the store information or contact us to see if we can arrange special delivery to your area.'
+      )
       return
     }
     

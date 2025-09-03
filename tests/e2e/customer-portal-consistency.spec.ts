@@ -303,7 +303,7 @@ test.describe('Customer Portal Design Consistency Evaluation', () => {
 
   test('should evaluate overall design system cohesion', async ({ page }) => {
     // Comprehensive design system evaluation
-    const designSystemData = await page.evaluate(() => {
+    const designPatterns = await page.evaluate(() => {
       // Get all elements and analyze design patterns
       const allElements = document.querySelectorAll('*')
       const designPatterns = {

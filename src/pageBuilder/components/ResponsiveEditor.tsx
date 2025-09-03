@@ -558,6 +558,9 @@ export const ResponsiveEditor: React.FC<ResponsiveEditorProps> = ({
         {activeSection === 'typography' && renderTypographySection()}
         {activeSection === 'colors' && renderColorsSection()}
         {activeSection === 'effects' && renderEffectsSection()}
+        
+        {/* Bottom padding for better scroll visibility (1 inch minimum) */}
+        <div className="h-24"></div>
       </div>
     </div>
   );

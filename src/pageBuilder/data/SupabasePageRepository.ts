@@ -43,6 +43,12 @@ export class SupabasePageRepository implements PageRepository {
         accessibility: data.accessibility || {},
         customCode: data.custom_code || {},
         globalStyles: data.global_styles || {},
+        // System page properties
+        pageType: data.page_type,
+        isSystemPage: data.isSystemPage,
+        systemPageType: data.systemPageType,
+        editingRestrictions: data.editingRestrictions,
+        navigationPlacement: data.navigation_placement,
         history: [] // History loaded separately if needed
       };
     } catch (error) {
@@ -70,6 +76,12 @@ export class SupabasePageRepository implements PageRepository {
           accessibility: doc.accessibility || {},
           custom_code: doc.customCode || {},
           global_styles: doc.globalStyles || {},
+          // System page properties
+          page_type: doc.pageType || 'page',
+          isSystemPage: doc.isSystemPage || false,
+          systemPageType: doc.systemPageType || null,
+          editingRestrictions: doc.editingRestrictions || null,
+          navigation_placement: doc.navigationPlacement || 'both',
           updated_at: new Date().toISOString()
         });
 
@@ -127,6 +139,11 @@ export class SupabasePageRepository implements PageRepository {
         accessibility: item.accessibility || {},
         customCode: item.custom_code || {},
         globalStyles: item.global_styles || {},
+        // System page properties
+        pageType: item.page_type,
+        isSystemPage: item.isSystemPage,
+        systemPageType: item.systemPageType,
+        editingRestrictions: item.editingRestrictions,
         history: []
       }));
     } catch (error) {
@@ -315,6 +332,11 @@ export class SupabasePageRepository implements PageRepository {
         accessibility: pageData.accessibility || {},
         customCode: pageData.custom_code || {},
         globalStyles: pageData.global_styles || {},
+        // System page properties
+        pageType: pageData.page_type,
+        isSystemPage: pageData.isSystemPage,
+        systemPageType: pageData.systemPageType,
+        editingRestrictions: pageData.editingRestrictions,
         history: []
       };
     } catch (error) {

@@ -3,6 +3,7 @@ import { Route, Switch, Redirect } from 'wouter'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StoreProvider } from './contexts/StoreContext'
+import { ModalProvider } from './contexts/ModalContext'
 import LandingPage from './pages/LandingPage'
 import FeaturesPage from './pages/FeaturesPage'
 import WhyNotPage from './pages/WhyNotPage'
@@ -13,8 +14,10 @@ import CookiePolicyPage from './pages/CookiePolicyPage'
 import StoreOwnerDashboard from './pages/StoreOwnerDashboard'
 import { StoreFrontView } from './pages/StoreFrontView'
 import AuthCallback from './pages/AuthCallback'
+import { VisualPageBuilder } from './pages/VisualPageBuilder'
+import { HeaderConfiguration } from './pages/HeaderConfiguration'
+import { FooterConfiguration } from './pages/FooterConfiguration'
 import CookieConsent from './components/ui/CookieConsent'
-// Page Builder components removed - launched separately
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -61,7 +64,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <StoreProvider>
-          <Switch>
+          <ModalProvider>
+            <Switch>
             <Route path="/" component={LandingPage} />
             <Route path="/features" component={FeaturesPage} />
             <Route path="/why-not" component={WhyNotPage} />
@@ -74,11 +78,26 @@ function App() {
                 <StoreOwnerDashboard />
               </ProtectedRoute>
             </Route>
-            {/* Page Builder routes removed - launched separately */}
+            <Route path="/admin/page-builder">
+              <ProtectedRoute>
+                <VisualPageBuilder />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/admin/header-config">
+              <ProtectedRoute>
+                <HeaderConfiguration />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/admin/footer-config">
+              <ProtectedRoute>
+                <FooterConfiguration />
+              </ProtectedRoute>
+            </Route>
             <Route path="/auth/callback" component={AuthCallback} />
             <Route path="/store/:storeSlug" component={StoreFrontView} />
-          </Switch>
-          <CookieConsent />
+            </Switch>
+            <CookieConsent />
+          </ModalProvider>
         </StoreProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -1,39 +1,39 @@
 {
-  "timestamp": "2025-08-21T06:49:32.564Z",
+  "timestamp": "2025-09-02T17:20:39.513Z",
   "totalTests": 22,
-  "passedTests": 18,
-  "failedTests": 4,
+  "passedTests": 16,
+  "failedTests": 6,
   "categories": {
     "Code Quality": {
       "tests": [
         {
           "name": "TypeScript Compilation",
           "status": "PASS",
-          "duration": 301,
-          "timestamp": "2025-08-21T06:49:32.865Z"
+          "duration": 379,
+          "timestamp": "2025-09-02T17:20:39.892Z"
         },
         {
           "name": "Linting",
           "status": "PASS",
           "duration": 0,
-          "timestamp": "2025-08-21T06:49:32.865Z"
+          "timestamp": "2025-09-02T17:20:39.892Z"
         },
         {
           "name": "Import Validation",
-          "status": "PASS",
-          "duration": 20,
-          "timestamp": "2025-08-21T06:49:32.885Z"
+          "status": "FAIL",
+          "duration": 11,
+          "timestamp": "2025-09-02T17:20:39.981Z"
         },
         {
           "name": "Code Complexity Analysis",
           "status": "WARN",
-          "duration": 6,
-          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/AnalyticsDashboard.tsx: Large component (245 lines), consider splitting; /Users/glennhurn/AppDev/SellUsGenie/src/components/AnalyticsDashboard.tsx: Multiple ternary operators, consider simplifying; /Users/glennhurn/AppDev/SellUsGenie/src/components/CreateCustomerModal.tsx: Large component (342 lines), consider splitting",
-          "timestamp": "2025-08-21T06:49:32.897Z"
+          "duration": 7,
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/archive-safe/StoreOwnerDashboard.tsx: Large component (1993 lines), consider splitting; /Users/glennhurn/AppDev/SellUsGenie/src/archive-safe/StoreOwnerDashboard.tsx: Multiple ternary operators, consider simplifying; /Users/glennhurn/AppDev/SellUsGenie/src/components/AnalyticsDashboard.tsx: Large component (245 lines), consider splitting",
+          "timestamp": "2025-09-02T17:20:39.995Z"
         }
       ],
-      "passed": 3,
-      "failed": 1
+      "passed": 2,
+      "failed": 2
     },
     "Component Testing": {
       "tests": [
@@ -41,8 +41,8 @@
           "name": "React Component Validation",
           "status": "FAIL",
           "duration": 4,
-          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/OrderDebugger.tsx: Missing TypeScript props interface",
-          "timestamp": "2025-08-21T06:49:32.905Z"
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/OrderDebugger.tsx: Missing TypeScript props interface; /Users/glennhurn/AppDev/SellUsGenie/src/components/auth/SessionWarningDialog.tsx: Missing TypeScript props interface; /Users/glennhurn/AppDev/SellUsGenie/src/components/debug/SlugFixUtility.tsx: Missing TypeScript props interface",
+          "timestamp": "2025-09-02T17:20:40.004Z"
         }
       ],
       "passed": 0,
@@ -53,16 +53,16 @@
         {
           "name": "Accessibility Compliance",
           "status": "FAIL",
-          "duration": 5,
-          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/ProductListNew.tsx: Button missing accessibility label; /Users/glennhurn/AppDev/SellUsGenie/src/components/ProductSelector.tsx: Button missing accessibility label; /Users/glennhurn/AppDev/SellUsGenie/src/components/ProductSelector.tsx: Input missing accessibility label",
-          "timestamp": "2025-08-21T06:49:32.916Z"
+          "duration": 8,
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/SimplePageBuilder.tsx: Button missing accessibility label; /Users/glennhurn/AppDev/SellUsGenie/src/archive-safe/StoreOwnerDashboard.tsx: Button missing accessibility label; /Users/glennhurn/AppDev/SellUsGenie/src/components/ViewCustomerModal.tsx: Button missing accessibility label",
+          "timestamp": "2025-09-02T17:20:40.019Z"
         },
         {
           "name": "Responsive Design Testing",
           "status": "WARN",
-          "duration": 4,
-          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/canvas/SandboxedCanvas.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/components/ResponsiveControls.tsx: Multiple hardcoded dimensions, consider responsive design",
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "duration": 6,
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/website/WorldClassRenderer.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/canvas/SandboxedCanvas.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/components/ResponsiveControls.tsx: Multiple hardcoded dimensions, consider responsive design",
+          "timestamp": "2025-09-02T17:20:40.031Z"
         }
       ],
       "passed": 0,
@@ -83,9 +83,9 @@
         {
           "name": "Supabase RLS Validation",
           "status": "PASS",
-          "duration": 0,
+          "duration": 1,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "timestamp": "2025-09-02T17:20:40.032Z"
         }
       ],
       "passed": 1,
@@ -98,21 +98,21 @@
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "timestamp": "2025-09-02T17:20:40.032Z"
         },
         {
           "name": "Type Definitions",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "timestamp": "2025-09-02T17:20:40.032Z"
         },
         {
           "name": "Database Interface Validation",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "timestamp": "2025-09-02T17:20:40.032Z"
         }
       ],
       "passed": 3,
@@ -125,21 +125,21 @@
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "timestamp": "2025-09-02T17:20:40.032Z"
         },
         {
           "name": "Tailwind CSS Configuration",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.925Z"
+          "timestamp": "2025-09-02T17:20:40.032Z"
         },
         {
           "name": "Environment Variables",
           "status": "PASS",
-          "duration": 0,
+          "duration": 1,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.926Z"
+          "timestamp": "2025-09-02T17:20:40.033Z"
         }
       ],
       "passed": 3,
@@ -152,62 +152,62 @@
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.926Z"
+          "timestamp": "2025-09-02T17:20:40.033Z"
         },
         {
           "name": "Version Compatibility",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.926Z"
+          "timestamp": "2025-09-02T17:20:40.033Z"
         },
         {
           "name": "React Query Integration",
-          "status": "PASS",
-          "duration": 1,
-          "error": null,
-          "timestamp": "2025-08-21T06:49:32.927Z"
+          "status": "FAIL",
+          "duration": 2,
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/hooks/useTokenRefresh.ts: Missing React Query import; /Users/glennhurn/AppDev/SellUsGenie/src/hooks/useTokenRefresh.ts: Missing React Query hooks",
+          "timestamp": "2025-09-02T17:20:40.036Z"
         }
       ],
-      "passed": 3,
-      "failed": 0
+      "passed": 2,
+      "failed": 1
     },
     "E-commerce Specific": {
       "tests": [
         {
           "name": "Store Management Testing",
           "status": "PASS",
-          "duration": 2,
+          "duration": 1,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.929Z"
+          "timestamp": "2025-09-02T17:20:40.037Z"
         },
         {
           "name": "Product Management Testing",
           "status": "PASS",
-          "duration": 1,
+          "duration": 2,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.930Z"
+          "timestamp": "2025-09-02T17:20:40.039Z"
         },
         {
           "name": "Order Management Testing",
           "status": "PASS",
           "duration": 1,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.931Z"
+          "timestamp": "2025-09-02T17:20:40.040Z"
         },
         {
           "name": "Customer Management Testing",
           "status": "PASS",
-          "duration": 1,
+          "duration": 2,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.932Z"
+          "timestamp": "2025-09-02T17:20:40.042Z"
         },
         {
           "name": "Authentication Flow Testing",
           "status": "PASS",
           "duration": 1,
           "error": null,
-          "timestamp": "2025-08-21T06:49:32.933Z"
+          "timestamp": "2025-09-02T17:20:40.043Z"
         }
       ],
       "passed": 5,

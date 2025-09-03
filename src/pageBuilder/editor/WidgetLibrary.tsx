@@ -15,8 +15,37 @@ import {
   ShoppingCart,
   Minus,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Layout,
+  Star,
+  Package,
+  Heart,
+  Grid,
+  Navigation,
+  Mail
 } from 'lucide-react';
+
+// Map icon strings to Lucide React components
+const ICON_MAP = {
+  Type,
+  Image,
+  MousePointer,
+  ShoppingCart,
+  Layout,
+  Star,
+  Package,
+  Heart,
+  Grid,
+  Navigation,
+  Mail,
+  Minus
+} as const;
+
+// Function to get icon component from string
+const getIconComponent = (iconName: string) => {
+  const IconComponent = ICON_MAP[iconName as keyof typeof ICON_MAP];
+  return IconComponent || Type; // Default to Type icon if not found
+};
 
 interface DraggableWidgetProps {
   widgetType: WidgetType;
@@ -43,6 +72,17 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
   } : undefined;
 
+  const IconComponent = getIconComponent(icon);
+
+  // Debug: log when isDragging changes
+  React.useEffect(() => {
+    if (isDragging) {
+      console.log(`🔄 Widget ${widgetType} is dragging`);
+    } else {
+      console.log(`✅ Widget ${widgetType} drag finished`);
+    }
+  }, [isDragging, widgetType]);
+
   return (
     <div
       ref={setNodeRef}
@@ -50,12 +90,12 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       {...attributes}
       {...listeners}
       className={`p-3 border border-gray-200 rounded-lg bg-white cursor-move hover:bg-blue-50 hover:border-blue-300 transition-colors ${
-        isDragging ? 'opacity-50' : ''
+        isDragging ? 'opacity-50' : 'opacity-100'
       }`}
     >
       <div className="flex items-center space-x-3">
         <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-          <span className="text-blue-600 text-sm">{icon}</span>
+          <IconComponent className="text-blue-600 w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-gray-900 truncate">{name}</h4>
@@ -72,12 +112,28 @@ export const WidgetLibrary: React.FC = () => {
     new Set(WIDGET_CATEGORIES.map(cat => cat.id))
   );
   const [availableWidgets, setAvailableWidgets] = useState<any[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Debug: Check available widgets on mount
+  // Load available widgets on mount and refresh when widgets are dropped
   useEffect(() => {
-    const widgets = widgetRegistry.getAll();
-    console.log('WidgetLibrary: Available widgets:', widgets);
-    setAvailableWidgets(widgets);
+    const loadWidgets = () => {
+      const widgets = widgetRegistry.getUserWidgets();
+      setAvailableWidgets(widgets);
+    };
+
+    loadWidgets();
+
+    // Listen for widget drop events to refresh the library
+    const handleWidgetDropped = () => {
+      loadWidgets();
+      setRefreshKey(prev => prev + 1); // Force re-render of draggable components
+    };
+
+    window.addEventListener('widget-dropped', handleWidgetDropped);
+    
+    return () => {
+      window.removeEventListener('widget-dropped', handleWidgetDropped);
+    };
   }, []);
 
   const toggleCategory = (categoryId: string) => {
@@ -164,7 +220,7 @@ export const WidgetLibrary: React.FC = () => {
                 <div className="space-y-2 pl-4">
                   {category.widgets.map((widget) => (
                     <DraggableWidget
-                      key={widget.type}
+                      key={`${widget.type}-${refreshKey}`}
                       widgetType={widget.type}
                       name={widget.name}
                       description={widget.description}
@@ -191,6 +247,9 @@ export const WidgetLibrary: React.FC = () => {
             <p className="text-xs mt-2">Check console for debug info</p>
           </div>
         )}
+        
+        {/* Bottom padding for better scroll visibility (1 inch minimum) */}
+        <div className="h-24"></div>
       </div>
     </div>
   );

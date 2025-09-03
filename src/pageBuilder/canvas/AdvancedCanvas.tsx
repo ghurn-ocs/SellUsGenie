@@ -878,4 +878,4 @@ const AdvancedCanvas: React.FC<AdvancedCanvasProps> = ({ className }) => {
   );
 };
 
-export default AdvancedCanvas;
+export { AdvancedCanvas };

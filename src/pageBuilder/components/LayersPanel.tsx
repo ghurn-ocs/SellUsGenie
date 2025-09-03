@@ -385,6 +385,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
             <p className="text-xs mt-1">Add widgets from the Widget panel to get started</p>
           </div>
         )}
+        
+        {/* Bottom padding for better scroll visibility (1 inch minimum) */}
+        <div className="h-24"></div>
       </div>
 
       {/* Layer Actions */}

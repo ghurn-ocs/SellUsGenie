@@ -49,8 +49,8 @@ test.describe('Delivery Areas Functionality', () => {
           await areaTypeSelect.selectOption('circle')
           await page.waitForTimeout(2000)
           
-          // Check if map container is visible
-          const mapContainer = page.locator('[ref="mapRef"], .map-container, [id*="map"]').first()
+          // Check if map container is visible (for future reference)
+          // const _mapContainer = page.locator('[ref="mapRef"], .map-container, [id*="map"]').first()
           
           // The test passes if we can switch between area types without crashes
           await expect(page.locator('[role="dialog"]')).toBeVisible()

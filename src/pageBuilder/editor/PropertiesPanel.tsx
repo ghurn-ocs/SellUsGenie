@@ -1,18 +1,27 @@
 /**
- * Properties Panel
- * Shows editing options for selected widgets, sections, and rows
+ * Properties Panel - Redesigned with Expandable Sections
+ * Shows editing options for page, selected widgets, sections, and rows
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { PageDocument, WidgetBase } from '../types';
 import { widgetRegistry } from '../widgets/registry';
+import { PageColorSettings } from '../components/PageColorSettings';
+import { ExpandableSection } from '../components/ExpandableSection';
 import { 
   Settings, 
   Layout, 
   Eye, 
   Search,
   Type,
-  MousePointer
+  MousePointer,
+  Palette,
+  Globe,
+  FileText,
+  Layers,
+  Square,
+  Grid,
+  Link
 } from 'lucide-react';
 
 interface PropertiesPanelProps {
@@ -32,6 +41,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onDocumentChange,
   onWidgetUpdate,
 }) => {
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    new Set(['general', 'widget'])
+  );
+
+  const toggleSection = (sectionId: string) => {
+    const newOpenSections = new Set(openSections);
+    if (newOpenSections.has(sectionId)) {
+      newOpenSections.delete(sectionId);
+    } else {
+      newOpenSections.add(sectionId);
+    }
+    setOpenSections(newOpenSections);
+  };
+
   // Find selected elements
   const selectedWidget = selectedWidgetId 
     ? document.sections
@@ -52,71 +75,189 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   const widgetConfig = selectedWidget ? widgetRegistry.get(selectedWidget.type) : null;
 
+  const updateDocument = (updates: Partial<PageDocument>) => {
+    onDocumentChange({
+      ...document,
+      ...updates,
+    });
+  };
+
+  const renderGeneralSection = () => (
+    <ExpandableSection
+      title="General"
+      description="Basic page information and URL"
+      icon={Globe}
+      isOpen={openSections.has('general')}
+      onToggle={() => toggleSection('general')}
+    >
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Page Name
+        </label>
+        <input
+          type="text"
+          value={document.name || document.title || ''}
+          onChange={(e) => updateDocument({ name: e.target.value, title: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Enter page name"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Internal name for organizing your pages
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Page URL Slug
+        </label>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-500">/</span>
+          <input
+            type="text"
+            value={document.slug || ''}
+            onChange={(e) => {
+              const slug = e.target.value.toLowerCase()
+                .replace(/[^a-z0-9-]/g, '-')
+                .replace(/--+/g, '-')
+                .replace(/^-|-$/g, '');
+              updateDocument({ slug });
+            }}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="page-url-slug"
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          The URL path for this page (e.g., /about-us, /products)
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Status
+        </label>
+        <select
+          value={document.status || 'draft'}
+          onChange={(e) => updateDocument({ status: e.target.value as 'draft' | 'published' | 'archived' })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Navigation Placement
+        </label>
+        <select
+          value={document.navigationPlacement || 'both'}
+          onChange={(e) => updateDocument({ navigationPlacement: e.target.value as 'header' | 'footer' | 'both' | 'none' })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="both">Both (Header & Footer)</option>
+          <option value="header">Header Only</option>
+          <option value="footer">Footer Only</option>
+          <option value="none">None</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Controls where this page appears in site navigation menus
+        </p>
+      </div>
+    </ExpandableSection>
+  );
+
+  const renderColorSection = () => (
+    <ExpandableSection
+      title="Colors & Theme"
+      description="Page color scheme and theme settings"
+      icon={Palette}
+      isOpen={openSections.has('colors')}
+      onToggle={() => toggleSection('colors')}
+    >
+      <PageColorSettings
+        document={document}
+        onDocumentChange={onDocumentChange}
+      />
+    </ExpandableSection>
+  );
+
   const renderWidgetProperties = () => {
     if (!selectedWidget || !widgetConfig) {
       return (
-        <div className="p-4 text-center text-gray-500">
-          <Type className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-          <p>Select a widget to edit its properties</p>
-        </div>
+        <ExpandableSection
+          title="Widget Properties"
+          description="Select a widget to edit"
+          icon={Type}
+          isOpen={openSections.has('widget')}
+          onToggle={() => toggleSection('widget')}
+        >
+          <div className="text-center text-gray-500">
+            <Type className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm">Select a widget to edit its properties</p>
+          </div>
+        </ExpandableSection>
       );
     }
 
     const WidgetEditor = widgetConfig.Editor;
     return (
-      <WidgetEditor
-        widget={selectedWidget}
-        onChange={(updates) => onWidgetUpdate(selectedWidget.id, updates)}
-        onDelete={() => {
-          // Handle widget deletion
-          const newDocument = { ...document };
-          newDocument.sections = newDocument.sections.map(section => ({
-            ...section,
-            rows: section.rows.map(row => ({
-              ...row,
-              widgets: row.widgets.filter(w => w.id !== selectedWidget.id)
-            }))
-          }));
-          onDocumentChange(newDocument);
-        }}
-        onDuplicate={() => {
-          // Handle widget duplication
-          const newWidget = {
-            ...selectedWidget,
-            id: `widget_${Date.now()}`
-          };
-          const newDocument = { ...document };
-          newDocument.sections = newDocument.sections.map(section => ({
-            ...section,
-            rows: section.rows.map(row => ({
-              ...row,
-              widgets: [...row.widgets, newWidget]
-            }))
-          }));
-          onDocumentChange(newDocument);
-        }}
-      />
+      <ExpandableSection
+        title="Widget Properties"
+        description={`Editing ${widgetConfig.name}`}
+        icon={Type}
+        isOpen={openSections.has('widget')}
+        onToggle={() => toggleSection('widget')}
+      >
+        <WidgetEditor
+          widget={selectedWidget}
+          onChange={(updates) => onWidgetUpdate(selectedWidget.id, updates)}
+          onDelete={() => {
+            const newDocument = { ...document };
+            newDocument.sections = newDocument.sections.map(section => ({
+              ...section,
+              rows: section.rows.map(row => ({
+                ...row,
+                widgets: row.widgets.filter(w => w.id !== selectedWidget.id)
+              }))
+            }));
+            onDocumentChange(newDocument);
+          }}
+          onDuplicate={() => {
+            const newWidget = {
+              ...selectedWidget,
+              id: `widget_${Date.now()}`
+            };
+            const newDocument = { ...document };
+            newDocument.sections = newDocument.sections.map(section => ({
+              ...section,
+              rows: section.rows.map(row => {
+                const hasWidget = row.widgets.some(w => w.id === selectedWidget.id);
+                return hasWidget
+                  ? { ...row, widgets: [...row.widgets, newWidget] }
+                  : row;
+              })
+            }));
+            onDocumentChange(newDocument);
+          }}
+        />
+      </ExpandableSection>
     );
   };
 
   const renderSectionProperties = () => {
     if (!selectedSection) {
-      return (
-        <div className="p-4 text-center text-gray-500">
-          <Layout className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-          <p>Select a section to edit its properties</p>
-        </div>
-      );
+      return null;
     }
 
     return (
-      <div className="p-4 space-y-4">
-        <div className="flex items-center space-x-2">
-          <Layout className="w-4 h-4 text-blue-600" />
-          <h3 className="font-medium text-gray-900">Section Properties</h3>
-        </div>
-
-        {/* Section Title */}
+      <ExpandableSection
+        title="Section Properties"
+        description="Configure section settings"
+        icon={Layout}
+        isOpen={openSections.has('section')}
+        onToggle={() => toggleSection('section')}
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Section Title
@@ -138,7 +279,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           />
         </div>
 
-        {/* Background Color */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Background Color
@@ -172,7 +312,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </select>
         </div>
 
-        {/* Padding */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Padding
@@ -195,129 +334,109 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             <option value="p-6">Large</option>
             <option value="p-8">Extra Large</option>
             <option value="py-8 px-4">Vertical Large</option>
+            <option value="py-12 px-4">Vertical Extra Large</option>
           </select>
         </div>
-      </div>
+      </ExpandableSection>
     );
   };
 
   const renderRowProperties = () => {
     if (!selectedRow) {
-      return (
-        <div className="p-4 text-center text-gray-500">
-          <MousePointer className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-          <p>Select a row to edit its properties</p>
-        </div>
-      );
+      return null;
     }
 
     return (
-      <div className="p-4 space-y-4">
-        <div className="flex items-center space-x-2">
-          <MousePointer className="w-4 h-4 text-gray-600" />
-          <h3 className="font-medium text-gray-900">Row Properties</h3>
-        </div>
-
-        <div className="text-sm text-gray-600">
-          <p>Row ID: {selectedRow.id}</p>
-          <p>Widgets: {selectedRow.widgets.length}</p>
-        </div>
-
-        {/* Add more row-specific properties here */}
-      </div>
-    );
-  };
-
-  const renderPageProperties = () => {
-    return (
-      <div className="p-4 space-y-4">
-        <div className="flex items-center space-x-2">
-          <Settings className="w-4 h-4 text-gray-600" />
-          <h3 className="font-medium text-gray-900">Page Properties</h3>
-        </div>
-
-        {/* Page Name */}
+      <ExpandableSection
+        title="Row Properties"
+        description="Configure row layout"
+        icon={Grid}
+        isOpen={openSections.has('row')}
+        onToggle={() => toggleSection('row')}
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Page Name
+            Row Alignment
           </label>
-          <input
-            type="text"
-            value={document.name}
+          <select
+            value={selectedRow.alignment || 'left'}
             onChange={(e) => {
-              const newDocument = { ...document, name: e.target.value };
+              const newDocument = { ...document };
+              newDocument.sections = newDocument.sections.map(section => ({
+                ...section,
+                rows: section.rows.map(row =>
+                  row.id === selectedRow.id
+                    ? { ...row, alignment: e.target.value }
+                    : row
+                )
+              }));
               onDocumentChange(newDocument);
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            placeholder="Enter page name..."
-          />
-        </div>
-
-        {/* SEO Settings */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Meta Title
-          </label>
-          <input
-            type="text"
-            value={document.seo?.metaTitle || ''}
-            onChange={(e) => {
-              const newDocument = {
-                ...document,
-                seo: { ...document.seo, metaTitle: e.target.value }
-              };
-              onDocumentChange(newDocument);
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            placeholder="Enter meta title..."
-          />
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+            <option value="justify">Justify</option>
+          </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Meta Description
+            Gap Between Items
           </label>
-          <textarea
-            value={document.seo?.metaDescription || ''}
+          <select
+            value={selectedRow.gap || 'gap-4'}
             onChange={(e) => {
-              const newDocument = {
-                ...document,
-                seo: { ...document.seo, metaDescription: e.target.value }
-              };
+              const newDocument = { ...document };
+              newDocument.sections = newDocument.sections.map(section => ({
+                ...section,
+                rows: section.rows.map(row =>
+                  row.id === selectedRow.id
+                    ? { ...row, gap: e.target.value }
+                    : row
+                )
+              }));
               onDocumentChange(newDocument);
             }}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            placeholder="Enter meta description..."
-          />
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="gap-0">None</option>
+            <option value="gap-2">Small</option>
+            <option value="gap-4">Medium</option>
+            <option value="gap-6">Large</option>
+            <option value="gap-8">Extra Large</option>
+          </select>
         </div>
-
-        {/* Page Info */}
-        <div className="pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>Status: <span className="font-medium">{document.status}</span></p>
-            <p>Version: <span className="font-medium">{document.version}</span></p>
-            <p>Created: <span className="font-medium">{new Date(document.createdAt).toLocaleDateString()}</span></p>
-            <p>Updated: <span className="font-medium">{new Date(document.updatedAt).toLocaleDateString()}</span></p>
-          </div>
-        </div>
-      </div>
+      </ExpandableSection>
     );
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+            <Settings className="w-5 h-5" />
+            <span>Properties</span>
+          </h2>
+        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          Configure page and element properties
+        </p>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {selectedWidgetId && renderWidgetProperties()}
-        {selectedSectionId && !selectedWidgetId && renderSectionProperties()}
-        {selectedRowId && !selectedWidgetId && !selectedSectionId && renderRowProperties()}
-        {!selectedWidgetId && !selectedSectionId && !selectedRowId && renderPageProperties()}
+      {/* Properties Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {renderGeneralSection()}
+        {renderColorSection()}
+        {renderWidgetProperties()}
+        {selectedSection && renderSectionProperties()}
+        {selectedRow && renderRowProperties()}
+        
+        {/* Bottom padding for better scroll visibility (1 inch minimum) */}
+        <div className="h-24"></div>
       </div>
     </div>
   );

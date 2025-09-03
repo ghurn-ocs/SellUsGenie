@@ -22,6 +22,7 @@ interface CanvasRowProps {
   onWidgetUpdate: (widgetId: string, updates: Partial<WidgetBase>) => void;
   onWidgetDelete: (widgetId: string) => void;
   onWidgetDuplicate: (widgetId: string) => void;
+  onRowDelete: () => void;
   isDragOver: boolean;
 }
 
@@ -37,6 +38,7 @@ export const CanvasRow: React.FC<CanvasRowProps> = ({
   onWidgetUpdate,
   onWidgetDelete,
   onWidgetDuplicate,
+  onRowDelete,
   isDragOver,
 }) => {
   const {
@@ -134,12 +136,21 @@ export const CanvasRow: React.FC<CanvasRowProps> = ({
           </div>
           <div className="flex items-center space-x-1">
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // TODO: Implement add widget to row functionality
+                console.log('Add widget to row clicked - functionality to be implemented');
+              }}
               className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
               title="Add widget"
             >
               +
             </button>
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRowDelete();
+              }}
               className="p-1 text-blue-600 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
               title="Delete row"
             >
@@ -150,11 +161,11 @@ export const CanvasRow: React.FC<CanvasRowProps> = ({
       )}
 
       {/* Row Content with proper grid layout */}
-      <div className="grid grid-cols-12 gap-4 p-4">
+      <div className="grid grid-cols-12 gap-4 p-4 w-full max-w-full overflow-x-hidden">
         {row.widgets.map((widget) => (
           <div
             key={widget.id}
-            className={`${getWidgetColSpanClasses(widget)} min-h-[60px]`}
+            className={`${getWidgetColSpanClasses(widget)} min-h-[60px] w-full max-w-full overflow-hidden`}
           >
             <CanvasWidget
               widget={widget}

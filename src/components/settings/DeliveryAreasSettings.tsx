@@ -20,6 +20,7 @@ import {
 import { useDeliveryAreas } from '../../hooks/useDeliveryAreas'
 import type { DeliveryAreaFormData, OperatingHours, DeliveryArea } from '../../types/deliveryAreas'
 import { DEFAULT_OPERATING_HOURS } from '../../types/deliveryAreas'
+import { useModal } from '../../contexts/ModalContext'
 
 // Google Maps singleton loader
 class GoogleMapsLoader {
@@ -143,6 +144,7 @@ interface DeliveryAreasSettingsProps {
 }
 
 export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ storeId }) => {
+  const modal = useModal()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingArea, setEditingArea] = useState<DeliveryArea | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
@@ -597,7 +599,16 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this delivery area?')) {
+    const confirmed = await modal.showConfirmation({
+      title: 'Delete Delivery Area',
+      message: 'Are you sure you want to permanently delete this delivery area?\n\nCustomers in this area will no longer be able to place orders for delivery. This action cannot be undone.',
+      type: 'warning',
+      confirmText: 'Delete Area',
+      cancelText: 'Keep Area',
+      confirmButtonClass: 'px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium'
+    })
+    
+    if (confirmed) {
       await deleteDeliveryArea.mutateAsync(id)
     }
   }

@@ -133,6 +133,12 @@ export interface PageDocument {
   status: "draft" | "published" | "archived" | "scheduled";
   publishedAt?: string;
   scheduledFor?: string;
+  // System page properties
+  pageType?: string;
+  isSystemPage?: boolean;
+  systemPageType?: string;
+  editingRestrictions?: Record<string, any>;
+  navigationPlacement?: 'header' | 'footer' | 'both' | 'none';
   history?: { 
     id: string; 
     createdAt: string; 
@@ -182,6 +188,11 @@ export interface PageDocument {
     colors?: Record<string, string>;
     spacing?: Record<string, number>;
     breakpoints?: Record<string, number>;
+  };
+  colorPalette?: {
+    paletteId: string;
+    customColors?: Partial<ColorPalette['colors']>;
+    applyOptions?: ColorPaletteApplyOptions;
   };
 }
 
@@ -234,6 +245,7 @@ export interface WidgetConfig {
   Editor: React.ComponentType<WidgetEditorProps>;
   View: React.ComponentType<WidgetViewProps>;
   migrate?: (widget: WidgetBase, targetVersion: number) => WidgetBase;
+  systemWidget?: boolean; // If true, widget is not shown in user widget library
 }
 
 export interface WidgetEditorProps {
@@ -268,6 +280,52 @@ export interface User {
   email: string;
   role: 'owner' | 'editor' | 'viewer';
   storeId: string;
+}
+
+export interface ColorPalette {
+  id: string;
+  name: string;
+  description: string;
+  category: 'business' | 'creative' | 'minimal' | 'bold' | 'nature' | 'elegant';
+  colors: {
+    primary: string;
+    primaryHover: string;
+    secondary: string;
+    secondaryHover: string;
+    accent: string;
+    accentHover: string;
+    background: string;
+    backgroundSecondary: string;
+    backgroundAccent: string;
+    textPrimary: string;
+    textSecondary: string;
+    textMuted: string;
+    textInverse: string;
+    border: string;
+    borderHover: string;
+    shadow: string;
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+    buttonPrimary: string;
+    buttonPrimaryHover: string;
+    buttonSecondary: string;
+    buttonSecondaryHover: string;
+    headerBackground: string;
+    headerText: string;
+    footerBackground: string;
+    footerText: string;
+  };
+}
+
+export interface ColorPaletteApplyOptions {
+  backgrounds?: boolean;
+  buttons?: boolean;
+  text?: boolean;
+  borders?: boolean;
+  headerFooter?: boolean;
+  customElements?: string[];
 }
 
 export interface PageBuilderConfig {

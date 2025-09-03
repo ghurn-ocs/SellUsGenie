@@ -84,6 +84,20 @@ export const GalleryEditor: React.FC<WidgetEditorProps> = ({ widget, onChange, o
                   onChange={(e) => updateImage(image.id, { src: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 />
+                {index === 0 && (
+                  <p className="text-xs text-gray-500">
+                    Need images? Visit{' '}
+                    <a
+                      href="https://unsplash.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Unsplash
+                    </a>{' '}
+                    for free photos. Right-click on an image and select "Copy image address" to get the direct URL.
+                  </p>
+                )}
                 
                 <input
                   type="text"

@@ -26,8 +26,8 @@ export type ImageProps = z.infer<typeof imageSchema>;
 
 // Default properties for new image widgets
 export const defaultImageProps: ImageProps = {
-  src: 'https://via.placeholder.com/400x300',
-  alt: 'Image description',
+  src: '/placeholder-product.svg',
+  alt: 'Image placeholder',
   objectFit: 'cover',
   borderRadius: 0,
   shadow: 'none',
@@ -39,7 +39,7 @@ export const imageWidgetConfig: WidgetConfig = {
   name: 'Image',
   category: 'media',
   description: 'Add images with configurable styling',
-  icon: '🖼️',
+  icon: 'Image',
   defaultProps: defaultImageProps,
   defaultColSpan: { sm: 12, md: 6, lg: 4 },
   schema: imageSchema,

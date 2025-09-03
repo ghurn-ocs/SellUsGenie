@@ -6,6 +6,8 @@
 import { z } from 'zod';
 import { widgetRegistry } from '../registry';
 import type { WidgetConfig } from '../../types';
+import { HeroEditor } from './HeroEditor';
+import { HeroView } from './HeroView';
 
 // Schema for hero widget properties
 export const heroSchema = z.object({
@@ -32,7 +34,7 @@ export const defaultHeroProps: HeroProps = {
   title: 'Welcome to Our Store',
   subtitle: 'Discover amazing products and great deals',
   backgroundType: 'image',
-  backgroundImage: 'https://via.placeholder.com/1200x600',
+  backgroundImage: '/placeholder-product.svg',
   backgroundColor: '#f3f4f6',
   textColor: '#000000',
   alignment: 'center',
@@ -50,10 +52,12 @@ export const heroWidgetConfig: WidgetConfig = {
   name: 'Hero Banner',
   category: 'content',
   description: 'Create eye-catching hero sections with background media',
-  icon: 'Image',
+  icon: 'Layout',
   defaultProps: defaultHeroProps,
   defaultColSpan: { sm: 12, md: 12, lg: 12 },
   schema: heroSchema,
+  Editor: HeroEditor,
+  View: HeroView,
   migrate: (widget: any, version: number) => {
     // Migration logic for future versions
     return widget;

@@ -127,7 +127,23 @@ class AnalyticsTracker {
         .from('analytics_events')
         .insert({
           store_id: this.storeId,
-          ...fullEvent,
+          event_name: fullEvent.event_name,
+          event_category: fullEvent.event_category || 'general',
+          parameters: fullEvent.parameters || {},
+          user_id: fullEvent.user_id || null,
+          session_id: fullEvent.session_id,
+          visitor_id: fullEvent.visitor_id,
+          source: 'internal', // Analytics event source (internal tracking)
+          utm_source: fullEvent.utm_source || null,
+          utm_medium: fullEvent.utm_medium || null,
+          utm_campaign: fullEvent.utm_campaign || null,
+          utm_term: fullEvent.utm_term || null,
+          utm_content: fullEvent.utm_content || null,
+          page_url: fullEvent.page_url,
+          page_title: fullEvent.page_title,
+          device_type: fullEvent.device_type,
+          browser: fullEvent.browser,
+          os: fullEvent.os,
           ip_address: null, // Will be set server-side
           user_agent: navigator.userAgent,
           referrer: document.referrer || null
@@ -278,11 +294,11 @@ class AnalyticsTracker {
           channel: utmParams.utm_medium || 'direct',
           source: utmParams.utm_source || 'direct',
           medium: utmParams.utm_medium || 'direct',
-          campaign: utmParams.utm_campaign,
-          content: utmParams.utm_content,
-          term: utmParams.utm_term,
+          campaign: utmParams.utm_campaign || null,
+          content: utmParams.utm_content || null,
+          term: utmParams.utm_term || null,
           converted: data.converted || false,
-          order_id: data.order_id,
+          order_id: data.order_id || null,
           conversion_value: data.conversion_value || 0,
           value_contribution: data.conversion_value || 0 // Simple attribution model
         })
@@ -333,7 +349,8 @@ export const useAnalyticsTracker = () => {
     if (currentStore?.id) {
       analytics.trackPageView()
     }
-  }, [currentStore?.id, window.location.pathname])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStore?.id])
 
   return analytics
 }

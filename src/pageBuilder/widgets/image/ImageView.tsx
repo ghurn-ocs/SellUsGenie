@@ -44,7 +44,10 @@ export const ImageView: React.FC<WidgetViewProps> = ({ widget, theme }) => {
       onError={(e) => {
         // Fallback for broken images
         const target = e.target as HTMLImageElement;
-        target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+        if (target.src !== '/placeholder-product.svg') {
+          console.warn('Failed to load image:', target.src);
+          target.src = '/placeholder-product.svg';
+        }
       }}
     />
   );

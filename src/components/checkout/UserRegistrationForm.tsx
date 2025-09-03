@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { GooglePlacesAutocomplete, useGoogleMapsScript } from '../GooglePlacesAutocomplete'
 import { GOOGLE_MAPS_API_KEY } from '../../lib/googleMaps'
 import { COUNTRIES, getStatesForCountry, countryRequiresState, getStateLabel, getPostalCodeLabel } from '../../lib/countries'
+import { useModal } from '../../contexts/ModalContext'
 
 const registrationSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -31,6 +32,7 @@ interface UserRegistrationFormProps {
 export const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ onComplete, storeId }) => {
   const { user } = useAuth()
   const { checkDeliveryAvailability } = useDeliveryAreas(storeId)
+  const modal = useModal()
   const [deliveryStatus, setDeliveryStatus] = useState<'checking' | 'available' | 'unavailable' | null>(null)
   const [deliveryInfo, setDeliveryInfo] = useState<any>(null)
   const [lastCheckedAddress, setLastCheckedAddress] = useState<string>('')
@@ -160,9 +162,12 @@ export const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ onCo
     }, 100) // Small delay to allow form updates to process
   }
 
-  const onSubmit = (data: RegistrationFormData) => {
+  const onSubmit = async (data: RegistrationFormData) => {
     if (deliveryStatus === 'unavailable') {
-      alert('Delivery is not available to this address. Please choose a different address.')
+      await modal.showWarning(
+        'Delivery Not Available',
+        'We\'re sorry, but delivery is not currently available to this address. Please try a different address or contact us to see if we can arrange special delivery to your area.'
+      )
       return
     }
     

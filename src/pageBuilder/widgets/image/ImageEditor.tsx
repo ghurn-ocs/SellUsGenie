@@ -48,6 +48,23 @@ export const ImageEditor: React.FC<WidgetEditorProps> = ({ widget, onChange, onD
             placeholder="https://example.com/image.jpg"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {props.src && props.src.includes('unsplash.com/photos/') && (
+            <p className="text-xs text-red-600 mt-1">
+              ⚠️ This looks like an Unsplash page URL. Right-click on the image and select "Copy image address" to get the direct image URL instead.
+            </p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            Need images? Visit{' '}
+            <a
+              href="https://unsplash.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              Unsplash
+            </a>{' '}
+            for free photos. Right-click on an image and select "Copy image address" to get the direct URL.
+          </p>
         </div>
 
         <div>

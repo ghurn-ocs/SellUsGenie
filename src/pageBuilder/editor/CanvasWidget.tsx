@@ -129,8 +129,10 @@ export const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       )}
 
       {/* Widget Content */}
-      <div className={`${!isPreviewMode && isSelected ? 'pt-2' : ''} bg-white rounded border border-gray-200 shadow-sm`}>
-        <WidgetView widget={widget} theme={undefined} />
+      <div className={`${!isPreviewMode && isSelected ? 'pt-2' : ''} bg-white rounded border border-gray-200 shadow-sm overflow-hidden w-full max-w-full box-border`}>
+        <div className="w-full max-w-full overflow-hidden">
+          <WidgetView widget={widget} theme={undefined} />
+        </div>
       </div>
 
       {/* Resize Handles (Editor Mode Only) */}
@@ -144,7 +146,7 @@ export const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       )}
 
       {/* Column Span Indicator */}
-      {!isPreviewMode && isSelected && (
+      {!isPreviewMode && isSelected && widget.colSpan && (
         <div className="absolute -bottom-8 left-0 right-0 text-xs text-gray-600 text-center bg-white px-2 py-1 rounded shadow-sm border border-gray-200">
           <span className="font-medium text-blue-600">Spans:</span>
           {widget.colSpan.sm && ` sm:${widget.colSpan.sm}`}

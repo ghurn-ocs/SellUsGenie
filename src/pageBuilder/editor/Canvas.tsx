@@ -3,7 +3,7 @@
  * Main drag-and-drop canvas for the page builder
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -24,7 +24,6 @@ import { widgetRegistry } from '../widgets/registry';
 import { CanvasSection } from './CanvasSection';
 import { CanvasRow } from './CanvasRow';
 import { CanvasWidget } from './CanvasWidget';
-import { GridGuides } from './GridGuides';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 
 interface CanvasProps {
@@ -345,6 +344,54 @@ export const Canvas: React.FC<CanvasProps> = ({
     onWidgetSelect(newWidgetId);
   }, [document, onDocumentChange, onWidgetSelect]);
 
+  // Handle row addition
+  const handleRowAdd = useCallback((sectionId: string) => {
+    const newDocument = { ...document };
+    const section = newDocument.sections.find(s => s.id === sectionId);
+    
+    if (section) {
+      const newRow = {
+        id: `row_${Date.now()}`,
+        widgets: []
+      };
+      section.rows.push(newRow);
+      onDocumentChange(newDocument);
+    }
+  }, [document, onDocumentChange]);
+
+  // Handle row deletion
+  const handleRowDelete = useCallback((sectionId: string, rowId: string) => {
+    const newDocument = { ...document };
+    const section = newDocument.sections.find(s => s.id === sectionId);
+    
+    if (section) {
+      section.rows = section.rows.filter(row => row.id !== rowId);
+      onDocumentChange(newDocument);
+    }
+  }, [document, onDocumentChange]);
+
+  // Handle section deletion
+  const handleSectionDelete = useCallback((sectionId: string) => {
+    const newDocument = { ...document };
+    newDocument.sections = newDocument.sections.filter(s => s.id !== sectionId);
+    onDocumentChange(newDocument);
+  }, [document, onDocumentChange]);
+
+  // Handle adding a new section
+  const handleSectionAdd = useCallback(() => {
+    const newDocument = { ...document };
+    const newSection = {
+      id: `section_${Date.now()}`,
+      title: '',
+      rows: [{
+        id: `row_${Date.now()}`,
+        widgets: []
+      }]
+    };
+    newDocument.sections.push(newSection);
+    onDocumentChange(newDocument);
+  }, [document, onDocumentChange]);
+
   const { setNodeRef, isOver } = useDroppable({
     id: 'canvas-drop-zone',
     data: {
@@ -378,69 +425,88 @@ export const Canvas: React.FC<CanvasProps> = ({
     </DragOverlay>
   );
 
-  // Always disable local DndContext when used within EnhancedPageBuilder
+
   return (
-    <div className="flex-1 bg-gray-50 overflow-auto">
-      <div ref={setNodeRef} className={`min-h-screen p-8 ${isOver ? 'bg-blue-50' : ''}`}>
-        {/* Page content area with grid guides */}
-        <div className="relative">
-          {/* Grid guides with page boundary */}
-          <GridGuides />
-          
-          {/* Page content positioned inside the grid guides */}
-          <div className="absolute top-8 left-8 right-8 bottom-8">
-            <SortableContext
-              items={document.sections.map(s => `section-${s.id}`)}
-              strategy={verticalListSortingStrategy}
-            >
-              {document.sections.map((section) => (
-                <CanvasSection
-                  key={section.id}
-                  section={section}
-                  isSelected={selectedSectionId === section.id}
-                  onSelect={() => onSectionSelect(section.id)}
-                  onDeselect={() => onSectionSelect(null)}
-                  isPreviewMode={isPreviewMode}
-                  selectedWidgetId={selectedWidgetId}
-                  onWidgetSelect={onWidgetSelect}
-                  selectedRowId={selectedRowId}
-                  onRowSelect={onRowSelect}
-                  onWidgetUpdate={handleWidgetUpdate}
-                  onWidgetDelete={handleWidgetDelete}
-                  onWidgetDuplicate={handleWidgetDuplicate}
-                  dragOverSection={dragOverSection}
-                  dragOverRow={dragOverRow}
-                />
-              ))}
-            </SortableContext>
-            
-            {/* Section ordering help */}
-            {!isPreviewMode && document.sections.length > 1 && (
-              <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">💡 Section Ordering</h4>
-                <p className="text-sm text-blue-700">
-                  Drag the section headers (⋮⋮ icon) to reorder sections on your page. 
-                  The order determines how they appear vertically on your storefront.
-                </p>
-                <div className="mt-2 text-xs text-blue-600">
-                  💭 Tip: Hero sections typically go first, followed by featured products, then delivery areas or footer content.
+    <div className="flex-1 bg-gray-50">
+      <div 
+        ref={setNodeRef} 
+        className={`p-8 pb-24 ${isOver ? 'bg-blue-50' : ''}`} 
+        style={{ minHeight: '100vh' }}
+      >
+        <div className="relative mx-auto max-w-4xl">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-hidden">
+            <div className="p-8 w-full max-w-full overflow-x-hidden min-h-[400px]">
+              
+              <SortableContext
+                items={document.sections.map(s => `section-${s.id}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                {document.sections.map((section) => (
+                  <CanvasSection
+                    key={section.id}
+                    section={section}
+                    isSelected={selectedSectionId === section.id}
+                    onSelect={() => onSectionSelect(section.id)}
+                    onDeselect={() => onSectionSelect(null)}
+                    isPreviewMode={isPreviewMode}
+                    selectedWidgetId={selectedWidgetId}
+                    onWidgetSelect={onWidgetSelect}
+                    selectedRowId={selectedRowId}
+                    onRowSelect={onRowSelect}
+                    onWidgetUpdate={handleWidgetUpdate}
+                    onWidgetDelete={handleWidgetDelete}
+                    onWidgetDuplicate={handleWidgetDuplicate}
+                    onRowAdd={handleRowAdd}
+                    onRowDelete={handleRowDelete}
+                    onSectionDelete={handleSectionDelete}
+                    dragOverSection={dragOverSection}
+                    dragOverRow={dragOverRow}
+                  />
+                ))}
+              </SortableContext>
+              
+              {/* Add new section button */}
+              {!isPreviewMode && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={handleSectionAdd}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                    title="Add new section"
+                  >
+                    <span className="text-lg">+</span>
+                    <span>Add Section</span>
+                  </button>
                 </div>
-              </div>
-            )}
-            
-            {/* Empty state */}
-            {document.sections.length === 0 && !isPreviewMode && (
-              <div className="text-center py-16 text-gray-500">
-                <h3 className="text-lg font-medium mb-2">No sections added yet</h3>
-                <p className="mb-4">Drag widgets from the sidebar to create your first section</p>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-white">
-                  <p className="text-sm">Drop widgets here to get started</p>
+              )}
+                
+              {/* Section ordering help */}
+              {!isPreviewMode && document.sections.length > 1 && (
+                <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-800 mb-2">💡 Section Ordering</h4>
+                  <p className="text-sm text-blue-700">
+                    Drag the section headers (⋮⋮ icon) to reorder sections on your page. 
+                    The order determines how they appear vertically on your storefront.
+                  </p>
                 </div>
-              </div>
-            )}
+              )}
+                
+              {/* Empty state */}
+              {document.sections.length === 0 && !isPreviewMode && (
+                <div className="text-center py-16 text-gray-500">
+                  <h3 className="text-lg font-medium mb-2">No sections added yet</h3>
+                  <p className="mb-4">Drag widgets from the sidebar to create your first section</p>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-white">
+                    <p className="text-sm">Drop widgets here to get started</p>
+                  </div>
+                </div>
+              )}
+              
+            </div>
           </div>
         </div>
       </div>
+      
+      {renderDragOverlay()}
     </div>
   );
 };

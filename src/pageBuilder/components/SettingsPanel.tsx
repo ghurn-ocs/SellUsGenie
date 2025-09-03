@@ -78,7 +78,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onDocumentChange,
 }) => {
   const [openSections, setOpenSections] = useState<Set<string>>(
-    new Set(['general', 'seo', 'performance'])
+    new Set(['general', 'performance'])
   );
 
   const toggleSection = (sectionId: string) => {
@@ -99,23 +99,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     });
   };
 
-  const updateSEO = (seoUpdates: Partial<typeof document.seo>) => {
-    updateDocument({
-      seo: {
-        ...document.seo,
-        ...seoUpdates,
-      },
-    });
-  };
-
-  const updateAnalytics = (analyticsUpdates: Partial<typeof document.analytics>) => {
-    updateDocument({
-      analytics: {
-        ...document.analytics,
-        ...analyticsUpdates,
-      },
-    });
-  };
 
   const updatePerformance = (performanceUpdates: Partial<typeof document.performance>) => {
     updateDocument({
@@ -156,6 +139,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <p className="text-sm text-gray-500 mt-1">
           Configure page-level settings and properties
         </p>
+        <p className="text-xs text-blue-600 mt-1">
+          💡 SEO & Analytics settings are now in the dedicated SEO panel
+        </p>
       </div>
 
       {/* Settings Content */}
@@ -163,7 +149,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         {/* General Settings */}
         <SettingsSection
           title="General"
-          description="Basic page information and metadata"
+          description="Basic page information and status"
           icon={Globe}
           isOpen={openSections.has('general')}
           onToggle={() => toggleSection('general')}
@@ -179,6 +165,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter page name"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Internal name for organizing your pages (not shown to visitors)
+            </p>
           </div>
 
           <div>
@@ -204,115 +193,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
         </SettingsSection>
 
-        {/* SEO Settings */}
-        <SettingsSection
-          title="SEO & Meta"
-          description="Search engine optimization settings"
-          icon={Eye}
-          isOpen={openSections.has('seo')}
-          onToggle={() => toggleSection('seo')}
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Meta Title
-            </label>
-            <input
-              type="text"
-              value={document.seo?.metaTitle || ''}
-              onChange={(e) => updateSEO({ metaTitle: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Page title for search engines"
-              maxLength={60}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {document.seo?.metaTitle?.length || 0}/60 characters
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Meta Description
-            </label>
-            <textarea
-              value={document.seo?.metaDescription || ''}
-              onChange={(e) => updateSEO({ metaDescription: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Brief description of the page content"
-              rows={3}
-              maxLength={160}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {document.seo?.metaDescription?.length || 0}/160 characters
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Keywords (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={document.seo?.keywords?.join(', ') || ''}
-              onChange={(e) => updateSEO({ 
-                keywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) 
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="keyword1, keyword2, keyword3"
-            />
-          </div>
-        </SettingsSection>
-
-        {/* Analytics */}
-        <SettingsSection
-          title="Analytics & Tracking"
-          description="Configure analytics and tracking codes"
-          icon={Zap}
-          isOpen={openSections.has('analytics')}
-          onToggle={() => toggleSection('analytics')}
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Google Analytics Tracking ID
-            </label>
-            <input
-              type="text"
-              value={document.analytics?.trackingId || ''}
-              onChange={(e) => updateAnalytics({ trackingId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="GA4-XXXXXXXXXX"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Heatmap Tracking</span>
-              <button 
-                onClick={() => updateAnalytics({ heatmap: !document.analytics?.heatmap })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  document.analytics?.heatmap ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  document.analytics?.heatmap ? 'translate-x-5' : 'translate-x-0'
-                }`}></span>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Scroll Tracking</span>
-              <button 
-                onClick={() => updateAnalytics({ scrollTracking: !document.analytics?.scrollTracking })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  document.analytics?.scrollTracking ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  document.analytics?.scrollTracking ? 'translate-x-5' : 'translate-x-0'
-                }`}></span>
-              </button>
-            </div>
-          </div>
-        </SettingsSection>
+        {/* Note: SEO & Analytics settings have been moved to the dedicated SEO panel */}
 
         {/* Performance */}
         <SettingsSection
@@ -458,6 +339,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
           </div>
         </SettingsSection>
+        
+        {/* Bottom padding for better scroll visibility (1 inch minimum) */}
+        <div className="h-24"></div>
       </div>
 
       {/* Footer */}

@@ -7,7 +7,28 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Check if client already exists to prevent HMR duplicates
+if (typeof window !== 'undefined' && (window as any).__supabase_client) {
+  var supabase = (window as any).__supabase_client;
+} else {
+  var supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storageKey: 'supabase-admin-auth-token'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'sellusgenie-admin',
+      },
+    },
+  });
+
+  // Store in window for HMR persistence
+  if (typeof window !== 'undefined') {
+    (window as any).__supabase_client = supabase;
+  }
+}
+
+export { supabase };
 
 // Types for our multi-tenant schema
 export interface StoreOwner {

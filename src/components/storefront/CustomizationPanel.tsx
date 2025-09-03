@@ -163,24 +163,28 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-3">Customize Your Content</h3>
-        <p className="text-sm text-[#A0A0A0]">
+    <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">Theme Customization</h2>
+        <p className="text-xs text-gray-500">
           Personalize your store with your own content, branding, and contact information
         </p>
       </div>
 
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+
       {/* Hero Section */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Type className="w-5 h-5 text-[#9B51E0]" />
-          <h4 className="font-semibold text-white">Hero Section</h4>
+          <Type className="w-4 h-4 text-blue-600" />
+          <h4 className="font-medium text-gray-800 text-sm">Hero Section</h4>
         </div>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Main Headline
             </label>
             <input
@@ -188,12 +192,12 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               value={customizations.hero?.title || ''}
               onChange={(e) => updateCustomization('hero', 'title', e.target.value)}
               placeholder="Welcome to your store"
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Subtitle
             </label>
             <textarea
@@ -201,12 +205,12 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               onChange={(e) => updateCustomization('hero', 'subtitle', e.target.value)}
               placeholder="Describe what makes your store special"
               rows={3}
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Call-to-Action Button Text
             </label>
             <input
@@ -214,7 +218,7 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               value={customizations.hero?.ctaText || ''}
               onChange={(e) => updateCustomization('hero', 'ctaText', e.target.value)}
               placeholder="Shop Now"
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -223,13 +227,13 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
       {/* Branding Section */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Image className="w-5 h-5 text-[#9B51E0]" />
-          <h4 className="font-semibold text-white">Branding</h4>
+          <Image className="w-5 h-5 text-blue-600" />
+          <h4 className="font-semibold text-gray-800">Branding</h4>
         </div>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Store Name
             </label>
             <input
@@ -237,12 +241,12 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               value={customizations.branding?.storeName || ''}
               onChange={(e) => updateCustomization('branding', 'storeName', e.target.value)}
               placeholder="Your Store Name"
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Tagline
             </label>
             <input
@@ -250,12 +254,12 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               value={customizations.branding?.tagline || ''}
               onChange={(e) => updateCustomization('branding', 'tagline', e.target.value)}
               placeholder="Your brand's tagline or slogan"
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Logo URL
             </label>
             <div className="flex space-x-2">
@@ -264,7 +268,7 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 value={customizations.branding?.logo || ''}
                 onChange={(e) => updateCustomization('branding', 'logo', e.target.value)}
                 placeholder="https://example.com/logo.png"
-                className="flex-1 px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+                className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <div className="relative">
                 <input
@@ -277,10 +281,10 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 <button 
                   type="button"
                   disabled={isUploading}
-                  className="px-3 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-2 bg-gray-200 text-gray-500 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUploading ? (
-                    <div className="w-4 h-4 border-2 border-[#A0A0A0] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <Upload className="w-4 h-4" />
                   )}
@@ -299,12 +303,12 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 <p className="text-xs text-green-400">{uploadSuccess}</p>
               </div>
             )}
-            <p className="text-xs text-[#A0A0A0] mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Recommended size: 200x60px, PNG, JPG, SVG, or WebP format (max 5MB)
             </p>
             {customizations.branding?.logo && (
               <div className="mt-2">
-                <p className="text-xs text-[#A0A0A0] mb-1">Preview:</p>
+                <p className="text-xs text-gray-500 mb-1">Preview:</p>
                 <div className="p-2 bg-white rounded border">
                   <img 
                     src={customizations.branding.logo} 
@@ -325,14 +329,14 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
       {/* Contact Information */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Phone className="w-5 h-5 text-[#9B51E0]" />
-          <h4 className="font-semibold text-white">Contact Information</h4>
+          <Phone className="w-5 h-5 text-blue-600" />
+          <h4 className="font-semibold text-gray-800">Contact Information</h4>
         </div>
         
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+              <label className="block text-sm font-medium text-gray-500 mb-2">
                 Phone Number
               </label>
               <input
@@ -340,12 +344,12 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 value={customizations.contact?.phone || ''}
                 onChange={(e) => updateCustomization('contact', 'phone', e.target.value)}
                 placeholder="+1 (555) 123-4567"
-                className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+              <label className="block text-sm font-medium text-gray-500 mb-2">
                 Email Address
               </label>
               <input
@@ -353,13 +357,13 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 value={customizations.contact?.email || ''}
                 onChange={(e) => updateCustomization('contact', 'email', e.target.value)}
                 placeholder="hello@yourstore.com"
-                className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Business Address
             </label>
             <textarea
@@ -367,19 +371,19 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               onChange={(e) => updateCustomization('contact', 'address', e.target.value)}
               placeholder="123 Main Street, City, State 12345"
               rows={3}
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Social Media Links */}
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-3">
+            <label className="block text-sm font-medium text-gray-500 mb-3">
               Social Media Links
             </label>
             <div className="space-y-3">
               {Object.entries(customizations.contact?.socialLinks || {}).map(([platform, url]) => (
                 <div key={platform}>
-                  <label className="block text-xs font-medium text-[#A0A0A0] mb-1 capitalize">
+                  <label className="block text-xs font-medium text-gray-500 mb-1 capitalize">
                     {platform}
                   </label>
                   <input
@@ -387,7 +391,7 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                     value={url}
                     onChange={(e) => updateSocialLink(platform, e.target.value)}
                     placeholder={`https://www.${platform}.com/yourstore`}
-                    className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               ))}
@@ -399,13 +403,13 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
       {/* SEO Section */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Globe className="w-5 h-5 text-[#9B51E0]" />
-          <h4 className="font-semibold text-white">SEO Settings</h4>
+          <Globe className="w-5 h-5 text-blue-600" />
+          <h4 className="font-semibold text-gray-800">SEO Settings</h4>
         </div>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Page Title
             </label>
             <input
@@ -413,15 +417,15 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               value={customizations.seo?.title || ''}
               onChange={(e) => updateCustomization('seo', 'title', e.target.value)}
               placeholder="Your Store - Quality Products Online"
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <p className="text-xs text-[#A0A0A0] mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Appears in browser tab and search results (recommended: 50-60 characters)
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Meta Description
             </label>
             <textarea
@@ -429,15 +433,15 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               onChange={(e) => updateCustomization('seo', 'description', e.target.value)}
               placeholder="Brief description of your store and products for search engines"
               rows={3}
-              className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <p className="text-xs text-[#A0A0A0] mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Appears in search results (recommended: 120-160 characters)
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            <label className="block text-sm font-medium text-gray-500 mb-2">
               Keywords
             </label>
             <div className="space-y-2">
@@ -445,7 +449,7 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 {customizations.seo?.keywords?.map((keyword, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-2 py-1 bg-[#3A3A3A] rounded-full text-xs text-white cursor-pointer hover:bg-[#4A4A4A]"
+                    className="inline-flex items-center px-2 py-1 bg-gray-200 rounded-full text-xs text-gray-800 cursor-pointer hover:bg-gray-300"
                     onClick={() => removeKeyword(keyword)}
                   >
                     {keyword} ×
@@ -454,25 +458,29 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               </div>
               <button
                 onClick={addKeyword}
-                className="px-3 py-1 bg-[#9B51E0] text-white rounded-lg text-xs hover:bg-[#A051E0] transition-colors"
+                className="px-3 py-1 bg-blue-600 text-gray-800 rounded-lg text-xs hover:bg-blue-700 transition-colors"
               >
                 Add Keyword
               </button>
             </div>
-            <p className="text-xs text-[#A0A0A0] mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Click on keywords to remove them
             </p>
           </div>
         </div>
       </div>
 
-      {/* Save Reminder */}
-      <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-4">
-        <h4 className="text-white font-medium mb-2">💾 Remember to Save</h4>
-        <p className="text-sm text-[#A0A0A0]">
-          Your customizations are ready to be saved. Click "Save Draft" to store your changes, 
-          then "Preview" to see how they look, and "Publish Live" when you're ready to go live.
-        </p>
+        {/* Save Reminder */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <h4 className="text-gray-800 font-medium mb-2 text-sm">💾 Remember to Save</h4>
+          <p className="text-xs text-gray-600">
+            Your customizations are ready to be saved. Click "Save Draft" to store your changes, 
+            then "Preview" to see how they look, and "Publish Live" when you're ready to go live.
+          </p>
+        </div>
+        
+        {/* Bottom padding for scroll visibility */}
+        <div className="h-4"></div>
       </div>
     </div>
   )

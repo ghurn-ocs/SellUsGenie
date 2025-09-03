@@ -8,6 +8,7 @@ import { useCart } from '../../contexts/CartContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { MapPin, AlertCircle, CheckCircle } from 'lucide-react'
 import { GooglePlacesAutocomplete, useGoogleMapsScript } from '../GooglePlacesAutocomplete'
+import { useModal } from '../../contexts/ModalContext'
 import { GOOGLE_MAPS_API_KEY } from '../../lib/googleMaps'
 import { COUNTRIES, getStatesForCountry, countryRequiresState, getStateLabel, getPostalCodeLabel } from '../../lib/countries'
 
@@ -63,6 +64,7 @@ export const ShippingForm: React.FC<ShippingFormProps> = ({ onComplete, storeId 
   const { user } = useAuth()
   const { setShippingAddress, shippingAddress } = useCheckout()
   const { checkDeliveryAvailability, deliveryAreas } = useDeliveryAreas(storeId)
+  const modal = useModal()
   const [deliveryStatus, setDeliveryStatus] = useState<'checking' | 'available' | 'unavailable' | null>(null)
   const [deliveryInfo, setDeliveryInfo] = useState<any>(null)
   const [lastCheckedAddress, setLastCheckedAddress] = useState<string>('')
@@ -200,9 +202,12 @@ export const ShippingForm: React.FC<ShippingFormProps> = ({ onComplete, storeId 
     }
   }, [watchedShippingFields, lastCheckedAddress, isAddressFromAutocomplete])
 
-  const onSubmit = (data: ShippingFormData) => {
+  const onSubmit = async (data: ShippingFormData) => {
     if (deliveryStatus === 'unavailable') {
-      alert('Delivery is not available to this address. Please choose a different address.')
+      await modal.showWarning(
+        'Delivery Not Available',
+        'We\'re sorry, but delivery is not currently available to this address. Please try a different address or contact us to see if we can arrange special delivery to your area.'
+      )
       return
     }
     

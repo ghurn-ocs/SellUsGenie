@@ -28,6 +28,7 @@ import { SEOPanel } from '../components/SEOPanel';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { TemplateMarketplace } from '../templates/TemplateMarketplace';
 import type { WidgetBase } from '../types';
+import { widgetRegistry } from '../widgets/registry';
 
 // Import all widgets
 import '../widgets/text/index';
@@ -38,6 +39,14 @@ import '../widgets/spacer/index';
 import '../widgets/gallery/index';
 import '../widgets/form/index';
 import '../widgets/carousel/index';
+import '../widgets/navigation/index';
+import '../widgets/cart/index';
+import '../widgets/featured-products/index';
+import '../widgets/product-listing/index';
+import '../widgets/subscribe/index';
+// Import new header/footer layout widgets
+import '../widgets/header-layout/index';
+import '../widgets/footer-layout/index';
 
 interface EnhancedPageBuilderProps {
   pageId?: string;
@@ -71,6 +80,7 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
   const [leftPanelMode, setLeftPanelMode] = useState<PanelMode>('widgets');
   const [rightPanelMode, setRightPanelMode] = useState<PanelMode>('properties');
   const [showTemplateMarketplace, setShowTemplateMarketplace] = useState(false);
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
   
   // Editor state
   const [isDirty, setIsDirty] = useState(false);
@@ -366,12 +376,15 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
     if (dragItem?.type === 'new-widget' && dragItem.widgetType) {
       console.log('Creating new widget:', dragItem.widgetType);
       
-      const newWidget = {
-        id: `widget_${Date.now()}`,
-        type: dragItem.widgetType,
-        props: {},
-        styles: {},
-      };
+      // Use the widget registry to create a properly configured widget
+      const widgetId = `widget_${Date.now()}`;
+      
+      if (!widgetRegistry.has(dragItem.widgetType)) {
+        console.error('❌ Widget type not found in registry:', dragItem.widgetType);
+        return;
+      }
+      
+      const newWidget = widgetRegistry.createWidget(dragItem.widgetType, widgetId);
 
       const newDocument = { ...document };
       
@@ -470,6 +483,11 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
     }
 
     setActiveDragItem(null);
+    
+    // Force widget library to refresh after successful drop
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('widget-dropped'));
+    }, 100);
   };
 
   const renderTopBar = () => (
@@ -495,6 +513,15 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
+            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+            title={isLeftPanelCollapsed ? "Show sidebar" : "Hide sidebar"}
+          >
+            <Layout className="w-4 h-4" />
+          </button>
+          
           {/* Undo/Redo */}
           <div className="flex items-center space-x-1">
             <button
@@ -584,9 +611,9 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
   );
 
   const renderLeftPanel = () => (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+    <div className="w-72 lg:w-80 xl:w-72 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 max-w-[300px] min-w-[280px]">
       {/* Panel tabs */}
-      <div className="border-b border-gray-200 p-4">
+      <div className="border-b border-gray-200 p-3">
         <div className="grid grid-cols-3 gap-1">
           {[
             { id: 'widgets', label: 'Widgets', icon: Zap },
@@ -855,7 +882,7 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
     };
 
     return (
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-auto bg-gray-100">
         {viewMode === 'preview' && (
           <div className="absolute top-4 right-4 z-10">
             <div className="bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm">
@@ -883,6 +910,20 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
   const renderFloatingActions = () => (
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
       <div className="flex items-center space-x-2 bg-white rounded-full shadow-lg border border-gray-200 p-2">
+        {/* Sidebar toggle when collapsed */}
+        {isLeftPanelCollapsed && viewMode !== 'preview' && (
+          <>
+            <button
+              onClick={() => setIsLeftPanelCollapsed(false)}
+              className="p-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
+              title="Show Sidebar"
+            >
+              <Layers className="w-5 h-5" />
+            </button>
+            <div className="w-px h-6 bg-gray-300" />
+          </>
+        )}
+        
         <button
           onClick={() => setShowTemplateMarketplace(true)}
           className="p-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
@@ -939,7 +980,7 @@ export const EnhancedPageBuilder: React.FC<EnhancedPageBuilderProps> = ({
         {renderTopBar()}
         
         <div className="flex-1 flex overflow-hidden">
-          {viewMode !== 'preview' && renderLeftPanel()}
+          {viewMode !== 'preview' && !isLeftPanelCollapsed && renderLeftPanel()}
           {renderMainContent()}
         </div>
 

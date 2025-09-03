@@ -12,6 +12,11 @@ class WidgetRegistry {
    * Register a widget configuration
    */
   register(config: WidgetConfig): void {
+    // Prevent duplicate registrations
+    if (this.widgets.has(config.type)) {
+      console.warn(`Widget type "${config.type}" is already registered. Skipping duplicate registration.`);
+      return;
+    }
     this.widgets.set(config.type, config);
   }
 
@@ -30,10 +35,24 @@ class WidgetRegistry {
   }
 
   /**
+   * Get only user-facing widgets (excludes system widgets)
+   */
+  getUserWidgets(): WidgetConfig[] {
+    return this.getAll().filter(widget => !widget.systemWidget);
+  }
+
+  /**
    * Get widgets by category
    */
   getByCategory(category: string): WidgetConfig[] {
     return this.getAll().filter(widget => widget.category === category);
+  }
+
+  /**
+   * Get user widgets by category (excludes system widgets)
+   */
+  getUserWidgetsByCategory(category: string): WidgetConfig[] {
+    return this.getUserWidgets().filter(widget => widget.category === category);
   }
 
   /**

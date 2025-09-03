@@ -100,47 +100,44 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
   ]
 
   return (
-    <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
-      <div className="p-6 border-b border-[#3A3A3A]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-5 h-5 text-[#A0A0A0]" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Store Policies</h3>
-              <p className="text-sm text-[#A0A0A0]">
-                Set up your privacy policy, returns policy, and about us page
-              </p>
-            </div>
-          </div>
+    <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-gray-800">Store Policies</h2>
           {hasUnsavedChanges && (
             <button
               onClick={handleSave}
               disabled={savePolicies.isPending}
-              className="flex items-center space-x-2 px-4 py-2 bg-[#9B51E0] text-white rounded-lg text-sm font-medium hover:bg-[#B16CE8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>{savePolicies.isPending ? 'Saving...' : 'Save Changes'}</span>
+              <Save className="w-3 h-3 mr-1 inline" />
+              {savePolicies.isPending ? 'Saving...' : 'Save'}
             </button>
           )}
         </div>
+        <p className="text-xs text-gray-500">
+          Set up your privacy policy, returns policy, and about us page
+        </p>
       </div>
 
-      <div className="p-6">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-6 bg-[#1E1E1E] rounded-lg p-1">
+        <div className="grid grid-cols-2 gap-1 mb-4 bg-gray-100 rounded-lg p-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-2 text-xs font-medium rounded-md transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-[#9B51E0] text-white'
-                  : 'text-[#A0A0A0] hover:text-white hover:bg-[#3A3A3A]'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               {tab.label}
               {unsavedChanges[tab.field] && (
-                <span className="ml-2 w-2 h-2 bg-yellow-400 rounded-full"></span>
+                <span className="ml-1 w-1.5 h-1.5 bg-blue-500 rounded-full inline-block"></span>
               )}
             </button>
           ))}
@@ -151,61 +148,61 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
           activeTab === tab.id && (
             <div key={tab.id} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {tab.label}
                 </label>
                 <textarea
                   value={policies?.[tab.field] || ''}
                   onChange={(e) => handlePolicyChange(tab.field, e.target.value)}
                   placeholder={`Enter your ${tab.label.toLowerCase()} here...`}
-                  rows={15}
-                  className="w-full px-4 py-3 bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg text-white placeholder-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent resize-y"
+                  rows={12}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y text-sm"
                 />
-                <p className="mt-2 text-xs text-[#A0A0A0]">
+                <p className="mt-2 text-xs text-gray-500">
                   This will be displayed on your storefront. You can use plain text or basic HTML formatting.
                 </p>
               </div>
 
               {/* Template Suggestions */}
-              <div className="bg-[#1E1E1E] rounded-lg p-4">
-                <h4 className="text-sm font-medium text-white mb-2">Need help writing your {tab.label.toLowerCase()}?</h4>
-                <p className="text-xs text-[#A0A0A0] mb-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-800 mb-2">Need help writing your {tab.label.toLowerCase()}?</h4>
+                <p className="text-xs text-gray-600 mb-3">
                   {tab.id === 'privacy' && 'Include information about data collection, usage, cookies, and user rights.'}
                   {tab.id === 'returns' && 'Cover return timeframes, condition requirements, refund process, and shipping costs.'}
                   {tab.id === 'terms' && 'Define the legal terms and conditions for using your store and services.'}
                   {tab.id === 'about' && 'Tell your story, mission, values, and what makes your business unique.'}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {tab.id === 'privacy' && (
                     <>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Data Collection</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Cookies</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Third Parties</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">User Rights</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Data Collection</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Cookies</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Third Parties</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">User Rights</span>
                     </>
                   )}
                   {tab.id === 'returns' && (
                     <>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Return Window</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Item Condition</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Refund Process</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Shipping Costs</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Return Window</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Item Condition</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Refund Process</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Shipping Costs</span>
                     </>
                   )}
                   {tab.id === 'terms' && (
                     <>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">User Agreement</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Payment Terms</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Liability</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Prohibited Uses</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">User Agreement</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Payment Terms</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Liability</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Prohibited Uses</span>
                     </>
                   )}
                   {tab.id === 'about' && (
                     <>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Company Story</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Mission & Values</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Team</span>
-                      <span className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Contact Info</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Company Story</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Mission & Values</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Team</span>
+                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Contact Info</span>
                     </>
                   )}
                 </div>
@@ -216,8 +213,8 @@ export const PolicySettings: React.FC<PolicySettingsProps> = ({ storeId }) => {
 
         {/* Error Display */}
         {savePolicies.isError && (
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <div className="flex items-center space-x-2 text-red-300 text-sm">
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2 text-red-700 text-sm">
               <AlertCircle className="w-4 h-4" />
               <span>Failed to save policies. Please try again.</span>
             </div>

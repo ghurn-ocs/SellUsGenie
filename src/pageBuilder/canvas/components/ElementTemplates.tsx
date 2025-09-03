@@ -158,7 +158,7 @@ const elementTemplates: ElementTemplate[] = [
     elementData: {
       tag: 'img',
       attributes: {
-        src: 'https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Image+Placeholder',
+        src: '/placeholder-product.svg',
         alt: 'Placeholder image'
       },
       styles: {

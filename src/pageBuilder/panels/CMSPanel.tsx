@@ -755,4 +755,4 @@ const CMSPanel: React.FC<CMSPanelProps> = ({ className }) => {
   );
 };
 
-export default CMSPanel;
+export { CMSPanel };

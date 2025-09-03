@@ -8,8 +8,8 @@ import { Route, Switch } from 'wouter'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StoreProvider } from './contexts/StoreContext'
-import { CanvasEditor } from './pageBuilder/canvas/CanvasEditor'
-import { CanvasError } from './pageBuilder/canvas/types/CanvasTypes'
+import { EnhancedPageBuilder } from './pageBuilder/editor/EnhancedPageBuilder'
+import { SupabasePageRepository } from './pageBuilder/data/SupabasePageRepository'
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -49,26 +49,33 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Page Builder Route Component
 const PageBuilderRoute: React.FC<{ pageId?: string }> = ({ pageId }) => {
-  const handleSave = (canvasData: any) => {
-    console.log('Saving canvas data:', canvasData);
-    // TODO: Implement save functionality
+  const { user } = useAuth();
+  
+  const handleSave = (doc: any) => {
+    console.log('Saving page document:', doc);
   };
 
-  const handleError = (error: CanvasError) => {
-    console.error('Canvas error:', error);
-    // TODO: Implement error notification
+  const handlePublish = (doc: any) => {
+    console.log('Publishing page document:', doc);
   };
 
-  const initialData = pageId 
-    ? null // TODO: Load existing page data
-    : { version: '1.0', pageTitle: 'New Page', timestamp: Date.now() };
+  const handleError = (error: Error) => {
+    console.error('Page builder error:', error);
+  };
+
+  // Create a mock user and repository for standalone mode
+  const mockUser = user || { id: 'standalone', email: 'standalone@example.com' };
+  const repository = new SupabasePageRepository('standalone-store');
 
   return (
     <div className="h-screen">
-      <CanvasEditor
+      <EnhancedPageBuilder
+        pageId={pageId}
+        user={mockUser}
+        repository={repository}
         onSave={handleSave}
+        onPublish={handlePublish}
         onError={handleError}
-        initialData={initialData}
       />
     </div>
   );

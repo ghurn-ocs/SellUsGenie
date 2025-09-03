@@ -655,4 +655,4 @@ const StylePanel: React.FC<StylePanelProps> = ({ className }) => {
   );
 };
 
-export default StylePanel;
+export { StylePanel };

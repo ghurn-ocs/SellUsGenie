@@ -695,4 +695,4 @@ const InteractionsPanel: React.FC<InteractionsPanelProps> = ({ className }) => {
   );
 };
 
-export default InteractionsPanel;
+export { InteractionsPanel };
