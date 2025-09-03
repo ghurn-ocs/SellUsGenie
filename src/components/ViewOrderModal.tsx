@@ -183,7 +183,7 @@ export const ViewOrderModal: React.FC<ViewOrderModalProps> = ({
                     <span className="text-lg font-semibold text-white">Total</span>
                     <div className="text-right">
                       <span className="text-xl font-bold text-[#9B51E0]">
-                        ${(order.total_amount || order.total || 0).toFixed(2)}
+                        ${(order.total || 0).toFixed(2)}
                       </span>
                       {order.status === 'to_be_paid' && (order.tax || 0) === 0 && (
                         <div className="text-xs text-amber-400 mt-1">*Plus taxes calculated by Stripe</div>

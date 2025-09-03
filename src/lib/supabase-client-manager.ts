@@ -50,11 +50,6 @@ class SupabaseClientManager {
           },
         },
       });
-      
-      // Store reference for HMR persistence
-      if (typeof window !== 'undefined') {
-        (window as any).__supabase_admin_client = this.adminClient;
-      }
     }
     return this.adminClient;
   }
@@ -69,15 +64,11 @@ class SupabaseClientManager {
   }
 
   /**
-   * Check and restore clients from window for HMR persistence
+   * Initialize client if needed (no longer uses window storage for security)
    */
-  restoreFromWindow() {
-    if (typeof window !== 'undefined') {
-      if ((window as any).__supabase_admin_client && !this.adminClient) {
-        console.log('🔧 SupabaseClientManager: Restoring admin client from window');
-        this.adminClient = (window as any).__supabase_admin_client;
-      }
-    }
+  initializeIfNeeded() {
+    // Clients are now created on-demand without window storage
+    // This prevents JWT token exposure vulnerabilities
   }
 
   /**
@@ -86,14 +77,13 @@ class SupabaseClientManager {
   getStatus() {
     return {
       hasAdminClient: !!this.adminClient,
-      windowAdminClient: !!(typeof window !== 'undefined' && (window as any).__supabase_admin_client),
+      // Window storage removed for security - no longer tracks window client
     };
   }
 }
 
-// Initialize and restore from window immediately
+// Initialize singleton instance
 const clientManager = SupabaseClientManager.getInstance();
-clientManager.restoreFromWindow();
 
 // Export the singleton instance and convenient client accessors
 export { clientManager as SupabaseClientManager };

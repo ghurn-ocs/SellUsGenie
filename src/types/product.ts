@@ -5,7 +5,7 @@ export interface Product {
   name: string
   description: string
   price: number
-  compare_price?: number
+  compare_at_price?: number
   sku?: string
   inventory_quantity: number
   is_active: boolean
@@ -19,7 +19,7 @@ export interface CreateProductRequest {
   name: string
   description: string
   price: number
-  compare_price?: number
+  compare_at_price?: number
   sku?: string
   inventory_quantity: number
   is_active: boolean

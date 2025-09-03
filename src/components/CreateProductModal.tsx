@@ -155,7 +155,7 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
         name: formData.name.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
-        compare_price: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
+        compare_at_price: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
         cost_price: formData.costPrice ? parseFloat(formData.costPrice) : 0,
         sku: formData.sku.trim() || undefined,
         inventory_quantity: parseInt(formData.inventory),

@@ -128,7 +128,7 @@ export const useRealAnalytics = (storeId: string) => {
   // Calculate monthly and daily stats
   const monthlyRevenue = paidOrders.reduce((acc, order) => {
     const month = new Date(order.created_at).toISOString().slice(0, 7) // YYYY-MM
-    acc[month] = (acc[month] || 0) + (order.total_amount || order.total || 0)
+    acc[month] = (acc[month] || 0) + (order.total || 0)
     return acc
   }, {} as Record<string, number>)
 
@@ -142,25 +142,25 @@ export const useRealAnalytics = (storeId: string) => {
   const analytics = {
     orderStats: {
       totalOrders: orders.length,
-      totalRevenue: paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
+      totalRevenue: paidOrders.reduce((sum, order) => sum + (order.total || 0), 0),
       pendingOrders: orders.filter(order => order.status === 'pending').length,
       completedOrders: orders.filter(order => order.status === 'delivered').length,
       processingOrders: orders.filter(order => order.status === 'processing').length,
       shippedOrders: orders.filter(order => order.status === 'shipped').length,
       paidOrders: orders.filter(order => order.status === 'paid').length,
       toBePaidOrders: orders.filter(order => order.status === 'to_be_paid').length,
-      unpaidRevenue: orders.filter(order => order.status === 'to_be_paid').reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
-      averageOrderValue: paidOrders.length > 0 ? paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0) / paidOrders.length : 0,
+      unpaidRevenue: orders.filter(order => order.status === 'to_be_paid').reduce((sum, order) => sum + (order.total || 0), 0),
+      averageOrderValue: paidOrders.length > 0 ? paidOrders.reduce((sum, order) => sum + (order.total || 0), 0) / paidOrders.length : 0,
       monthlyRevenue,
       dailyOrders,
       cogs: paidOrders.reduce((sum, order) => {
         // TODO: Calculate actual COGS from order_items when available
         // For now, use product COGS data if available, otherwise estimate
-        const orderTotal = order.total_amount || order.total || 0
+        const orderTotal = order.total || 0
         return sum + orderTotal * 0.4 // Fallback to 40% estimate
       }, 0),
       grossProfit: paidOrders.reduce((sum, order) => {
-        const orderTotal = order.total_amount || order.total || 0
+        const orderTotal = order.total || 0
         return sum + orderTotal * 0.6 // Fallback to 60% profit
       }, 0),
       profitMargin: 60, // Fallback estimate (TODO: Calculate from actual COGS when order_items include cost data)
@@ -191,12 +191,12 @@ export const useRealAnalytics = (storeId: string) => {
         )
 
         const financialYearRevenue = financialYearPaidOrders.reduce((sum, order) => 
-          sum + (order.total_amount || order.total || 0), 0
+          sum + (order.total || 0), 0
         )
         
         const financialYearUnpaidRevenue = financialYearOrders
           .filter(order => order.status === 'to_be_paid')
-          .reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0)
+          .reduce((sum, order) => sum + (order.total || 0), 0)
 
         return {
           isConfigured: true,
@@ -220,7 +220,7 @@ export const useRealAnalytics = (storeId: string) => {
       customersWithOrders: customers.filter(customer => 
         customer.orders && customer.orders.length > 0
       ).length,
-      totalRevenue: paidOrders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0),
+      totalRevenue: paidOrders.reduce((sum, order) => sum + (order.total || 0), 0),
       newCustomers: customers.reduce((acc, customer) => {
         if (customer.created_at) {
           const month = new Date(customer.created_at).toISOString().slice(0, 7)
@@ -233,7 +233,7 @@ export const useRealAnalytics = (storeId: string) => {
       ).length,
       customerAcquisitionCost: 0, // No marketing spend data available
       averageLifetimeValue: customers.length > 0 ? 
-        orders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0) / customers.length : 0,
+        orders.reduce((sum, order) => sum + (order.total || 0), 0) / customers.length : 0,
       retentionRate: customers.length > 0 ? 
         (customers.filter(customer => customer.orders && customer.orders.length > 1).length / customers.length) * 100 : 0,
       churnRate: (() => {

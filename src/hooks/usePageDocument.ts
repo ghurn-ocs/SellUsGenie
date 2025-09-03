@@ -46,7 +46,19 @@ export const usePageDocument = (options: UsePageDocumentOptions = {}) => {
       }
 
       if (data) {
-        setDocument(data);
+        // Transform snake_case from database to camelCase for application
+        const transformedDoc = {
+          ...data,
+          publishedAt: data.published_at,
+          scheduledFor: data.scheduled_for,
+          themeOverrides: data.theme_overrides,
+          customCode: data.custom_code,
+          globalStyles: data.global_styles,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        };
+        
+        setDocument(transformedDoc);
         setHasUnsavedChanges(false);
         
         // Apply color palette if it exists

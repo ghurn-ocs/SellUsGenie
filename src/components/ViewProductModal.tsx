@@ -116,7 +116,7 @@ export const ViewProductModal: React.FC<ViewProductModalProps> = ({
                 </div>
               </div>
 
-              {product.compare_price && (
+              {product.compare_at_price && (
                 <div>
                   <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
                     Compare Price
@@ -124,7 +124,7 @@ export const ViewProductModal: React.FC<ViewProductModalProps> = ({
                   <div className="px-3 py-2 bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg">
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-4 h-4 text-[#666]" />
-                      <span className="text-[#A0A0A0] line-through">${product.compare_price.toFixed(2)}</span>
+                      <span className="text-[#A0A0A0] line-through">${product.compare_at_price.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

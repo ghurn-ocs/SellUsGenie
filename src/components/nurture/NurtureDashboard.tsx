@@ -48,7 +48,7 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
   // Calculate recoverable value from abandoned carts
   const recoverableValue = orders
     .filter(order => order.status === 'pending')
-    .reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0)
+    .reduce((sum, order) => sum + (order.total || 0), 0)
   
   // Calculate recovery rate
   const recoveryRate = abandonedCarts > 0 ? (conversions / abandonedCarts) * 100 : 0

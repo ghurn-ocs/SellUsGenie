@@ -1,6 +1,7 @@
 # Supabase Database Schema Documentation
 Generated: 2025-09-03T10:12:28.933Z
 Database: https://jizobmpcyrzprrwsyedv.supabase.co
+Last Updated: 2025-09-03 - Added performance indexes documentation
 
 ## Executive Summary
 
@@ -545,8 +546,11 @@ ALTER TABLE orders
 ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
 ```
 
-3. **Create Missing Indexes**
+3. **Create Performance Indexes** (APPLIED - September 3, 2025)
 ```sql
+-- Full index creation script available in:
+-- database/add-performance-indexes-corrected.sql
+-- This includes 40+ indexes for improved query performance
 -- Add foreign key indexes
 CREATE INDEX IF NOT EXISTS idx_products_store_id ON products(store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_store_id ON orders(store_id);

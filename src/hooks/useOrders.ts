@@ -68,7 +68,7 @@ export const useOrders = (storeId: string) => {
         subtotal: orderDataForDB.subtotal,
         tax: orderDataForDB.tax,
         shipping: orderDataForDB.shipping,
-        total_amount: orderDataForDB.total, // Map 'total' to 'total_amount'
+        total: orderDataForDB.total,
         notes: orderDataForDB.notes
       }
       
@@ -179,7 +179,7 @@ export const useOrders = (storeId: string) => {
       // Map 'total' to 'total_amount' if provided
       const updatesForDB = {
         ...updates,
-        ...(total !== undefined && { total_amount: total })
+        ...(total !== undefined && { total: total })
       }
       const { data, error } = await supabase
         .from('orders')
@@ -225,7 +225,7 @@ export const useOrders = (storeId: string) => {
         .from('orders')
         .update({
           tax: orderData.tax,
-          total_amount: orderData.total, // Map to correct column name
+          total: orderData.total
           status: orderData.status,
           payment_status: orderData.payment_status,
           stripe_payment_intent_id: orderData.stripe_payment_intent_id
@@ -244,7 +244,7 @@ export const useOrders = (storeId: string) => {
 
   const getOrderStats = () => {
     const totalOrders = orders.length
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || order.total || 0), 0)
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
     const pendingOrders = orders.filter(order => order.status === 'pending').length
     const completedOrders = orders.filter(order => order.status === 'delivered').length
 

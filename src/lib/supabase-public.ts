@@ -1,15 +1,27 @@
 /**
  * Public Supabase Client
  * Used for accessing published content on storefronts without authentication
- * Uses the same client as admin but for public data access
- * The security is handled at the RLS policy level, not the client level
+ * This is a separate unauthenticated client for enhanced security
  */
 
-// Use the main admin client for public access too - RLS policies handle security
-import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
 
-// Re-export as supabasePublic for backward compatibility, but it's the same client
-export const supabasePublic = supabase;
+// Create a separate public client without authentication
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
+
+export const supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,  // No session persistence for public client
+    autoRefreshToken: false, // No token refresh for public client
+    detectSessionInUrl: false // Don't detect auth from URL
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'sellusgenie-public'  // Identify as public client
+    }
+  }
+});
 
 /**
  * Public Page Repository

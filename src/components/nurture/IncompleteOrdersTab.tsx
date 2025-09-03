@@ -236,7 +236,7 @@ export const IncompleteOrdersTab: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h4 className="text-white font-semibold">Abandoned Carts ({filteredOrders.length})</h4>
                 <div className="text-sm text-[#A0A0A0]">
-                  Total Value: ${filteredOrders.reduce((sum, order) => sum + order.total_amount, 0).toFixed(2)}
+                  Total Value: ${filteredOrders.reduce((sum, order) => sum + (order.total || 0), 0).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -289,7 +289,7 @@ export const IncompleteOrdersTab: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-white">
-                        ${order.total_amount.toFixed(2)}
+                        ${(order.total || 0).toFixed(2)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-[#A0A0A0]">
@@ -623,7 +623,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#A0A0A0]">Total:</span>
-                    <span className="text-white font-medium">${order.total_amount.toFixed(2)}</span>
+                    <span className="text-white font-medium">${(order.total || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#A0A0A0]">Status:</span>
@@ -727,7 +727,7 @@ const BulkEmailModal: React.FC<BulkEmailModalProps> = ({
   const recipientCount = sendToAll ? totalUnrecovered : selectedOrders.length
   const totalValue = sendToAll 
     ? 0 // Would need to calculate from all unrecovered orders
-    : selectedOrders.reduce((sum, order) => sum + order.total_amount, 0)
+    : selectedOrders.reduce((sum, order) => sum + (order.total || 0), 0)
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>

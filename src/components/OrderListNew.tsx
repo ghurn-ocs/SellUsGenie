@@ -281,7 +281,7 @@ export const OrderListNew: React.FC<OrderListNewProps> = ({
                 <div>
                   <span className="text-[#A0A0A0] text-xs">Total:</span>
                   <div className="text-lg font-semibold text-[#9B51E0]">
-                    ${(order.total_amount || order.total || 0).toFixed(2)}
+                    ${(order.total || 0).toFixed(2)}
                   </div>
                 </div>
                 
