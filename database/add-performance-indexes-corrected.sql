@@ -71,7 +71,7 @@ CREATE INDEX IF NOT EXISTS idx_product_analytics_product_id ON product_analytics
 CREATE INDEX IF NOT EXISTS idx_attribution_touchpoints_store_id ON attribution_touchpoints(store_id);
 CREATE INDEX IF NOT EXISTS idx_attribution_touchpoints_customer_id ON attribution_touchpoints(customer_id);
 CREATE INDEX IF NOT EXISTS idx_attribution_touchpoints_order_id ON attribution_touchpoints(order_id);
-CREATE INDEX IF NOT EXISTS idx_attribution_touchpoints_timestamp ON attribution_touchpoints(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_attribution_touchpoints_touched_at ON attribution_touchpoints(touched_at DESC);
 
 -- ============================================================================
 -- Low Priority: Additional optimization indexes
