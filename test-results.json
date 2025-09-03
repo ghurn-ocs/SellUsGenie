@@ -1,35 +1,35 @@
 {
-  "timestamp": "2025-09-02T17:20:39.513Z",
+  "timestamp": "2025-09-03T12:15:06.614Z",
   "totalTests": 22,
-  "passedTests": 16,
-  "failedTests": 6,
+  "passedTests": 15,
+  "failedTests": 7,
   "categories": {
     "Code Quality": {
       "tests": [
         {
           "name": "TypeScript Compilation",
           "status": "PASS",
-          "duration": 379,
-          "timestamp": "2025-09-02T17:20:39.892Z"
+          "duration": 407,
+          "timestamp": "2025-09-03T12:15:07.023Z"
         },
         {
           "name": "Linting",
           "status": "PASS",
           "duration": 0,
-          "timestamp": "2025-09-02T17:20:39.892Z"
+          "timestamp": "2025-09-03T12:15:07.023Z"
         },
         {
           "name": "Import Validation",
           "status": "FAIL",
           "duration": 11,
-          "timestamp": "2025-09-02T17:20:39.981Z"
+          "timestamp": "2025-09-03T12:15:07.130Z"
         },
         {
           "name": "Code Complexity Analysis",
           "status": "WARN",
-          "duration": 7,
+          "duration": 8,
           "error": "/Users/glennhurn/AppDev/SellUsGenie/src/archive-safe/StoreOwnerDashboard.tsx: Large component (1993 lines), consider splitting; /Users/glennhurn/AppDev/SellUsGenie/src/archive-safe/StoreOwnerDashboard.tsx: Multiple ternary operators, consider simplifying; /Users/glennhurn/AppDev/SellUsGenie/src/components/AnalyticsDashboard.tsx: Large component (245 lines), consider splitting",
-          "timestamp": "2025-09-02T17:20:39.995Z"
+          "timestamp": "2025-09-03T12:15:07.146Z"
         }
       ],
       "passed": 2,
@@ -42,7 +42,7 @@
           "status": "FAIL",
           "duration": 4,
           "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/OrderDebugger.tsx: Missing TypeScript props interface; /Users/glennhurn/AppDev/SellUsGenie/src/components/auth/SessionWarningDialog.tsx: Missing TypeScript props interface; /Users/glennhurn/AppDev/SellUsGenie/src/components/debug/SlugFixUtility.tsx: Missing TypeScript props interface",
-          "timestamp": "2025-09-02T17:20:40.004Z"
+          "timestamp": "2025-09-03T12:15:07.155Z"
         }
       ],
       "passed": 0,
@@ -55,14 +55,14 @@
           "status": "FAIL",
           "duration": 8,
           "error": "/Users/glennhurn/AppDev/SellUsGenie/src/SimplePageBuilder.tsx: Button missing accessibility label; /Users/glennhurn/AppDev/SellUsGenie/src/archive-safe/StoreOwnerDashboard.tsx: Button missing accessibility label; /Users/glennhurn/AppDev/SellUsGenie/src/components/ViewCustomerModal.tsx: Button missing accessibility label",
-          "timestamp": "2025-09-02T17:20:40.019Z"
+          "timestamp": "2025-09-03T12:15:07.171Z"
         },
         {
           "name": "Responsive Design Testing",
           "status": "WARN",
-          "duration": 6,
-          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/website/WorldClassRenderer.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/canvas/SandboxedCanvas.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/components/ResponsiveControls.tsx: Multiple hardcoded dimensions, consider responsive design",
-          "timestamp": "2025-09-02T17:20:40.031Z"
+          "duration": 5,
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/components/website/WorldClassRenderer.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/canvas/SandboxedCanvas.tsx: Multiple hardcoded dimensions, consider responsive design; /Users/glennhurn/AppDev/SellUsGenie/src/pageBuilder/components/CanvasSettings.tsx: Multiple hardcoded dimensions, consider responsive design",
+          "timestamp": "2025-09-03T12:15:07.183Z"
         }
       ],
       "passed": 0,
@@ -85,7 +85,7 @@
           "status": "PASS",
           "duration": 1,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.032Z"
+          "timestamp": "2025-09-03T12:15:07.185Z"
         }
       ],
       "passed": 1,
@@ -98,25 +98,25 @@
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.032Z"
+          "timestamp": "2025-09-03T12:15:07.185Z"
         },
         {
           "name": "Type Definitions",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.032Z"
+          "timestamp": "2025-09-03T12:15:07.185Z"
         },
         {
           "name": "Database Interface Validation",
-          "status": "PASS",
+          "status": "FAIL",
           "duration": 0,
-          "error": null,
-          "timestamp": "2025-09-02T17:20:40.032Z"
+          "error": "Missing: createClient, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY",
+          "timestamp": "2025-09-03T12:15:07.185Z"
         }
       ],
-      "passed": 3,
-      "failed": 0
+      "passed": 2,
+      "failed": 1
     },
     "Build System": {
       "tests": [
@@ -125,21 +125,21 @@
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.032Z"
+          "timestamp": "2025-09-03T12:15:07.185Z"
         },
         {
           "name": "Tailwind CSS Configuration",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.032Z"
+          "timestamp": "2025-09-03T12:15:07.185Z"
         },
         {
           "name": "Environment Variables",
           "status": "PASS",
           "duration": 1,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.033Z"
+          "timestamp": "2025-09-03T12:15:07.186Z"
         }
       ],
       "passed": 3,
@@ -152,21 +152,21 @@
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.033Z"
+          "timestamp": "2025-09-03T12:15:07.186Z"
         },
         {
           "name": "Version Compatibility",
           "status": "PASS",
           "duration": 0,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.033Z"
+          "timestamp": "2025-09-03T12:15:07.186Z"
         },
         {
           "name": "React Query Integration",
           "status": "FAIL",
-          "duration": 2,
-          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/hooks/useTokenRefresh.ts: Missing React Query import; /Users/glennhurn/AppDev/SellUsGenie/src/hooks/useTokenRefresh.ts: Missing React Query hooks",
-          "timestamp": "2025-09-02T17:20:40.036Z"
+          "duration": 1,
+          "error": "/Users/glennhurn/AppDev/SellUsGenie/src/hooks/usePageDocument.ts: Missing React Query import; /Users/glennhurn/AppDev/SellUsGenie/src/hooks/usePageDocument.ts: Missing React Query hooks; /Users/glennhurn/AppDev/SellUsGenie/src/hooks/useTokenRefresh.ts: Missing React Query import",
+          "timestamp": "2025-09-03T12:15:07.189Z"
         }
       ],
       "passed": 2,
@@ -177,37 +177,37 @@
         {
           "name": "Store Management Testing",
           "status": "PASS",
-          "duration": 1,
+          "duration": 2,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.037Z"
+          "timestamp": "2025-09-03T12:15:07.191Z"
         },
         {
           "name": "Product Management Testing",
           "status": "PASS",
           "duration": 2,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.039Z"
+          "timestamp": "2025-09-03T12:15:07.193Z"
         },
         {
           "name": "Order Management Testing",
           "status": "PASS",
-          "duration": 1,
+          "duration": 2,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.040Z"
+          "timestamp": "2025-09-03T12:15:07.195Z"
         },
         {
           "name": "Customer Management Testing",
           "status": "PASS",
           "duration": 2,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.042Z"
+          "timestamp": "2025-09-03T12:15:07.197Z"
         },
         {
           "name": "Authentication Flow Testing",
           "status": "PASS",
           "duration": 1,
           "error": null,
-          "timestamp": "2025-09-02T17:20:40.043Z"
+          "timestamp": "2025-09-03T12:15:07.198Z"
         }
       ],
       "passed": 5,
