@@ -60,6 +60,7 @@
     "immer": "^10.1.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.539.0",
+    "node-fetch": "^3.3.2",
     "react": "^19.1.1",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

@@ -84,11 +84,11 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
       try {
       const { data: orders, error } = await supabase
         .from('orders')
-        .select('total, created_at, payment_method')
+        .select('total, created_at')
         .eq('store_id', storeId)
         .gte('created_at', dateRange.start.toISOString())
         .lte('created_at', dateRange.end.toISOString())
-        .eq('status', 'completed')
+        .in('status', ['delivered', 'completed'])
 
       if (error) throw error
 
@@ -105,7 +105,7 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
         .eq('store_id', storeId)
         .gte('created_at', previousStart.toISOString())
         .lt('created_at', dateRange.start.toISOString())
-        .eq('status', 'completed')
+        .in('status', ['delivered', 'completed'])
 
       const previousTotal = previousOrders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
       const growth = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0
@@ -157,22 +157,37 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
         .gte('created_at', dateRange.start.toISOString())
         .lte('created_at', dateRange.end.toISOString())
 
-      // Get customer analytics data
-      const { data: customerAnalytics } = await supabase
-        .from('customer_analytics')
-        .select('rfm_segment, churn_probability, total_spent')
-        .eq('store_id', storeId)
-
-      // Calculate segments
-      const segmentCounts = customerAnalytics?.reduce((acc, customer) => {
-        const segment = customer.rfm_segment || 'New'
-        if (!acc[segment]) {
-          acc[segment] = { count: 0, value: 0 }
+      // Try to get customer analytics data, but handle missing table gracefully
+      let customerAnalytics: any[] = []
+      try {
+        const { data, error } = await supabase
+          .from('customer_analytics')
+          .select('rfm_segment, churn_probability, total_spent')
+          .eq('store_id', storeId)
+        
+        if (error && !error.message.includes('does not exist')) {
+          throw error
         }
-        acc[segment].count++
-        acc[segment].value += customer.total_spent || 0
-        return acc
-      }, {} as Record<string, { count: number; value: number }>) || {}
+        customerAnalytics = data || []
+      } catch (analyticsError: any) {
+        if (!analyticsError?.message?.includes('does not exist')) {
+          console.warn('Customer analytics table query failed:', analyticsError)
+        }
+        // Table doesn't exist, use fallback data
+      }
+
+      // Calculate segments with fallback
+      const segmentCounts = customerAnalytics.length > 0 
+        ? customerAnalytics.reduce((acc, customer) => {
+            const segment = customer.rfm_segment || 'New'
+            if (!acc[segment]) {
+              acc[segment] = { count: 0, value: 0 }
+            }
+            acc[segment].count++
+            acc[segment].value += customer.total_spent || 0
+            return acc
+          }, {} as Record<string, { count: number; value: number }>)
+        : { 'New': { count: newCustomers || 0, value: 0 } }
 
       const segments = Object.entries(segmentCounts).map(([name, data]) => ({
         name,
@@ -217,12 +232,14 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
         .from('order_items')
         .select(`
           quantity,
-          price,
-          product:products(id, name)
+          unit_price,
+          product:products(id, name),
+          order:orders!inner(store_id, created_at, status)
         `)
-        .eq('store_id', storeId)
-        .gte('created_at', dateRange.start.toISOString())
-        .lte('created_at', dateRange.end.toISOString())
+        .eq('order.store_id', storeId)
+        .gte('order.created_at', dateRange.start.toISOString())
+        .lte('order.created_at', dateRange.end.toISOString())
+        .in('order.status', ['delivered', 'completed'])
 
       // Aggregate by product
       const productSales = orderItems?.reduce((acc, item) => {
@@ -239,20 +256,33 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
           }
         }
         acc[productId].sales += item.quantity || 0
-        acc[productId].revenue += (item.quantity || 0) * (item.price || 0)
+        acc[productId].revenue += (item.quantity || 0) * (item.unit_price || 0)
         return acc
       }, {} as Record<string, any>) || {}
 
-      // Get product analytics for conversion rates
-      const { data: productAnalytics } = await supabase
-        .from('product_analytics')
-        .select('product_id, conversion_rate')
-        .eq('store_id', storeId)
+      // Get product analytics for conversion rates with graceful fallback
+      let productAnalytics: any[] = []
+      try {
+        const { data, error } = await supabase
+          .from('product_analytics')
+          .select('product_id, conversion_rate')
+          .eq('store_id', storeId)
+        
+        if (error && !error.message.includes('does not exist')) {
+          throw error
+        }
+        productAnalytics = data || []
+      } catch (analyticsError: any) {
+        if (!analyticsError?.message?.includes('does not exist')) {
+          console.warn('Product analytics table query failed:', analyticsError)
+        }
+        // Table doesn't exist, use fallback data
+      }
 
-      const conversionRates = productAnalytics?.reduce((acc, pa) => {
+      const conversionRates = productAnalytics.reduce((acc, pa) => {
         acc[pa.product_id] = pa.conversion_rate || 0
         return acc
-      }, {} as Record<string, number>) || {}
+      }, {} as Record<string, number>)
 
       const topSelling = Object.values(productSales)
         .map(product => ({
@@ -286,12 +316,26 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
     queryKey: ['analytics', 'attribution', storeId, dateRange],
     queryFn: async () => {
       try {
-      const { data: touchpoints } = await supabase
-        .from('attribution_touchpoints')
-        .select('channel, value_contribution, conversion_value')
-        .eq('store_id', storeId)
-        .gte('touched_at', dateRange.start.toISOString())
-        .lte('touched_at', dateRange.end.toISOString())
+      // Try to get attribution data, but handle missing table gracefully
+      let touchpoints: any[] = []
+      try {
+        const { data, error } = await supabase
+          .from('attribution_touchpoints')
+          .select('channel, value_contribution, conversion_value')
+          .eq('store_id', storeId)
+          .gte('touched_at', dateRange.start.toISOString())
+          .lte('touched_at', dateRange.end.toISOString())
+        
+        if (error && !error.message.includes('does not exist')) {
+          throw error
+        }
+        touchpoints = data || []
+      } catch (attributionError: any) {
+        if (!attributionError?.message?.includes('does not exist')) {
+          console.warn('Attribution touchpoints table query failed:', attributionError)
+        }
+        // Table doesn't exist, use empty fallback
+      }
 
       const channelData = touchpoints?.reduce((acc, tp) => {
         const channel = tp.channel
@@ -336,11 +380,25 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
     queryKey: ['analytics', 'predictions', storeId],
     queryFn: async () => {
       try {
-      const { data: customerAnalytics } = await supabase
-        .from('customer_analytics')
-        .select('customer_id, churn_probability, lifetime_value_prediction, next_purchase_probability, total_spent')
-        .eq('store_id', storeId)
-        .order('churn_probability', { ascending: false })
+      // Try to get customer analytics data with graceful fallback
+      let customerAnalytics: any[] = []
+      try {
+        const { data, error } = await supabase
+          .from('customer_analytics')
+          .select('customer_id, churn_probability, lifetime_value_prediction, next_purchase_probability, total_spent')
+          .eq('store_id', storeId)
+          .order('churn_probability', { ascending: false })
+        
+        if (error && !error.message.includes('does not exist')) {
+          throw error
+        }
+        customerAnalytics = data || []
+      } catch (analyticsError: any) {
+        if (!analyticsError?.message?.includes('does not exist')) {
+          console.warn('Customer analytics table query failed for predictions:', analyticsError)
+        }
+        // Table doesn't exist, use empty fallback
+      }
 
       const churnRisk = customerAnalytics
         ?.filter(ca => (ca.churn_probability || 0) > 50)
@@ -396,12 +454,26 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
     queryKey: ['analytics', 'website', storeId, dateRange],
     queryFn: async () => {
       try {
-      const { data: events } = await supabase
-        .from('analytics_events')
-        .select('event_name, parameters, device_type, utm_source')
-        .eq('store_id', storeId)
-        .gte('timestamp', dateRange.start.toISOString())
-        .lte('timestamp', dateRange.end.toISOString())
+      // Try to get analytics events data with graceful fallback
+      let events: any[] = []
+      try {
+        const { data, error } = await supabase
+          .from('analytics_events')
+          .select('event_name, parameters, device_type, utm_source')
+          .eq('store_id', storeId)
+          .gte('timestamp', dateRange.start.toISOString())
+          .lte('timestamp', dateRange.end.toISOString())
+        
+        if (error && !error.message.includes('does not exist')) {
+          throw error
+        }
+        events = data || []
+      } catch (eventsError: any) {
+        if (!eventsError?.message?.includes('does not exist')) {
+          console.warn('Analytics events table query failed:', eventsError)
+        }
+        // Table doesn't exist, use empty fallback
+      }
 
       const pageViews = events?.filter(e => e.event_name === 'page_view').length || 0
       const uniqueVisitors = new Set(events?.map(e => e.parameters?.visitor_id).filter(Boolean)).size || 0

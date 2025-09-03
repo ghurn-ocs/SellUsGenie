@@ -5,6 +5,7 @@
 
 import { provisionNewStore } from '../services/storeProvisioning';
 import { cleanupDuplicateHomePagesForStore } from './cleanupDuplicateHomePages';
+import { supabase } from '../lib/supabase';
 
 /**
  * Provision the current store with default pages and policies
@@ -53,7 +54,6 @@ export async function checkProvisioningStatus(storeId: string): Promise<{
   needsPolicies: boolean;
   pageCount: number;
 }> {
-  const { supabase } = await import('../lib/supabase');
   
   try {
     // Check pages

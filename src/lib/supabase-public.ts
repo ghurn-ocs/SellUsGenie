@@ -1,51 +1,15 @@
 /**
  * Public Supabase Client
  * Used for accessing published content on storefronts without authentication
- * Uses anonymous access with public read policies for published pages
+ * Uses the same client as admin but for public data access
+ * The security is handled at the RLS policy level, not the client level
  */
 
-import { createClient } from '@supabase/supabase-js'
+// Use the main admin client for public access too - RLS policies handle security
+import { supabase } from './supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables for public client')
-}
-
-// Check if client already exists to prevent HMR duplicates
-if (typeof window !== 'undefined' && (window as any).__supabase_public_client) {
-  var supabasePublic = (window as any).__supabase_public_client;
-} else {
-  var supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
-    db: {
-      schema: 'public',
-    },
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-      storage: {
-        getItem: () => null,
-        setItem: () => {},
-        removeItem: () => {}
-      },
-      storageKey: 'supabase-public-auth-token'
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'sellusgenie-storefront-public',
-      },
-    },
-  });
-
-  // Store in window for HMR persistence
-  if (typeof window !== 'undefined') {
-    (window as any).__supabase_public_client = supabasePublic;
-  }
-}
-
-export { supabasePublic };
+// Re-export as supabasePublic for backward compatibility, but it's the same client
+export const supabasePublic = supabase;
 
 /**
  * Public Page Repository

@@ -1,0 +1,215 @@
+#!/usr/bin/env node
+
+/**
+ * Simplified schema dump script that queries accessible tables
+ */
+
+import { createClient } from '@supabase/supabase-js'
+import { config } from 'dotenv'
+import { writeFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+// Load environment variables
+config({ path: join(__dirname, '..', '.env') })
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase environment variables')
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+async function dumpSchema() {
+  console.log('🔍 Querying Supabase database schema...')
+  
+  // List of known tables from the codebase
+  const knownTables = [
+    'store_owners',
+    'store_owner_subscriptions',
+    'stores',
+    'categories',
+    'products',
+    'customers',
+    'orders',
+    'order_items',
+    'cart_items',
+    'payments',
+    'store_policies',
+    'delivery_areas',
+    'custom_domains',
+    'page_documents',
+    'page_history',
+    'store_page_layouts',
+    'analytics_events',
+    'customer_analytics',
+    'product_analytics',
+    'attribution_touchpoints',
+    'customer_segments',
+    'customer_segment_memberships',
+    'marketing_campaigns',
+    'store_integrations',
+    'leads',
+    'lead_activities',
+    'lead_notes',
+    'lead_tasks',
+    'lead_conversions'
+  ]
+
+  let markdown = `# Supabase Database Schema Documentation
+Generated: ${new Date().toISOString()}
+Database: ${supabaseUrl}
+
+## Database Tables and Structure
+
+`
+
+  const tableInfo = {}
+  
+  for (const tableName of knownTables) {
+    console.log(`Checking table: ${tableName}...`)
+    
+    try {
+      // Try to query each table with limit 0 to just get structure
+      const { data, error, count } = await supabase
+        .from(tableName)
+        .select('*', { count: 'exact' })
+        .limit(0)
+      
+      if (error) {
+        if (error.message.includes('does not exist')) {
+          tableInfo[tableName] = { exists: false, error: 'Table does not exist' }
+        } else if (error.message.includes('permission denied')) {
+          tableInfo[tableName] = { exists: true, error: 'Permission denied (RLS active)' }
+        } else {
+          tableInfo[tableName] = { exists: 'unknown', error: error.message }
+        }
+      } else {
+        // Get one row to see columns
+        const { data: sample } = await supabase
+          .from(tableName)
+          .select('*')
+          .limit(1)
+        
+        const columns = sample && sample[0] ? Object.keys(sample[0]) : []
+        
+        tableInfo[tableName] = { 
+          exists: true, 
+          rowCount: count || 0,
+          columns: columns
+        }
+      }
+    } catch (err) {
+      tableInfo[tableName] = { exists: 'error', error: err.message }
+    }
+  }
+
+  // Group tables by status
+  const existingTables = Object.entries(tableInfo).filter(([_, info]) => info.exists === true)
+  const missingTables = Object.entries(tableInfo).filter(([_, info]) => info.exists === false)
+  const restrictedTables = Object.entries(tableInfo).filter(([_, info]) => info.error?.includes('Permission'))
+
+  markdown += `## Summary
+
+- **Total Tables Checked:** ${knownTables.length}
+- **Existing Tables:** ${existingTables.length}
+- **Missing Tables:** ${missingTables.length}
+- **Permission Restricted:** ${restrictedTables.length}
+
+## Existing Tables
+
+| Table Name | Row Count | Columns |
+|------------|-----------|---------|
+`
+
+  for (const [tableName, info] of existingTables) {
+    markdown += `| ${tableName} | ${info.rowCount || 0} | ${info.columns?.join(', ') || 'N/A'} |\n`
+  }
+
+  markdown += `\n## Missing Tables
+
+These tables are referenced in the codebase but do not exist in the database:
+
+| Table Name | Status |
+|------------|---------|
+`
+
+  for (const [tableName, info] of missingTables) {
+    markdown += `| ${tableName} | ${info.error} |\n`
+  }
+
+  markdown += `\n## Permission Restricted Tables
+
+These tables exist but have RLS policies that prevent direct access:
+
+| Table Name | Status |
+|------------|---------|
+`
+
+  for (const [tableName, info] of restrictedTables) {
+    markdown += `| ${tableName} | ${info.error} |\n`
+  }
+
+  markdown += `\n## Detailed Table Information\n\n`
+
+  for (const [tableName, info] of existingTables) {
+    if (info.columns && info.columns.length > 0) {
+      markdown += `### ${tableName}\n\n`
+      markdown += `**Columns:** ${info.columns.length}\n`
+      markdown += `**Row Count:** ${info.rowCount || 0}\n\n`
+      markdown += `#### Column List:\n`
+      for (const col of info.columns) {
+        markdown += `- ${col}\n`
+      }
+      markdown += `\n---\n\n`
+    }
+  }
+
+  markdown += `## Notes
+
+- This schema documentation was generated by querying accessible tables through the Supabase client
+- Tables with Row Level Security (RLS) policies may show as "Permission denied"
+- The actual database schema may contain additional tables not listed here
+- Column types and constraints are not available through this method
+- For a complete schema dump, database admin access is required
+
+## Recommendations
+
+1. **Missing Analytics Tables:** The following analytics tables need to be created:
+   - customer_analytics
+   - product_analytics
+   - attribution_touchpoints
+   - analytics_events
+   - customer_segments
+   - customer_segment_memberships
+   - marketing_campaigns
+   - store_integrations
+
+2. **Apply Analytics Schema:** Run the \`database/world-class-analytics-schema.sql\` file to create missing analytics tables
+
+3. **Fix RLS Policies:** Update RLS policies in analytics schema to use \`store_owner_id\` instead of \`owner_id\`
+`
+
+  // Save to file
+  const outputPath = join(__dirname, '..', 'SUPABASE_SCHEMA_SEPT032025.md')
+  writeFileSync(outputPath, markdown)
+  console.log(`✅ Schema documentation saved to: SUPABASE_SCHEMA_SEPT032025.md`)
+  
+  // Print summary
+  console.log(`\n📊 Summary:`)
+  console.log(`  - Existing tables: ${existingTables.length}`)
+  console.log(`  - Missing tables: ${missingTables.length}`)
+  console.log(`  - Restricted tables: ${restrictedTables.length}`)
+  
+  if (missingTables.length > 0) {
+    console.log(`\n⚠️  Missing tables that need to be created:`)
+    missingTables.forEach(([name]) => console.log(`  - ${name}`))
+  }
+}
+
+dumpSchema().catch(console.error)
