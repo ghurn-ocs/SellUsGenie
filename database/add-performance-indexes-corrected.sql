@@ -43,8 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_page_documents_navigation ON page_documents(store
 CREATE INDEX IF NOT EXISTS idx_page_documents_page_type ON page_documents(store_id, page_type);
 
 -- Page history table indexes  
-CREATE INDEX IF NOT EXISTS idx_page_history_document_id ON page_history(document_id);
-CREATE INDEX IF NOT EXISTS idx_page_history_store_id ON page_history(store_id);
+CREATE INDEX IF NOT EXISTS idx_page_history_page_id ON page_history(page_id);
+CREATE INDEX IF NOT EXISTS idx_page_history_version ON page_history(version);
 CREATE INDEX IF NOT EXISTS idx_page_history_created_at ON page_history(created_at DESC);
 
 -- ============================================================================
