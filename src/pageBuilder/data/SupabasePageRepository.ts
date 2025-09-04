@@ -371,4 +371,54 @@ export class SupabasePageRepository implements PageRepository {
       throw error;
     }
   }
+
+  async getPageBySlug(slug: string): Promise<PageDocument | null> {
+    try {
+      // Handle slug variations - remove leading slash and handle empty/home
+      const normalizedSlug = slug.startsWith('/') ? slug.substring(1) : slug;
+      
+      const { data, error } = await supabase
+        .from('page_documents')
+        .select('*')
+        .eq('store_id', this.storeId)
+        .eq('slug', `/${normalizedSlug}`)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Not found
+        }
+        throw error;
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        version: data.version,
+        sections: data.sections || [],
+        themeOverrides: data.theme_overrides || {},
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        status: data.status,
+        publishedAt: data.published_at,
+        scheduledFor: data.scheduled_for,
+        seo: data.seo || {},
+        analytics: data.analytics || {},
+        performance: data.performance || {},
+        accessibility: data.accessibility || {},
+        customCode: data.custom_code || {},
+        globalStyles: data.global_styles || {},
+        // System page properties
+        pageType: data.page_type,
+        isSystemPage: data.isSystemPage,
+        systemPageType: data.systemPageType,
+        editingRestrictions: data.editingRestrictions,
+        history: []
+      };
+    } catch (error) {
+      console.error('Error getting page by slug:', error);
+      throw error;
+    }
+  }
 }

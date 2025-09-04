@@ -157,7 +157,7 @@ const RowRenderer: React.FC<{
 
   return (
     <div className={`grid grid-cols-12 gap-4 w-full ${pageType === 'header' ? 'items-center' : ''}`}>
-      {row.widgets.map((widget: any) => (
+      {(row.widgets || []).map((widget: any) => (
         <WidgetRenderer
           key={widget.id}
           widget={widget}
@@ -236,7 +236,7 @@ const SectionRenderer: React.FC<{
       style={sectionStyle}
     >
       <div className={`${isSystemPage ? 'responsive-content-width px-4 sm:px-6 lg:px-8' : 'responsive-content-width'} ${pageType === 'header' ? 'flex items-center min-h-[80px]' : ''}`}>
-        {section.rows.map((row: any) => (
+        {(section.rows || []).map((row: any) => (
           <div key={row.id} className={`${isSystemPage ? 'mb-2 last:mb-0' : 'mb-6 last:mb-0'} ${pageType === 'header' ? 'w-full' : ''}`}>
             <RowRenderer row={row} theme={theme} isSystemPage={isSystemPage} pageType={pageType} storeData={storeData} />
           </div>
@@ -273,7 +273,7 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
     pageName: page.name,
     pageType: page.pageType,
     isSystemPage,
-    sectionsCount: page.sections.length,
+    sectionsCount: page.sections?.length || 0,
     hasThemeOverrides: Object.keys(page.themeOverrides || {}).length > 0,
     themeOverrides: page.themeOverrides,
     finalTheme: pageTheme
@@ -283,8 +283,8 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
   if (isSystemPage && process.env.NODE_ENV === 'development') {
     console.log('🔍 Page Structure:', {
       pageName: page.name,
-      sectionsCount: page.sections.length,
-      firstSectionId: page.sections[0]?.id
+      sectionsCount: page.sections?.length || 0,
+      firstSectionId: page.sections?.[0]?.id
     });
   }
 
@@ -304,7 +304,7 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
 
       {/* Render page sections */}
       <div className={isSystemPage ? 'w-full' : 'min-h-screen'}>
-        {page.sections.map((section) => {
+        {(page.sections || []).map((section) => {
           // Validate section structure
           if (!section.rows || !Array.isArray(section.rows)) {
             if (process.env.NODE_ENV === 'development') {

@@ -88,7 +88,7 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
         .eq('store_id', storeId)
         .gte('created_at', dateRange.start.toISOString())
         .lte('created_at', dateRange.end.toISOString())
-        .in('status', ['delivered', 'completed'])
+        .in('status', ['delivered'])
 
       if (error) throw error
 
@@ -105,7 +105,7 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
         .eq('store_id', storeId)
         .gte('created_at', previousStart.toISOString())
         .lt('created_at', dateRange.start.toISOString())
-        .in('status', ['delivered', 'completed'])
+        .in('status', ['delivered'])
 
       const previousTotal = previousOrders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
       const growth = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0
@@ -239,7 +239,7 @@ export const useComprehensiveAnalytics = (storeId: string, dateRange: DateRange)
         .eq('order.store_id', storeId)
         .gte('order.created_at', dateRange.start.toISOString())
         .lte('order.created_at', dateRange.end.toISOString())
-        .in('order.status', ['delivered', 'completed'])
+        .in('order.status', ['delivered'])
 
       // Aggregate by product
       const productSales = orderItems?.reduce((acc, item) => {

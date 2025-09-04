@@ -145,6 +145,20 @@ WHERE schemaname = 'public'
 ORDER BY idx_scan DESC;
 */
 
+-- Alternative query to check if indexes exist:
+/*
+SELECT 
+    t.schemaname,
+    t.tablename,
+    i.indexname,
+    i.indexdef
+FROM pg_indexes i
+JOIN pg_tables t ON i.tablename = t.tablename
+WHERE t.schemaname = 'public'
+AND i.indexname LIKE 'idx_%'
+ORDER BY t.tablename, i.indexname;
+*/
+
 -- To verify all indexes were created successfully:
 /*
 SELECT 

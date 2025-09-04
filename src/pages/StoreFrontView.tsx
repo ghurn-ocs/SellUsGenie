@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useRoute } from 'wouter'
-import { useStoreFront, applyColorScheme } from '../hooks/useStoreFront'
-import { EnhancedStoreFront } from '../components/storefront/EnhancedStoreFront'
-import { PageBuilderRenderer } from '../components/storefront/PageBuilderRenderer'
+import { VisualPageBuilderStoreFront } from '../components/website/VisualPageBuilderStoreFront'
 import { supabase } from '../lib/supabase'
 
 interface Store {
@@ -13,13 +11,14 @@ interface Store {
 }
 
 export const StoreFrontView: React.FC = () => {
-  const [, params] = useRoute('/store/:storeSlug')
+  const [, params] = useRoute('/store/:storeSlug/:pagePath*')
+  const [, paramsBase] = useRoute('/store/:storeSlug')
   const [store, setStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [usePageBuilder, setUsePageBuilder] = useState<boolean | null>(null)
 
-  const storeSlug = params?.storeSlug
+  const storeSlug = params?.storeSlug || paramsBase?.storeSlug
+  const pagePath = params?.pagePath || ''
 
   // Fetch store data
   useEffect(() => {
@@ -50,21 +49,7 @@ export const StoreFrontView: React.FC = () => {
     fetchStore()
   }, [storeSlug])
 
-  const {
-    currentTemplate,
-    currentLayout,
-    currentColorScheme,
-    isLoading: templateLoading
-  } = useStoreFront(store?.id || '')
-
-  // Apply color scheme when it loads
-  useEffect(() => {
-    if (currentColorScheme) {
-      applyColorScheme(currentColorScheme)
-    }
-  }, [currentColorScheme])
-
-  if (loading || templateLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -86,34 +71,11 @@ export const StoreFrontView: React.FC = () => {
     )
   }
 
-  if (!currentTemplate || !currentLayout || !currentColorScheme) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">{store.store_name}</h1>
-          <p className="text-gray-600">This store is still being set up. Please check back later.</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <>
-      <PageBuilderRenderer
-        storeId={store.id}
-        storeName={store.store_name}
-        className="min-h-screen"
-        onFallbackNeeded={() => setUsePageBuilder(false)}
-      />
-      
-      {/* Fallback to legacy storefront if page builder content is not available */}
-      {usePageBuilder === false && (
-        <EnhancedStoreFront
-          storeId={store.id}
-          storeName={store.store_name}
-          customizations={currentTemplate?.customizations || {}}
-        />
-      )}
-    </>
+    <VisualPageBuilderStoreFront
+      storeId={store.id}
+      storeName={store.store_name}
+      pagePath={pagePath}
+    />
   )
 }

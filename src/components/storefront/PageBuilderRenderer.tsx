@@ -8,9 +8,27 @@ import type { PageDocument, Section, Row, WidgetBase } from '../../pageBuilder/t
 import { widgetRegistry } from '../../pageBuilder/widgets/registry';
 import { SupabasePageRepository } from '../../pageBuilder/data/SupabasePageRepository';
 
+// Import all widgets to register them
+import '../../pageBuilder/widgets/text/index';
+import '../../pageBuilder/widgets/button/index';
+import '../../pageBuilder/widgets/image/index';
+import '../../pageBuilder/widgets/hero/index';
+import '../../pageBuilder/widgets/navigation/index';
+import '../../pageBuilder/widgets/spacer/index';
+import '../../pageBuilder/widgets/gallery/index';
+import '../../pageBuilder/widgets/form/index';
+import '../../pageBuilder/widgets/carousel/index';
+import '../../pageBuilder/widgets/cart/index';
+import '../../pageBuilder/widgets/product-listing/index';
+import '../../pageBuilder/widgets/subscribe/index';
+import '../../pageBuilder/widgets/featured-products/index';
+import '../../pageBuilder/widgets/header-layout/index';
+import '../../pageBuilder/widgets/footer-layout/index';
+
 interface PageBuilderRendererProps {
   storeId: string;
   storeName: string;
+  pagePath?: string;
   className?: string;
   onFallbackNeeded?: () => void;
 }
@@ -22,7 +40,7 @@ interface WidgetRendererProps {
 
 const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, theme }) => {
   try {
-    const config = widgetRegistry.getConfig(widget.type);
+    const config = widgetRegistry.get(widget.type);
     if (!config) {
       console.warn(`Widget type ${widget.type} not found in registry`);
       return (
@@ -133,6 +151,7 @@ const SectionRenderer: React.FC<{ section: Section; theme?: Record<string, strin
 export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
   storeId,
   storeName,
+  pagePath = '',
   className = '',
   onFallbackNeeded
 }) => {
@@ -141,28 +160,58 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStorefrontPage = async () => {
+    const loadPage = async () => {
       try {
         const repository = new SupabasePageRepository(storeId);
-        const page = await repository.getStorefrontPage();
+        
+        // Determine which page to load based on the path
+        let targetSlug = pagePath;
+        
+        // Handle root path - look for home page or page with empty slug
+        if (!pagePath || pagePath === '') {
+          // First try to find a page with slug 'home' or empty slug
+          const homeQuery = await repository.getPageBySlug('home');
+          if (homeQuery && homeQuery.status === 'published') {
+            setPageDocument(homeQuery);
+            setLoading(false);
+            return;
+          }
+          
+          // Try empty slug
+          const rootQuery = await repository.getPageBySlug('');
+          if (rootQuery && rootQuery.status === 'published') {
+            setPageDocument(rootQuery);
+            setLoading(false);
+            return;
+          }
+          
+          // No home page found, set error message
+          setPageDocument(null);
+          setError('No home page has been published. Please create and publish a home page in the Visual Page Builder.');
+          setLoading(false);
+          return;
+        }
+        
+        // Load specific page by slug
+        const page = await repository.getPageBySlug(targetSlug);
         
         if (page && page.status === 'published') {
           setPageDocument(page);
         } else {
-          // No published page builder content, trigger fallback
+          // Page not found or not published
           setPageDocument(null);
-          onFallbackNeeded?.();
+          setError(`Page "${pagePath}" not found or not published`);
         }
       } catch (err) {
-        console.error('Error loading storefront page:', err);
+        console.error('Error loading page:', err);
         setError('Failed to load page content');
       } finally {
         setLoading(false);
       }
     };
 
-    loadStorefrontPage();
-  }, [storeId]);
+    loadPage();
+  }, [storeId, pagePath]);
 
   if (loading) {
     return (
@@ -186,10 +235,16 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
     );
   }
 
-  if (!pageDocument) {
-    // Return null to indicate no page builder content is available
-    // The parent component can then fall back to the legacy storefront
-    return null;
+  if (!pageDocument && !error) {
+    // This shouldn't happen with our new logic, but just in case
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${className}`}>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Page Not Found</h1>
+          <p className="text-gray-600">This page doesn't exist or hasn't been published yet.</p>
+        </div>
+      </div>
+    );
   }
 
   // Apply custom global styles

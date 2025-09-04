@@ -69,7 +69,7 @@ import { useCanvasStore, useCanvasHistory } from '../pageBuilder/canvas/store/Ca
 import { useEditorStore } from '../pageBuilder/store/EditorStore';
 
 // Existing Components
-import { CustomizationPanel } from '../components/storefront/CustomizationPanel';
+// CustomizationPanel archived - Visual Page Builder is now the standard method
 import { PolicySettings } from '../components/settings/PolicySettings';
 import { HeaderFooterEditor } from '../pageBuilder/components/HeaderFooterEditor';
 import { SystemPageModal } from '../pageBuilder/components/SystemPageModal';
@@ -196,6 +196,15 @@ export const VisualPageBuilder: React.FC = () => {
               <p className="text-gray-600 mt-1">Manage your website pages and system defaults</p>
             </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => window.open(`/store/${currentStore?.store_slug}`, '_blank')}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                title="View your live store in a new tab"
+                disabled={!currentStore?.store_slug}
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>View Store</span>
+              </button>
               <button
                 onClick={() => setShowRegenerateModal(true)}
                 disabled={isRegenerating}
@@ -740,7 +749,18 @@ export const VisualPageBuilder: React.FC = () => {
         
         {leftPanelMode === 'settings' && <PolicySettings />}
         
-        {leftPanelMode === 'customization' && <CustomizationPanel />}
+        {leftPanelMode === 'customization' && (
+          <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-purple-900 mb-2">Visual Page Builder</h3>
+            <p className="text-purple-700 mb-4">
+              The Visual Page Builder is now the standard and only method for creating and customizing store pages. 
+              Use the canvas above to design your pages with drag & drop widgets.
+            </p>
+            <p className="text-sm text-purple-600">
+              Legacy customization tools have been archived. All page customization is now done through this interface.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -134,13 +134,15 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
             });
 
             section.rows?.forEach((row: any, rIdx: number) => {
-              row.widgets?.forEach((widget: any, wIdx: number) => {
-                console.log(`🎨 Header Widget [${sIdx}.${rIdx}.${wIdx}]:`, {
-                  type: widget.type,
-                  props: widget.props,
-                  customCSS: widget.customCSS
+              if (row && row.widgets && Array.isArray(row.widgets)) {
+                row.widgets.forEach((widget: any, wIdx: number) => {
+                  console.log(`🎨 Header Widget [${sIdx}.${rIdx}.${wIdx}]:`, {
+                    type: widget.type,
+                    props: widget.props,
+                    customCSS: widget.customCSS
+                  });
                 });
-              });
+              }
             });
           });
         }
@@ -167,14 +169,14 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
   // Load current page content based on pagePath
   useEffect(() => {
     const loadCurrentPage = async () => {
-      if (!storeId || !pagePath) return;
+      if (!storeId || pagePath === undefined) return;
 
       try {
         setPageLoading(true);
         const publicRepository = new PublicPageRepository(storeId);
         
         // Normalize the path - remove leading slash for slug lookup
-        const pageSlug = pagePath === '/' ? '/' : pagePath.replace(/^\//, '');
+        const pageSlug = (pagePath === '/' || pagePath === '') ? '/' : pagePath.replace(/^\//, '');
         
         console.log('🔍 Loading page for path:', {
           pagePath,

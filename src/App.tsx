@@ -95,6 +95,7 @@ function App() {
             </Route>
             <Route path="/auth/callback" component={AuthCallback} />
             <Route path="/store/:storeSlug" component={StoreFrontView} />
+            <Route path="/store/:storeSlug/:pagePath*" component={StoreFrontView} />
             </Switch>
             <CookieConsent />
           </ModalProvider>

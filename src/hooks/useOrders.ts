@@ -225,7 +225,7 @@ export const useOrders = (storeId: string) => {
         .from('orders')
         .update({
           tax: orderData.tax,
-          total: orderData.total
+          total: orderData.total,
           status: orderData.status,
           payment_status: orderData.payment_status,
           stripe_payment_intent_id: orderData.stripe_payment_intent_id
