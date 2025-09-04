@@ -17,6 +17,7 @@ import AuthCallback from './pages/AuthCallback'
 import { VisualPageBuilder } from './pages/VisualPageBuilder'
 import { HeaderConfiguration } from './pages/HeaderConfiguration'
 import { FooterConfiguration } from './pages/FooterConfiguration'
+import { PageBuilderMain } from './pages/pageBuilder/PageBuilderMain'
 import CookieConsent from './components/ui/CookieConsent'
 
 // Protected Route component
@@ -79,6 +80,11 @@ function App() {
               </ProtectedRoute>
             </Route>
             <Route path="/admin/page-builder">
+              <ProtectedRoute>
+                <PageBuilderMain />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/admin/visual-page-builder">
               <ProtectedRoute>
                 <VisualPageBuilder />
               </ProtectedRoute>

@@ -6,9 +6,7 @@ import {
   CreditCard, 
   Truck,
   Globe,
-  FileText,
-  Zap,
-  Layout
+  Zap
 } from 'lucide-react'
 
 interface SettingsSubTabsProps {
@@ -63,25 +61,11 @@ export const SettingsSubTabs: React.FC<SettingsSubTabsProps> = ({
       description: 'Manage custom domains, SSL certificates, and store branding configurations.'
     },
     { 
-      key: 'policies', 
-      label: 'Policies', 
-      icon: <FileText className="w-4 h-4" />,
-      title: 'Store Policies',
-      description: 'Configure privacy policy, terms of service, and other legal compliance settings.'
-    },
-    { 
       key: 'integrations', 
       label: 'Integrations', 
       icon: <Zap className="w-4 h-4" />,
       title: 'Third-Party Integrations',
       description: 'Connect external services, APIs, and tools to enhance your store functionality.'
-    },
-    { 
-      key: 'pagebuilder', 
-      label: 'Page Builder', 
-      icon: <Layout className="w-4 h-4" />,
-      title: 'Visual Page Builder',
-      description: 'Create and manage custom pages using drag-and-drop page builder with section ordering.'
     }
   ]
 

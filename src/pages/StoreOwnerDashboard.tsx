@@ -32,7 +32,7 @@ import { PolicySettings } from '../components/settings/PolicySettings'
 import { IntegrationsSettings } from '../components/settings/IntegrationsSettings'
 import { PageBuilderSettings } from '../components/settings/PageBuilderSettings'
 import { SettingsSubTabs, SettingsSubTabContent } from '../components/settings/SettingsSubTabs'
-import { StoreFrontCustomizer } from '../components/storefront/StoreFrontCustomizer'
+import { PageBuilderMain } from './pageBuilder/PageBuilderMain'
 import { useSubscription } from '../hooks/useSubscription'
 import { useCustomDomain } from '../hooks/useCustomDomain'
 import { useRealAnalytics } from '../hooks/useRealAnalytics'
@@ -831,116 +831,13 @@ const StoreOwnerDashboard: React.FC = () => {
               </Tabs.Content>
 
               <Tabs.Content value="storefront" className="space-y-6">
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white">Page Builder</h3>
-                    <button
-                      onClick={() => window.open('/admin/page-builder', '_blank')}
-                      className="px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
-                    >
-                      Launch Page Builder
-                    </button>
-                  </div>
-                  <div className="bg-[#1E1E1E] rounded-lg p-8 text-center">
-                    <div className="max-w-md mx-auto">
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#9B51E0] to-[#FF7F00] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                        </svg>
-                      </div>
-                      <h4 className="text-xl font-bold text-white mb-4">Advanced Visual Page Builder</h4>
-                      <p className="text-[#A0A0A0] mb-6">
-                        Create stunning, professional pages with our drag-and-drop visual editor. 
-                        Build custom layouts, add interactive widgets, and publish seamlessly to your store.
-                      </p>
-                      <div className="grid grid-cols-2 gap-4 text-left">
-                        <div className="bg-[#2A2A2A] rounded-lg p-4">
-                          <h5 className="text-sm font-semibold text-white mb-2">Features</h5>
-                          <ul className="text-xs text-[#A0A0A0] space-y-1">
-                            <li>• Drag & drop interface</li>
-                            <li>• Custom widgets</li>
-                            <li>• Responsive design</li>
-                            <li>• Live preview</li>
-                          </ul>
-                        </div>
-                        <div className="bg-[#2A2A2A] rounded-lg p-4">
-                          <h5 className="text-sm font-semibold text-white mb-2">Built-in Widgets</h5>
-                          <ul className="text-xs text-[#A0A0A0] space-y-1">
-                            <li>• Hero sections</li>
-                            <li>• Product listings</li>
-                            <li>• Navigation menus</li>
-                            <li>• Shopping cart</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
+                  <PageBuilderMain />
                 </div>
               </Tabs.Content>
               <Tabs.Content value="page-builder" className="space-y-6">
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white">Page Builder (Deprecated)</h3>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-red-400">
-                        Replaced by Store Front customizer
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-[#1E1E1E] rounded-lg p-8 text-center">
-                    <div className="max-w-md mx-auto">
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#9B51E0] to-[#FF7F00] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <h4 className="text-xl font-bold text-white mb-2">
-                        🎨 Use Store Front Instead
-                      </h4>
-                      <p className="text-[#A0A0A0] mb-4">
-                        The Page Builder has been replaced with our new Store Front customizer featuring:
-                      </p>
-                      <div className="text-left text-sm text-[#A0A0A0] mb-6 space-y-1">
-                        <div className="flex items-center">
-                          <span className="text-green-400 mr-2">✓</span>
-                          50+ industry-specific layouts
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-green-400 mr-2">✓</span>
-                          20 professional color schemes
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-green-400 mr-2">✓</span>
-                          Easy drag & drop customization
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-green-400 mr-2">✓</span>
-                          Mobile responsive designs
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-green-400 mr-2">✓</span>
-                          Real-time preview
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-green-400 mr-2">✓</span>
-                          One-click publish
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <button
-                          onClick={() => setActiveTab('storefront')}
-                          className="bg-[#9B51E0] hover:bg-[#A051E0] text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                        >
-                          Go to Store Front
-                        </button>
-                      </div>
-                      <div className="mt-4 pt-4 border-t border-[#3A3A3A]">
-                        <p className="text-xs text-[#A0A0A0]">
-                          The new Store Front designer provides better templates and easier customization.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
+                  <PageBuilderMain />
                 </div>
               </Tabs.Content>
 

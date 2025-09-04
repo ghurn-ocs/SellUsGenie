@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Save, Palette, Type, Settings, Link2, ShoppingCart, Info, ArrowLeft } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { Save, Palette, Type, Settings, Link2, ShoppingCart, Info } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
+import { supabase } from '../lib/supabase';
 
 interface HeaderSettings {
   // a) Page Colors
@@ -60,51 +60,107 @@ const defaultSettings: HeaderSettings = {
 };
 
 export const HeaderConfiguration: React.FC = () => {
-  const [location, setLocation] = useLocation();
   const { currentStore } = useStore();
   const [settings, setSettings] = useState<HeaderSettings>(defaultSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [pages, setPages] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load header settings from store/database
-    // TODO: Implement loading from Supabase
-    
-    // Load pages for navigation preview
-    // TODO: Implement loading pages from Supabase
-    setPages([
-      { id: '1', name: 'Home', slug: 'home', navigationPlacement: 'both' },
-      { id: '2', name: 'Products', slug: 'products', navigationPlacement: 'header' },
-      { id: '3', name: 'About Us', slug: 'about', navigationPlacement: 'both' },
-      { id: '4', name: 'Contact', slug: 'contact', navigationPlacement: 'both' }
-    ]);
-  }, []);
+    const loadHeaderSettings = async () => {
+      if (!currentStore) return;
+
+      try {
+        // Load header settings from store_settings table
+        const { data: settingsData, error } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('store_id', currentStore.id)
+          .eq('setting_key', 'header_configuration')
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error loading header settings:', error);
+        } else if (settingsData?.setting_value) {
+          // Merge loaded settings with defaults
+          setSettings(prev => ({ ...prev, ...settingsData.setting_value }));
+        }
+
+        // Load pages for navigation preview
+        const { data: pagesData, error: pagesError } = await supabase
+          .from('page_documents')
+          .select('id, name, slug, navigation_placement')
+          .eq('store_id', currentStore.id)
+          .eq('status', 'published');
+
+        if (pagesError) {
+          console.error('Error loading pages:', pagesError);
+          // Fallback to mock data
+          setPages([
+            { id: '1', name: 'Home', slug: 'home', navigationPlacement: 'both' },
+            { id: '2', name: 'Products', slug: 'products', navigationPlacement: 'header' },
+            { id: '3', name: 'About Us', slug: 'about', navigationPlacement: 'both' },
+            { id: '4', name: 'Contact', slug: 'contact', navigationPlacement: 'both' }
+          ]);
+        } else {
+          setPages(pagesData || []);
+        }
+      } catch (error) {
+        console.error('Error in loadHeaderSettings:', error);
+      }
+    };
+
+    loadHeaderSettings();
+  }, [currentStore]);
 
   const updateSettings = (updates: Partial<HeaderSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
   };
 
   const handleSave = async () => {
+    if (!currentStore) {
+      console.error('No current store selected');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // TODO: Save to Supabase
-      console.log('Saving header settings:', settings);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Use upsert to insert or update the header configuration
+      const { error } = await supabase
+        .from('store_settings')
+        .upsert({
+          store_id: currentStore.id,
+          setting_key: 'header_configuration',
+          setting_value: settings,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'store_id,setting_key'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Header settings saved successfully:', settings);
     } catch (error) {
       console.error('Failed to save header settings:', error);
+      // You could add toast notifications here for better UX
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleBack = () => {
-    setLocation('/admin/page-builder');
-  };
 
-  // Get navigation pages for preview
+  // Get navigation pages for header preview
   const getNavigationPages = () => {
     return pages.filter(page => {
       const placement = page.navigationPlacement || 'both';
+      const pageName = page.name.toLowerCase();
+      
+      // Exclude Header and Footer system pages from navigation
+      const isSystemPage = pageName.includes('header') || pageName.includes('footer');
+      if (isSystemPage) return false;
+      
+      // Only include pages with header or both placement
       return placement === 'header' || placement === 'both';
     });
   };
@@ -133,20 +189,11 @@ export const HeaderConfiguration: React.FC = () => {
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handleBack}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Header Configuration</h1>
-              <p className="text-gray-400 mt-1">
-                Configure your site's header appearance and behavior
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Header Configuration</h1>
+            <p className="text-gray-400 mt-1">
+              Configure your site's header appearance and behavior
+            </p>
           </div>
           <button
             onClick={handleSave}

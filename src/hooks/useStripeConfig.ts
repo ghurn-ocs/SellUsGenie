@@ -1,6 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import type { StripeConfiguration } from '../lib/supabase'
+
+// Define the interface based on the actual database schema
+interface StripeConfiguration {
+  id?: string
+  store_id: string
+  stripe_publishable_key?: string | null
+  stripe_secret_key?: string | null
+  webhook_endpoint_id?: string | null
+  webhook_endpoint_url?: string | null
+  webhook_secret?: string | null
+  is_configured?: boolean
+  is_live_mode?: boolean
+  test_mode_configured?: boolean
+  live_mode_configured?: boolean
+  last_validated_at?: string | null
+  created_at?: string
+  updated_at?: string
+}
 
 export const useStripeConfig = (storeId: string) => {
   const queryClient = useQueryClient()
@@ -12,34 +29,21 @@ export const useStripeConfig = (storeId: string) => {
   } = useQuery({
     queryKey: ['stripe-config', storeId],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('stripe_configurations')
-          .select('*')
-          .eq('store_id', storeId)
-          .single()
+      const { data, error } = await supabase
+        .from('stripe_configurations')
+        .select('*')
+        .eq('store_id', storeId)
+        .maybeSingle() // Use maybeSingle instead of single to handle no rows gracefully
 
-        if (error && error.code !== 'PGRST116') {
-          // If table doesn't exist, return default values
-          if (error.message?.includes('does not exist')) {
-            console.warn('stripe_configurations table does not exist - using defaults')
-            return null
-          }
-          throw error
-        }
-        
-        return data || null
-      } catch (err: any) {
-        // Handle table not found gracefully
-        if (err.message?.includes('does not exist') || err.code === 'PGRST205') {
-          console.warn('stripe_configurations table does not exist - using defaults')
-          return null
-        }
-        throw err
+      if (error) {
+        console.error('Error fetching stripe configuration:', error)
+        return null
       }
+      
+      return data
     },
     enabled: !!storeId,
-    retry: 1, // Only retry once to avoid long delays
+    retry: 1,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 
@@ -59,7 +63,11 @@ export const useStripeConfig = (storeId: string) => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error updating stripe configuration:', error)
+        throw error
+      }
+      
       return data
     },
     onSuccess: () => {

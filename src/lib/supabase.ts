@@ -26,6 +26,9 @@ export interface Store {
   is_active: boolean
   subscription_status: 'active' | 'inactive' | 'trial'
   trial_expires_at: string | null
+  // Store branding
+  store_logo_url?: string
+  store_tagline?: string
   // Payment configuration
   stripe_publishable_key?: string
   stripe_webhook_secret?: string

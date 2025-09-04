@@ -107,25 +107,20 @@ export const HeaderFooterEditor: React.FC<HeaderFooterEditorProps> = ({
   };
 
 
-  // Show only Header editor for now
-  if (type !== 'header') {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center py-12">
-          <p className="text-gray-400">Footer editor coming soon...</p>
-        </div>
-      </div>
-    );
-  }
+  // Footer editor uses same interface as header editor
+  const editorTitle = type === 'header' ? 'Header Settings' : 'Footer Settings';
+  const editorDescription = type === 'header' 
+    ? "Customize your site's header with simple, focused options"
+    : "Customize your site's footer with simple, focused options";
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white capitalize">{type} Settings</h1>
+          <h1 className="text-2xl font-bold text-white">{editorTitle}</h1>
           <p className="text-gray-400 mt-1">
-            Customize your site's {type} with simple, focused options
+            {editorDescription}
           </p>
         </div>
         <button
@@ -147,94 +142,166 @@ export const HeaderFooterEditor: React.FC<HeaderFooterEditorProps> = ({
           </span>
         </div>
         <div className="border border-gray-700 rounded-lg p-4 bg-gray-800">
-          <div 
-            className={`w-full rounded flex items-center justify-between ${getSpacingClasses(settings.horizontalSpacing)}`}
-            style={{ 
-              backgroundColor: settings.backgroundColor,
-              color: settings.textColor 
-            }}
-          >
-            {/* Left side - Logo and Store Info */}
-            <div className="flex items-center space-x-3">
-              {settings.displayStoreLogo && storeLogoUrl && (
-                <img src={storeLogoUrl} alt="Store Logo" className="h-8 w-auto" />
-              )}
-              <div className="flex flex-col">
-                {settings.showStoreName && (
-                  <span className="font-semibold">Store Name</span>
+          {type === 'header' ? (
+            <div 
+              className={`w-full rounded flex items-center justify-between ${getSpacingClasses(settings.horizontalSpacing)}`}
+              style={{ 
+                backgroundColor: settings.backgroundColor,
+                color: settings.textColor 
+              }}
+            >
+              {/* Left side - Logo and Store Info */}
+              <div className="flex items-center space-x-3">
+                {settings.displayStoreLogo && storeLogoUrl && (
+                  <img src={storeLogoUrl} alt="Store Logo" className="h-8 w-auto" />
                 )}
-                {settings.showStoreTagline && (
-                  <span className="text-sm opacity-80">Store tagline here</span>
+                <div className="flex flex-col">
+                  {settings.showStoreName && (
+                    <span className="font-semibold">Store Name</span>
+                  )}
+                  {settings.showStoreTagline && (
+                    <span className="text-sm opacity-80">Store tagline here</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Center - Navigation Links */}
+              <nav className="flex items-center space-x-4">
+                {getNavigationPages().length > 0 ? (
+                  getNavigationPages().slice(0, 4).map((page) => {
+                    const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
+                    const linkClasses = `px-3 py-2 transition-all duration-200 ${borderRadius} ${
+                      settings.navLinkBorder ? 'border' : ''
+                    }`;
+                    const linkStyle: React.CSSProperties = {
+                      color: settings.navLinkTextColor,
+                      borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
+                      backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
+                    };
+
+                    return (
+                      <a 
+                        key={page.slug}
+                        href="#" 
+                        className={linkClasses}
+                        style={linkStyle}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = settings.navLinkHoverColor;
+                          if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
+                            e.currentTarget.style.backgroundColor = settings.navLinkTextColor;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = settings.navLinkTextColor;
+                          if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                        title={`Navigate to ${page.name}`}
+                      >
+                        {page.name}
+                      </a>
+                    );
+                  })
+                ) : (
+                  <span className="text-sm opacity-60 italic">
+                    No navigation pages configured
+                  </span>
+                )}
+              </nav>
+
+              {/* Right side - Shopping Cart */}
+              <div className="flex items-center">
+                {settings.cartDisplay === 'icon' ? (
+                  <ShoppingCart className="w-6 h-6" style={{ color: settings.textColor }} />
+                ) : (
+                  <button
+                    className={`flex items-center space-x-2 px-3 py-2 transition-all duration-200 ${getBorderRadius(settings.buttonStyle)} ${
+                      settings.buttonBorder ? 'border' : ''
+                    }`}
+                    style={{
+                      borderColor: settings.buttonBorder ? settings.buttonBorderColor : 'transparent',
+                      backgroundColor: settings.buttonBodyFill ? settings.buttonBodyColor : 'transparent',
+                      color: settings.textColor
+                    }}
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span className="text-sm">Cart</span>
+                  </button>
                 )}
               </div>
             </div>
+          ) : (
+            /* Footer Preview */
+            <div 
+              className={`w-full rounded ${getSpacingClasses(settings.horizontalSpacing)}`}
+              style={{ 
+                backgroundColor: settings.backgroundColor,
+                color: settings.textColor 
+              }}
+            >
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+                {/* Left side - Logo and Store Info */}
+                <div className="flex items-center space-x-3">
+                  {settings.displayStoreLogo && storeLogoUrl && (
+                    <img src={storeLogoUrl} alt="Store Logo" className="h-8 w-auto" />
+                  )}
+                  <div className="flex flex-col">
+                    {settings.showStoreName && (
+                      <span className="font-semibold">Store Name</span>
+                    )}
+                    {settings.showStoreTagline && (
+                      <span className="text-sm opacity-80">Store tagline here</span>
+                    )}
+                  </div>
+                </div>
 
-            {/* Center - Navigation Links */}
-            <nav className="flex items-center space-x-4">
-              {getNavigationPages().length > 0 ? (
-                getNavigationPages().slice(0, 4).map((page) => {
-                  const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
-                  const linkClasses = `px-3 py-2 transition-all duration-200 ${borderRadius} ${
-                    settings.navLinkBorder ? 'border' : ''
-                  }`;
-                  const linkStyle: React.CSSProperties = {
-                    color: settings.navLinkTextColor,
-                    borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
-                    backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
-                  };
+                {/* Center - Footer Navigation Links */}
+                <nav className="flex flex-wrap items-center gap-4">
+                  {getNavigationPages().length > 0 ? (
+                    getNavigationPages().slice(0, 5).map((page) => {
+                      const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
+                      const linkClasses = `px-2 py-1 text-sm transition-all duration-200 ${borderRadius} ${
+                        settings.navLinkBorder ? 'border' : ''
+                      }`;
+                      const linkStyle: React.CSSProperties = {
+                        color: settings.navLinkTextColor,
+                        borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
+                        backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
+                      };
 
-                  return (
-                    <a 
-                      key={page.slug}
-                      href="#" 
-                      className={linkClasses}
-                      style={linkStyle}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = settings.navLinkHoverColor;
-                        if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
-                          e.currentTarget.style.backgroundColor = settings.navLinkTextColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = settings.navLinkTextColor;
-                        if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
-                      }}
-                      title={`Navigate to ${page.name}`}
-                    >
-                      {page.name}
-                    </a>
-                  );
-                })
-              ) : (
-                <span className="text-sm opacity-60 italic">
-                  No navigation pages configured
-                </span>
-              )}
-            </nav>
+                      return (
+                        <a 
+                          key={page.slug}
+                          href="#" 
+                          className={linkClasses}
+                          style={linkStyle}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = settings.navLinkHoverColor;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = settings.navLinkTextColor;
+                          }}
+                          title={`Navigate to ${page.name}`}
+                        >
+                          {page.name}
+                        </a>
+                      );
+                    })
+                  ) : (
+                    <span className="text-sm opacity-60 italic">
+                      No footer navigation pages configured
+                    </span>
+                  )}
+                </nav>
 
-            {/* Right side - Shopping Cart */}
-            <div className="flex items-center">
-              {settings.cartDisplay === 'icon' ? (
-                <ShoppingCart className="w-6 h-6" style={{ color: settings.textColor }} />
-              ) : (
-                <button
-                  className={`flex items-center space-x-2 px-3 py-2 transition-all duration-200 ${getBorderRadius(settings.buttonStyle)} ${
-                    settings.buttonBorder ? 'border' : ''
-                  }`}
-                  style={{
-                    borderColor: settings.buttonBorder ? settings.buttonBorderColor : 'transparent',
-                    backgroundColor: settings.buttonBodyFill ? settings.buttonBodyColor : 'transparent',
-                    color: settings.textColor
-                  }}
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  <span className="text-sm">Cart</span>
-                </button>
-              )}
+                {/* Right side - Copyright & Year */}
+                <div className="text-sm opacity-80">
+                  © {new Date().getFullYear()} Store Name. All rights reserved.
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -245,7 +312,7 @@ export const HeaderFooterEditor: React.FC<HeaderFooterEditorProps> = ({
           <div>
             <h4 className="text-sm font-semibold text-blue-300 mb-1">Navigation Configuration</h4>
             <p className="text-xs text-blue-200">
-              What appears in the header navigation is configured in each page's <strong>"Properties"</strong> section. 
+              What appears in the {type} navigation is configured in each page's <strong>"Properties"</strong> section. 
               Set the <strong>"Navigation Placement"</strong> to control where pages appear (Header, Footer, Both, or None).
             </p>
           </div>

@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Save, Palette, Type, Link2, Info, ArrowLeft, Settings } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { Save, Palette, Type, Link2, Info, Settings } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
+import { supabase } from '../lib/supabase';
 
 interface FooterSettings {
   // a) Page Colors
@@ -44,54 +44,132 @@ const defaultSettings: FooterSettings = {
 };
 
 export const FooterConfiguration: React.FC = () => {
-  const [location, setLocation] = useLocation();
   const { currentStore } = useStore();
   const [settings, setSettings] = useState<FooterSettings>(defaultSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [pages, setPages] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load footer settings from store/database
-    // TODO: Implement loading from Supabase
-    
-    // Load pages for navigation preview
-    // TODO: Implement loading pages from Supabase
-    setPages([
-      { id: '1', name: 'Home', slug: 'home', navigationPlacement: 'both' },
-      { id: '2', name: 'About Us', slug: 'about', navigationPlacement: 'both' },
-      { id: '3', name: 'Privacy Policy', slug: 'privacy', navigationPlacement: 'footer' },
-      { id: '4', name: 'Terms of Service', slug: 'terms', navigationPlacement: 'footer' },
-      { id: '5', name: 'Contact', slug: 'contact', navigationPlacement: 'both' }
-    ]);
-  }, []);
+    const loadFooterSettings = async () => {
+      if (!currentStore) return;
+
+      try {
+        // Load footer settings from store_settings table
+        const { data: settingsData, error } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('store_id', currentStore.id)
+          .eq('setting_key', 'footer_configuration')
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error loading footer settings:', error);
+        } else if (settingsData?.setting_value) {
+          // Merge loaded settings with defaults
+          setSettings(prev => ({ ...prev, ...settingsData.setting_value }));
+        }
+
+        // Load pages for navigation preview
+        const { data: pagesData, error: pagesError } = await supabase
+          .from('page_documents')
+          .select('id, name, slug, navigation_placement')
+          .eq('store_id', currentStore.id)
+          .eq('status', 'published');
+
+        if (pagesError) {
+          console.error('Error loading pages:', pagesError);
+          // Fallback to mock data
+          setPages([
+            { id: '1', name: 'Home', slug: 'home', navigationPlacement: 'both' },
+            { id: '2', name: 'About Us', slug: 'about', navigationPlacement: 'both' },
+            { id: '3', name: 'Privacy Policy', slug: 'privacy', navigationPlacement: 'footer' },
+            { id: '4', name: 'Terms of Service', slug: 'terms', navigationPlacement: 'footer' },
+            { id: '5', name: 'Contact', slug: 'contact', navigationPlacement: 'both' }
+          ]);
+        } else {
+          setPages(pagesData || []);
+        }
+      } catch (error) {
+        console.error('Error in loadFooterSettings:', error);
+      }
+    };
+
+    loadFooterSettings();
+  }, [currentStore]);
 
   const updateSettings = (updates: Partial<FooterSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
   };
 
   const handleSave = async () => {
+    if (!currentStore) {
+      console.error('No current store selected');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // TODO: Save to Supabase
-      console.log('Saving footer settings:', settings);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Use upsert to insert or update the footer configuration
+      const { error } = await supabase
+        .from('store_settings')
+        .upsert({
+          store_id: currentStore.id,
+          setting_key: 'footer_configuration',
+          setting_value: settings,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'store_id,setting_key'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Footer settings saved successfully:', settings);
     } catch (error) {
       console.error('Failed to save footer settings:', error);
+      // You could add toast notifications here for better UX
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleBack = () => {
-    setLocation('/admin/page-builder');
-  };
 
-  // Get navigation pages for preview
-  const getNavigationPages = () => {
+  // Get navigation pages for footer preview
+  const getFooterPages = () => {
     return pages.filter(page => {
       const placement = page.navigationPlacement || 'both';
+      const pageName = page.name.toLowerCase();
+      
+      // Exclude Header and Footer system pages from navigation
+      const isSystemPage = pageName.includes('header') || pageName.includes('footer');
+      if (isSystemPage) return false;
+      
+      // Only include pages with footer or both placement
       return placement === 'footer' || placement === 'both';
     });
+  };
+
+  // Group footer pages into General and Legal categories
+  const getGroupedFooterPages = () => {
+    const footerPages = getFooterPages();
+    const legalKeywords = ['privacy', 'terms', 'legal', 'cookie', 'policy', 'disclaimer', 'returns', 'refund'];
+    
+    const general: typeof footerPages = [];
+    const legal: typeof footerPages = [];
+    
+    footerPages.forEach(page => {
+      const pageName = page.name.toLowerCase();
+      const isLegal = legalKeywords.some(keyword => pageName.includes(keyword));
+      
+      if (isLegal) {
+        legal.push(page);
+      } else {
+        general.push(page);
+      }
+    });
+    
+    return { general, legal };
   };
 
   // Helper functions for styling
@@ -117,20 +195,11 @@ export const FooterConfiguration: React.FC = () => {
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handleBack}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Footer Configuration</h1>
-              <p className="text-gray-400 mt-1">
-                Configure your site's footer appearance and behavior
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Footer Configuration</h1>
+            <p className="text-gray-400 mt-1">
+              Configure your site's footer appearance and behavior
+            </p>
           </div>
           <button
             onClick={handleSave}
@@ -158,73 +227,118 @@ export const FooterConfiguration: React.FC = () => {
                 color: settings.textColor 
               }}
             >
-              {/* Top section - Logo and Store Info */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center space-x-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Left Column - Logo, Store Name, and Tagline aligned top-left */}
+                <div className="flex items-start space-x-3">
                   {settings.displayStoreLogo && currentStore?.store_logo_url && (
-                    <img src={currentStore.store_logo_url} alt="Store Logo" className="h-6 w-auto" />
+                    <img src={currentStore.store_logo_url} alt="Store Logo" className="h-8 w-auto flex-shrink-0" />
                   )}
                   <div className="flex flex-col">
                     {settings.showStoreName && (
-                      <span className="font-semibold text-lg">{currentStore?.name || 'Store Name'}</span>
+                      <span className="font-semibold text-lg leading-tight">{currentStore?.store_name || 'Store Name'}</span>
                     )}
                     {settings.showStoreTagline && (
-                      <span className="text-sm opacity-80">{currentStore?.tagline || 'Store tagline here'}</span>
+                      <span className="text-sm opacity-80 leading-tight">
+                        {(currentStore as any)?.description || 'Store tagline here'}
+                      </span>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Navigation Links */}
-              <div className="border-t border-opacity-20 pt-4" style={{ borderColor: settings.textColor }}>
-                <nav className="flex flex-wrap justify-center gap-6">
-                  {getNavigationPages().length > 0 ? (
-                    getNavigationPages().map((page) => {
-                      const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
-                      const linkClasses = `px-3 py-2 transition-all duration-200 ${borderRadius} ${
-                        settings.navLinkBorder ? 'border' : ''
-                      } underline`;
-                      const linkStyle: React.CSSProperties = {
-                        color: settings.navLinkTextColor,
-                        borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
-                        backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
-                      };
+                {/* Middle Column - General Pages */}
+                <div>
+                  {(() => {
+                    const { general, legal } = getGroupedFooterPages();
+                    return general.length > 0 ? (
+                      <>
+                        <h4 className="font-semibold text-sm uppercase tracking-wide mb-3" style={{ color: settings.textColor }}>
+                          General
+                        </h4>
+                        <nav className="space-y-2">
+                          {general.map((page) => {
+                            const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
+                            const linkClasses = `block px-0 py-1 transition-all duration-200 text-sm ${borderRadius} ${
+                              settings.navLinkBorder ? 'border' : ''
+                            }`;
+                            const linkStyle: React.CSSProperties = {
+                              color: settings.navLinkTextColor,
+                              borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
+                              backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
+                            };
 
-                      return (
-                        <a 
-                          key={page.slug}
-                          href="#" 
-                          className={linkClasses}
-                          style={linkStyle}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = settings.navLinkHoverColor;
-                            if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
-                              e.currentTarget.style.backgroundColor = settings.navLinkTextColor;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = settings.navLinkTextColor;
-                            if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                            }
-                          }}
-                          title={`Navigate to ${page.name}`}
-                        >
-                          {page.name}
-                        </a>
-                      );
-                    })
-                  ) : (
-                    <span className="text-sm opacity-60 italic">
-                      No footer navigation pages configured
-                    </span>
-                  )}
-                </nav>
+                            return (
+                              <a 
+                                key={page.slug}
+                                href="#" 
+                                className={linkClasses}
+                                style={linkStyle}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = settings.navLinkHoverColor;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = settings.navLinkTextColor;
+                                }}
+                                title={`Navigate to ${page.name}`}
+                              >
+                                {page.name}
+                              </a>
+                            );
+                          })}
+                        </nav>
+                      </>
+                    ) : null;
+                  })()}
+                </div>
+
+                {/* Right Column - Legal Pages */}
+                <div>
+                  {(() => {
+                    const { general, legal } = getGroupedFooterPages();
+                    return legal.length > 0 ? (
+                      <>
+                        <h4 className="font-semibold text-sm uppercase tracking-wide mb-3" style={{ color: settings.textColor }}>
+                          Legal
+                        </h4>
+                        <nav className="space-y-2">
+                          {legal.map((page) => {
+                            const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
+                            const linkClasses = `block px-0 py-1 transition-all duration-200 text-sm ${borderRadius} ${
+                              settings.navLinkBorder ? 'border' : ''
+                            }`;
+                            const linkStyle: React.CSSProperties = {
+                              color: settings.navLinkTextColor,
+                              borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
+                              backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
+                            };
+
+                            return (
+                              <a 
+                                key={page.slug}
+                                href="#" 
+                                className={linkClasses}
+                                style={linkStyle}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = settings.navLinkHoverColor;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = settings.navLinkTextColor;
+                                }}
+                                title={`Navigate to ${page.name}`}
+                              >
+                                {page.name}
+                              </a>
+                            );
+                          })}
+                        </nav>
+                      </>
+                    ) : null;
+                  })()}
+                </div>
               </div>
 
               {/* Copyright section */}
-              <div className="border-t border-opacity-20 pt-4 mt-4 text-center text-sm opacity-80" style={{ borderColor: settings.textColor }}>
-                © {new Date().getFullYear()} {currentStore?.name || 'Your Store'}. All rights reserved.
+              <div className="border-t border-opacity-20 pt-4 mt-8 text-center text-sm opacity-80" style={{ borderColor: settings.textColor }}>
+                © {new Date().getFullYear()} {currentStore?.store_name || 'Your Store'}. All rights reserved.
               </div>
             </div>
           </div>
