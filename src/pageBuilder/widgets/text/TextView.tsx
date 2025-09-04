@@ -10,6 +10,22 @@ import { TextProps } from './index';
 export const TextView: React.FC<WidgetViewProps> = ({ widget, theme }) => {
   const props = widget.props as TextProps;
 
+  // Debug logging for HTML rendering issues (only when needed)
+  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_TEXT_WIDGETS) {
+    const hasHtmlContent = /<[^>]+>/.test(props.content || '');
+    const shouldRenderAsHtml = props.allowHtml || (props.allowHtml === undefined && hasHtmlContent);
+    
+    console.log('🎨 TextView Debug:', {
+      widgetId: widget.id,
+      allowHtml: props.allowHtml,
+      hasHtmlContent,
+      shouldRenderAsHtml,
+      autoDetected: props.allowHtml === undefined && hasHtmlContent,
+      contentLength: props.content?.length || 0,
+      contentPreview: props.content?.substring(0, 50) + '...'
+    });
+  }
+
   // Apply theme overrides if provided
   const getThemeColor = (colorClass: string) => {
     if (!theme) return colorClass;
@@ -37,7 +53,11 @@ export const TextView: React.FC<WidgetViewProps> = ({ widget, theme }) => {
 
   // Sanitize content if HTML is not allowed
   const renderContent = () => {
-    if (props.allowHtml) {
+    // Auto-detect HTML content if allowHtml is not explicitly set
+    const hasHtmlContent = /<[^>]+>/.test(props.content || '');
+    const shouldRenderAsHtml = props.allowHtml || (props.allowHtml === undefined && hasHtmlContent);
+    
+    if (shouldRenderAsHtml) {
       // Basic HTML sanitization - only allow safe tags
       const sanitizedContent = props.content
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
