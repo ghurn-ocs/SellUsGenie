@@ -4,9 +4,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Save, Palette, Type, Settings, Link2, ShoppingCart, Info } from 'lucide-react';
+import { Save, Palette, Type, Settings, Link2, ShoppingCart, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { supabase } from '../lib/supabase';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { HeaderLayoutView, type HeaderLayoutProps } from '../pageBuilder/widgets/header-layout/HeaderLayoutView';
+import type { Widget } from '../pageBuilder/types';
 
 interface HeaderSettings {
   // a) Page Colors
@@ -29,6 +32,7 @@ interface HeaderSettings {
   navLinkBorder: boolean;
   navLinkBorderStyle: 'rounded' | 'square';
   navLinkBorderTransparent: boolean;
+  navLinkBorderColor: string;
   navLinkTextColor: string;
   navLinkHoverColor: string;
   
@@ -53,6 +57,7 @@ const defaultSettings: HeaderSettings = {
   navLinkBorder: false,
   navLinkBorderStyle: 'rounded',
   navLinkBorderTransparent: true,
+  navLinkBorderColor: '#3b82f6',
   navLinkTextColor: '#1f2937',
   navLinkHoverColor: '#3b82f6',
   cartDisplay: 'icon',
@@ -61,8 +66,8 @@ const defaultSettings: HeaderSettings = {
 
 export const HeaderConfiguration: React.FC = () => {
   const { currentStore } = useStore();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<HeaderSettings>(defaultSettings);
-  const [isSaving, setIsSaving] = useState(false);
   const [pages, setPages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -102,7 +107,12 @@ export const HeaderConfiguration: React.FC = () => {
             { id: '4', name: 'Contact', slug: 'contact', navigationPlacement: 'both' }
           ]);
         } else {
-          setPages(pagesData || []);
+          // Map database fields from snake_case to camelCase
+          const mappedPages = (pagesData || []).map(page => ({
+            ...page,
+            navigationPlacement: page.navigation_placement
+          }));
+          setPages(mappedPages);
         }
       } catch (error) {
         console.error('Error in loadHeaderSettings:', error);
@@ -116,21 +126,19 @@ export const HeaderConfiguration: React.FC = () => {
     setSettings(prev => ({ ...prev, ...updates }));
   };
 
-  const handleSave = async () => {
-    if (!currentStore) {
-      console.error('No current store selected');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
+  const saveHeaderSettings = useMutation({
+    mutationFn: async (headerSettings: HeaderSettings) => {
+      if (!currentStore) throw new Error('No store selected');
+      console.log('Attempting to save header settings:', headerSettings);
+      console.log('Store ID:', currentStore.id);
+      
       // Use upsert to insert or update the header configuration
       const { error } = await supabase
         .from('store_settings')
         .upsert({
           store_id: currentStore.id,
           setting_key: 'header_configuration',
-          setting_value: settings,
+          setting_value: headerSettings,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'store_id,setting_key'
@@ -139,14 +147,18 @@ export const HeaderConfiguration: React.FC = () => {
       if (error) {
         throw error;
       }
-
-      console.log('Header settings saved successfully:', settings);
-    } catch (error) {
-      console.error('Failed to save header settings:', error);
-      // You could add toast notifications here for better UX
-    } finally {
-      setIsSaving(false);
+    },
+    onSuccess: () => {
+      console.log('Header settings saved successfully');
+      queryClient.invalidateQueries({ queryKey: ['store-settings'] });
+    },
+    onError: (error) => {
+      console.error('Error saving header settings:', error);
     }
+  });
+
+  const handleSave = () => {
+    saveHeaderSettings.mutate(settings);
   };
 
 
@@ -197,11 +209,11 @@ export const HeaderConfiguration: React.FC = () => {
           </div>
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={saveHeaderSettings.isPending}
             className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+            <span>{saveHeaderSettings.isPending ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
 
@@ -213,95 +225,79 @@ export const HeaderConfiguration: React.FC = () => {
               Updates automatically
             </span>
           </div>
-          <div className="border border-gray-700 rounded-lg p-4 bg-gray-800">
-            <div 
-              className={`w-full rounded flex items-center justify-between ${getSpacingClasses(settings.horizontalSpacing)}`}
-              style={{ 
-                backgroundColor: settings.backgroundColor,
-                color: settings.textColor 
+          <div className="border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+            <HeaderLayoutView
+              widget={{
+                id: 'header-preview',
+                type: 'header-layout',
+                props: {
+                  layout: 'logo-left',
+                  height: settings.horizontalSpacing === 'thin' ? 'compact' : 
+                          settings.horizontalSpacing === 'expanded' ? 'tall' : 'standard',
+                  logo: {
+                    type: (settings.displayStoreLogo && settings.showStoreName) ? 'both' :
+                          settings.displayStoreLogo ? 'image' :
+                          settings.showStoreName ? 'text' : 'image', // Default to showing at least image or text
+                    text: settings.showStoreName ? undefined : null, // undefined = use currentStore, null = hide
+                    imageUrl: settings.displayStoreLogo ? undefined : null, // undefined = use currentStore, null = hide  
+                    imageAlt: 'Store Logo',
+                    position: 'left',
+                    size: 'medium',
+                    link: '/',
+                    showTagline: settings.showStoreTagline
+                  },
+                  navigation: {
+                    enabled: getNavigationPages().length > 0,
+                    position: 'center',
+                    style: 'horizontal',
+                    links: getNavigationPages().slice(0, 4).map(page => ({
+                      id: page.id || page.slug,
+                      label: page.name,
+                      href: `/${page.slug}`,
+                      type: 'internal' as const,
+                      isActive: false
+                    })),
+                    autoDetectPages: false,
+                    borderEnabled: settings.navLinkBorder,
+                    borderStyle: settings.navLinkBorderStyle,
+                    borderColor: settings.navLinkBorderColor,
+                    borderTransparent: settings.navLinkBorderTransparent
+                  },
+                  cart: {
+                    enabled: true,
+                    position: 'right',
+                    style: settings.cartDisplay === 'button' ? 'icon-text' : 'icon',
+                    showCount: true,
+                    behavior: 'sidebar'
+                  },
+                  styling: {
+                    backgroundColor: settings.backgroundColor,
+                    textColor: settings.textColor,
+                    linkColor: settings.navLinkTextColor,
+                    linkHoverColor: settings.navLinkHoverColor,
+                    borderBottom: false,
+                    sticky: false,
+                    shadow: 'none'
+                  },
+                  responsive: {
+                    mobile: {
+                      showLogo: settings.displayStoreLogo,
+                      showNavigation: true,
+                      navigationStyle: 'hamburger',
+                      showCart: true
+                    },
+                    tablet: {
+                      showLogo: settings.displayStoreLogo,
+                      showNavigation: true,
+                      showCart: true
+                    }
+                  }
+                },
+                position: { x: 0, y: 0 },
+                size: { width: '100%', height: 'auto' },
+                styles: {}
               }}
-            >
-              {/* Left side - Logo and Store Info */}
-              <div className="flex items-center space-x-3">
-                {settings.displayStoreLogo && currentStore?.store_logo_url && (
-                  <img src={currentStore.store_logo_url} alt="Store Logo" className="h-8 w-auto" />
-                )}
-                <div className="flex flex-col">
-                  {settings.showStoreName && (
-                    <span className="font-semibold">{currentStore?.name || 'Store Name'}</span>
-                  )}
-                  {settings.showStoreTagline && (
-                    <span className="text-sm opacity-80">{currentStore?.tagline || 'Store tagline here'}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Center - Navigation Links */}
-              <nav className="flex items-center space-x-4">
-                {getNavigationPages().length > 0 ? (
-                  getNavigationPages().slice(0, 4).map((page) => {
-                    const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
-                    const linkClasses = `px-3 py-2 transition-all duration-200 ${borderRadius} ${
-                      settings.navLinkBorder ? 'border' : ''
-                    }`;
-                    const linkStyle: React.CSSProperties = {
-                      color: settings.navLinkTextColor,
-                      borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
-                      backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
-                    };
-
-                    return (
-                      <a 
-                        key={page.slug}
-                        href="#" 
-                        className={linkClasses}
-                        style={linkStyle}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = settings.navLinkHoverColor;
-                          if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
-                            e.currentTarget.style.backgroundColor = settings.navLinkTextColor;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = settings.navLinkTextColor;
-                          if (settings.navLinkBorder && !settings.navLinkBorderTransparent) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }
-                        }}
-                        title={`Navigate to ${page.name}`}
-                      >
-                        {page.name}
-                      </a>
-                    );
-                  })
-                ) : (
-                  <span className="text-sm opacity-60 italic">
-                    No navigation pages configured
-                  </span>
-                )}
-              </nav>
-
-              {/* Right side - Shopping Cart */}
-              <div className="flex items-center">
-                {settings.cartDisplay === 'icon' ? (
-                  <ShoppingCart className="w-6 h-6" style={{ color: settings.textColor }} />
-                ) : (
-                  <button
-                    className={`flex items-center space-x-2 px-3 py-2 transition-all duration-200 ${getBorderRadius(settings.buttonStyle)} ${
-                      settings.buttonBorder ? 'border' : ''
-                    }`}
-                    style={{
-                      borderColor: settings.buttonBorder ? settings.buttonBorderColor : 'transparent',
-                      backgroundColor: settings.buttonBodyFill ? settings.buttonBodyColor : 'transparent',
-                      color: settings.textColor
-                    }}
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    <span className="text-sm">Cart</span>
-                  </button>
-                )}
-              </div>
-            </div>
+            />
           </div>
         </div>
 
@@ -528,6 +524,23 @@ export const HeaderConfiguration: React.FC = () => {
                       <option value="square">Square Edge</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Border Color</label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        value={settings.navLinkBorderColor}
+                        onChange={(e) => updateSettings({ navLinkBorderColor: e.target.value })}
+                        className="w-12 h-8 rounded border border-gray-600 bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={settings.navLinkBorderColor}
+                        onChange={(e) => updateSettings({ navLinkBorderColor: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center space-x-3">
                     <input
                       id="navLinkBorderTransparent"
@@ -625,6 +638,29 @@ export const HeaderConfiguration: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Success/Error Messages */}
+        {(saveHeaderSettings.isSuccess || saveHeaderSettings.isError) && (
+          <div className="mt-8">
+            {saveHeaderSettings.isSuccess && (
+              <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
+                <div className="flex items-center space-x-2 text-green-400">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Header settings saved successfully!</span>
+                </div>
+              </div>
+            )}
+
+            {saveHeaderSettings.isError && (
+              <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                <div className="flex items-center space-x-2 text-red-400">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>Failed to save changes. Please try again.</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

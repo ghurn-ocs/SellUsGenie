@@ -11,6 +11,7 @@ export interface NavigationItem {
   location: 'header' | 'footer' | 'both';
   isActive: boolean;
   category: NavigationCategory;
+  footerColumn?: 1 | 2 | 3 | 4;
   children?: NavigationItem[];
 }
 export type NavigationCategory = 
@@ -169,7 +170,7 @@ export class NavigationManager {
    * Convert pages into organized navigation structure
    */
   generateNavigation(
-    pages: Array<{id: string, name: string, slug: string, status: string, navigationPlacement?: string}>, 
+    pages: Array<{id: string, name: string, slug: string, status: string, navigationPlacement?: string, footerColumn?: number}>, 
     policies?: {
       privacy_policy?: string;
       terms_of_service?: string; 
@@ -179,6 +180,12 @@ export class NavigationManager {
   ): {
     header: NavigationItem[];
     footer: NavigationItem[];
+    footerColumns: {
+      1: NavigationItem[];
+      2: NavigationItem[];
+      3: NavigationItem[];
+      4: NavigationItem[];
+    };
   } {
     // Filter only published pages and exclude pages with missing slugs
     const publishedPages = pages.filter(page => {
@@ -211,7 +218,8 @@ export class NavigationManager {
         order,
         location,
         isActive: true,
-        category
+        category,
+        footerColumn: page.footerColumn as 1 | 2 | 3 | 4 || undefined
       };
     }).filter(Boolean) as NavigationItem[];
     // Add policy pages from settings if they exist (only if no Visual Page Builder page exists)
@@ -231,7 +239,8 @@ export class NavigationManager {
           order: NAVIGATION_ORDER['about-us'] || 2,
           location: 'both',
           isActive: true,
-          category: 'primary'
+          category: 'primary',
+          footerColumn: 2
         });
       }
       if (policies.privacy_policy && !navigationItems.some(item => item.name.toLowerCase().includes('privacy'))) {
@@ -242,7 +251,8 @@ export class NavigationManager {
           order: NAVIGATION_ORDER['privacy'] || 50,
           location: 'footer',
           isActive: true,
-          category: 'legal'
+          category: 'legal',
+          footerColumn: 4
         });
       }
       if (policies.terms_of_service && !navigationItems.some(item => item.name.toLowerCase().includes('terms'))) {
@@ -253,7 +263,8 @@ export class NavigationManager {
           order: NAVIGATION_ORDER['terms'] || 51,
           location: 'footer',
           isActive: true,
-          category: 'legal'
+          category: 'legal',
+          footerColumn: 4
         });
       }
       // For Returns Policy, only add policy version if no Visual Page Builder Returns page exists
@@ -271,7 +282,8 @@ export class NavigationManager {
           order: NAVIGATION_ORDER['returns'] || 52,
           location: 'footer',
           isActive: true,
-          category: 'legal'
+          category: 'legal',
+          footerColumn: 4
         });
       }
     }
@@ -281,11 +293,26 @@ export class NavigationManager {
     const headerItems = navigationItems
       .filter(item => item.location === 'header' || item.location === 'both')
       .slice(0, this.config.header.maxItems);
+    
     const footerItems = navigationItems
       .filter(item => item.location === 'footer' || item.location === 'both');
+    
+    // Organize footer items by numbered columns using the new footerColumn field
+    const footerColumns = {
+      1: footerItems.filter(item => item.footerColumn === 1),
+      2: footerItems.filter(item => item.footerColumn === 2),
+      3: footerItems.filter(item => item.footerColumn === 3),
+      4: footerItems.filter(item => item.footerColumn === 4)
+    };
+    
+    // Fallback: items without footerColumn assignment go to column 2 (General)
+    const unassignedItems = footerItems.filter(item => !item.footerColumn);
+    footerColumns[2].push(...unassignedItems);
+    
     const finalNavigation = {
       header: headerItems,
-      footer: this.organizeFooterNavigation(footerItems)
+      footer: this.organizeFooterNavigation(footerItems), // Keep backward compatibility
+      footerColumns
     };
     
     return finalNavigation;

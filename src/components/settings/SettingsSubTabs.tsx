@@ -62,10 +62,10 @@ export const SettingsSubTabs: React.FC<SettingsSubTabsProps> = ({
     },
     { 
       key: 'integrations', 
-      label: 'Integrations', 
+      label: 'Analytics', 
       icon: <Zap className="w-4 h-4" />,
-      title: 'Third-Party Integrations',
-      description: 'Connect external services, APIs, and tools to enhance your store functionality.'
+      title: 'Analytics & Integrations',
+      description: 'Configure analytics tracking, connect external services, and manage third-party integrations.'
     }
   ]
 

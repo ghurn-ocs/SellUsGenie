@@ -120,52 +120,9 @@ declare namespace google {
       function addListenerOnce(instance: any, eventName: string, handler: (...args: any[]) => void): any;
     }
     
-    namespace drawing {
-      class DrawingManager {
-        constructor(options?: DrawingManagerOptions);
-        setMap(map: Map | null): void;
-        setDrawingMode(mode: OverlayType | null): void;
-      }
-      
-      interface DrawingManagerOptions {
-        drawingMode?: OverlayType | null;
-        drawingControl?: boolean;
-        drawingControlOptions?: DrawingControlOptions;
-        polygonOptions?: PolygonOptions;
-        circleOptions?: CircleOptions;
-      }
-      
-      interface DrawingControlOptions {
-        position?: ControlPosition;
-        drawingModes?: OverlayType[];
-      }
-      
-      interface PolygonOptions {
-        fillColor?: string;
-        fillOpacity?: number;
-        strokeWeight?: number;
-        strokeColor?: string;
-        editable?: boolean;
-        draggable?: boolean;
-      }
-      
-      interface CircleOptions {
-        fillColor?: string;
-        fillOpacity?: number;
-        strokeWeight?: number;
-        strokeColor?: string;
-        editable?: boolean;
-        draggable?: boolean;
-      }
-      
-      enum OverlayType {
-        CIRCLE = 'circle',
-        MARKER = 'marker',
-        POLYGON = 'polygon',
-        POLYLINE = 'polyline',
-        RECTANGLE = 'rectangle'
-      }
-    }
+    // Note: drawing library types removed as the library is deprecated
+    // (deprecated August 2025, removal May 2026)
+    // Use modern click-based drawing implementation instead
   }
 }
 

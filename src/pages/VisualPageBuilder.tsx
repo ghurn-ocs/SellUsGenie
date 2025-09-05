@@ -293,6 +293,9 @@ export const VisualPageBuilder: React.FC = () => {
                     Type
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Display
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Content
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -355,6 +358,22 @@ export const VisualPageBuilder: React.FC = () => {
                             : 'bg-blue-50 text-blue-700'
                         }`}>
                           {pageType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
+                          page.navigationPlacement === 'both' 
+                            ? 'bg-purple-50 text-purple-700'
+                            : page.navigationPlacement === 'header'
+                            ? 'bg-blue-50 text-blue-700'
+                            : page.navigationPlacement === 'footer'
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-gray-50 text-gray-700'
+                        }`}>
+                          {page.navigationPlacement === 'both' ? 'Both' :
+                           page.navigationPlacement === 'header' ? 'Header' :
+                           page.navigationPlacement === 'footer' ? 'Footer' :
+                           'None'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

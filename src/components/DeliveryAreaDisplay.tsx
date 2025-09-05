@@ -57,11 +57,72 @@ export const DeliveryAreaDisplay: React.FC<DeliveryAreaDisplayProps> = ({
   // Initialize map
   useEffect(() => {
     if (showMap && mapLoaded && mapRef.current && !currentMap && activeDeliveryAreas.length > 0) {
-      const map = new google.maps.Map(mapRef.current, {
-        center: { lat: 37.7749, lng: -122.4194 }, // Default center
-        zoom: 10,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
+      // Calculate center from delivery areas instead of hardcoded coordinates
+      let center = { lat: 0, lng: 0 }
+      let zoom = 10
+      
+      // Calculate bounds from delivery areas to center the map appropriately
+      const bounds = new google.maps.LatLngBounds()
+      let hasValidCoordinates = false
+      
+      activeDeliveryAreas.forEach((area) => {
+        if (area.coordinates) {
+          if (area.area_type === 'polygon' && area.coordinates.coordinates) {
+            area.coordinates.coordinates.forEach((coord: any) => {
+              bounds.extend({ lat: coord.lat, lng: coord.lng })
+              hasValidCoordinates = true
+            })
+          } else if (area.area_type === 'circle' && area.coordinates.center) {
+            bounds.extend(area.coordinates.center)
+            hasValidCoordinates = true
+          }
+        }
       })
+      
+      const initializeMapWithCenter = (mapCenter: { lat: number; lng: number }) => {
+        const map = new google.maps.Map(mapRef.current, {
+          mapId: 'DELIVERY_AREAS_DISPLAY_MAP', // Required for Advanced Markers
+          center: mapCenter,
+          zoom,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        })
+        
+        // Continue with map initialization
+        setupDeliveryAreas(map)
+        setCurrentMap(map)
+      }
+      
+      if (hasValidCoordinates) {
+        center = bounds.getCenter().toJSON()
+        initializeMapWithCenter(center)
+      } else {
+        console.warn('⚠️ No valid delivery area coordinates found, using geolocation fallback')
+        // Use user's location if no delivery areas have coordinates
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const userCenter = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              }
+              console.log('📍 Using user location for delivery area display:', userCenter)
+              initializeMapWithCenter(userCenter)
+            },
+            (error) => {
+              console.warn('⚠️ Could not get user location:', error.message)
+              console.error('❌ Cannot initialize map without location data')
+              // Show user a message that location is required
+              return
+            }
+          )
+        } else {
+          console.error('❌ Geolocation not supported and no delivery area coordinates available')
+          return
+        }
+        return // Don't proceed with map creation yet
+      }
+
+      function setupDeliveryAreas(map: google.maps.Map) {
 
       // Draw delivery areas on map
       activeDeliveryAreas.forEach((area) => {
@@ -130,8 +191,7 @@ export const DeliveryAreaDisplay: React.FC<DeliveryAreaDisplayProps> = ({
           }
         }
       })
-
-      setCurrentMap(map)
+      }
     }
   }, [showMap, mapLoaded, activeDeliveryAreas, currentMap])
 

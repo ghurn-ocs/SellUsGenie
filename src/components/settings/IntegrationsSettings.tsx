@@ -1,7 +1,9 @@
-// Integrations Settings Component
+// Analytics & Integrations Settings Component
 // Manage Analytics, Marketing, and third-party integrations
 
 import React, { useState } from 'react'
+import { AnalyticsConfigModal } from '../analytics/AnalyticsConfigModal'
+import { useAnalyticsIntegrations } from '../../hooks/useAnalyticsConfig'
 import { 
   Zap, 
   ExternalLink, 
@@ -10,7 +12,11 @@ import {
   XCircle,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  BarChart3,
+  Target,
+  TrendingUp,
+  Activity
 } from 'lucide-react'
 
 interface IntegrationsSettingsProps {
@@ -28,6 +34,7 @@ interface Integration {
   lastSynced?: string
   features: string[]
   requiredCredentials: string[]
+  realIntegrationId?: string
 }
 
 const AVAILABLE_INTEGRATIONS: Integration[] = [
@@ -145,6 +152,39 @@ const AVAILABLE_INTEGRATIONS: Integration[] = [
 export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ storeId }) => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'analytics' | 'advertising' | 'email' | 'sms'>('all')
   const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({})
+  const [isAnalyticsConfigOpen, setIsAnalyticsConfigOpen] = useState(false)
+  const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null)
+
+  const { data: realAnalyticsIntegrations = [] } = useAnalyticsIntegrations(storeId)
+
+  // Merge real analytics integrations with static data
+  const mergeIntegrations = () => {
+    const mergedIntegrations = [...AVAILABLE_INTEGRATIONS]
+    
+    // Update analytics integrations with real data
+    realAnalyticsIntegrations.forEach(realIntegration => {
+      const staticIndex = mergedIntegrations.findIndex(
+        staticIntegration => staticIntegration.id === realIntegration.integration_type || 
+                 (staticIntegration.id === 'ga4' && realIntegration.integration_type === 'google_analytics') ||
+                 (staticIntegration.id === 'meta_pixel' && realIntegration.integration_type === 'facebook_pixel') ||
+                 (staticIntegration.id === 'tiktok_pixel' && realIntegration.integration_type === 'tiktok_pixel')
+      )
+      
+      if (staticIndex !== -1) {
+        mergedIntegrations[staticIndex] = {
+          ...mergedIntegrations[staticIndex],
+          status: realIntegration.is_enabled ? 'connected' : 'disconnected',
+          isEnabled: realIntegration.is_enabled,
+          lastSynced: realIntegration.is_enabled ? realIntegration.last_synced || 'Recently' : undefined,
+          realIntegrationId: realIntegration.id
+        }
+      }
+    })
+    
+    return mergedIntegrations
+  }
+
+  const allIntegrations = mergeIntegrations()
 
   const toggleCredentials = (integrationId: string) => {
     setShowCredentials(prev => ({
@@ -154,8 +194,8 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ stor
   }
 
   const filteredIntegrations = activeCategory === 'all' 
-    ? AVAILABLE_INTEGRATIONS 
-    : AVAILABLE_INTEGRATIONS.filter(integration => integration.category === activeCategory)
+    ? allIntegrations 
+    : allIntegrations.filter(integration => integration.category === activeCategory)
 
   const getStatusIcon = (status: Integration['status']) => {
     switch (status) {
@@ -183,11 +223,11 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ stor
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-3">
-        <Zap className="w-6 h-6 text-[#9B51E0]" />
+        <BarChart3 className="w-6 h-6 text-[#9B51E0]" />
         <div>
-          <h3 className="text-lg font-semibold text-white">Integrations</h3>
+          <h3 className="text-lg font-semibold text-white">Analytics & Integrations</h3>
           <p className="text-sm text-[#A0A0A0]">
-            Connect your store with analytics, marketing, and advertising platforms
+            Configure analytics tracking, connect marketing platforms, and manage third-party integrations
           </p>
         </div>
       </div>
@@ -306,7 +346,15 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ stor
             <div className="flex space-x-3">
               {integration.status === 'connected' ? (
                 <>
-                  <button className="flex-1 px-4 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors flex items-center justify-center space-x-2">
+                  <button 
+                    onClick={() => {
+                      if (integration.category === 'analytics') {
+                        setSelectedIntegration(integration.id)
+                        setIsAnalyticsConfigOpen(true)
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors flex items-center justify-center space-x-2"
+                  >
                     <SettingsIcon className="w-4 h-4" />
                     <span>Configure</span>
                   </button>
@@ -315,8 +363,16 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ stor
                   </button>
                 </>
               ) : (
-                <button className="flex-1 px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors">
-                  Connect
+                <button 
+                  onClick={() => {
+                    if (integration.category === 'analytics') {
+                      setSelectedIntegration(integration.id)
+                      setIsAnalyticsConfigOpen(true)
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
+                >
+                  {integration.category === 'analytics' ? 'Configure' : 'Connect'}
                 </button>
               )}
             </div>
@@ -330,30 +386,40 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ stor
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-[#1E1E1E] rounded-lg border border-[#3A3A3A]">
             <div className="text-2xl font-bold text-green-400 mb-1">
-              {AVAILABLE_INTEGRATIONS.filter(i => i.status === 'connected').length}
+              {allIntegrations.filter(i => i.status === 'connected').length}
             </div>
             <div className="text-sm text-[#A0A0A0]">Connected</div>
           </div>
           <div className="text-center p-4 bg-[#1E1E1E] rounded-lg border border-[#3A3A3A]">
             <div className="text-2xl font-bold text-[#9B51E0] mb-1">
-              {AVAILABLE_INTEGRATIONS.filter(i => i.category === 'analytics').length}
+              {allIntegrations.filter(i => i.category === 'analytics').length}
             </div>
             <div className="text-sm text-[#A0A0A0]">Analytics</div>
           </div>
           <div className="text-center p-4 bg-[#1E1E1E] rounded-lg border border-[#3A3A3A]">
             <div className="text-2xl font-bold text-blue-400 mb-1">
-              {AVAILABLE_INTEGRATIONS.filter(i => i.category === 'advertising').length}
+              {allIntegrations.filter(i => i.category === 'advertising').length}
             </div>
             <div className="text-sm text-[#A0A0A0]">Advertising</div>
           </div>
           <div className="text-center p-4 bg-[#1E1E1E] rounded-lg border border-[#3A3A3A]">
             <div className="text-2xl font-bold text-orange-400 mb-1">
-              {AVAILABLE_INTEGRATIONS.filter(i => i.category === 'email' || i.category === 'sms').length}
+              {allIntegrations.filter(i => i.category === 'email' || i.category === 'sms').length}
             </div>
             <div className="text-sm text-[#A0A0A0]">Marketing</div>
           </div>
         </div>
       </div>
+
+      {/* Analytics Configuration Modal */}
+      <AnalyticsConfigModal 
+        isOpen={isAnalyticsConfigOpen}
+        onClose={() => {
+          setIsAnalyticsConfigOpen(false)
+          setSelectedIntegration(null)
+        }}
+        storeId={storeId}
+      />
     </div>
   )
 }

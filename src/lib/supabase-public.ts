@@ -1,27 +1,13 @@
 /**
  * Public Supabase Client
  * Used for accessing published content on storefronts without authentication
- * This is a separate unauthenticated client for enhanced security
+ * Uses the centralized client manager to prevent multiple instances
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { getPublicClient } from './supabase-client-manager';
 
-// Create a separate public client without authentication
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-
-export const supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,  // No session persistence for public client
-    autoRefreshToken: false, // No token refresh for public client
-    detectSessionInUrl: false // Don't detect auth from URL
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'sellusgenie-public'  // Identify as public client
-    }
-  }
-});
+// Use the centralized client manager to prevent multiple instances
+export const supabasePublic = getPublicClient();
 
 /**
  * Public Page Repository
@@ -32,29 +18,30 @@ export class PublicPageRepository {
 
   /**
    * Get published system pages (header/footer) for public storefront access
+   * DISABLED: System pages with hardcoded content violate Visual Page Builder architecture
    */
   async getPublishedSystemPage(pageType: 'header' | 'footer'): Promise<any | null> {
     try {
       console.log(`🌍 PUBLIC: Fetching ${pageType} page for store:`, this.storeId);
 
-      // First try querying by page_type (correct approach)
+      // Query for published system pages
       let { data, error } = await supabasePublic
         .from('page_documents')
         .select('*')
         .eq('store_id', this.storeId)
         .eq('page_type', pageType)
-        .eq('status', 'published') // Only published pages
+        .eq('status', 'published')
         .maybeSingle();
 
-      // Fallback: Query by name if page_type query doesn't find anything
+      // Fallback: Query by slug if page_type query doesn't find anything
       if (!data && !error) {
-        console.log(`⚠️ PUBLIC: No ${pageType} found by page_type, trying by name...`);
-        const pageName = pageType === 'header' ? 'Site Header' : 'Site Footer';
+        console.log(`⚠️ PUBLIC: No ${pageType} found by page_type, trying by slug...`);
+        const pageSlug = `/${pageType}`;
         const fallbackResult = await supabasePublic
           .from('page_documents')
           .select('*')
           .eq('store_id', this.storeId)
-          .eq('name', pageName)
+          .eq('slug', pageSlug)
           .eq('status', 'published')
           .maybeSingle();
         
@@ -72,7 +59,9 @@ export class PublicPageRepository {
         return null;
       }
 
-      console.log(`✅ PUBLIC: Found ${pageType} page:`, {
+      // Accept all pages - no hardcoded content filtering
+
+      console.log(`✅ PUBLIC: Found valid ${pageType} page:`, {
         id: data.id,
         name: data.name,
         sectionsCount: data.sections?.length || 0,
@@ -198,6 +187,18 @@ export class PublicPageRepository {
         return null;
       }
 
+      // Debug the sections data before processing
+      console.log('🔍 RAW DATABASE SECTIONS DEBUG:', {
+        pageName: data.name,
+        pageSlug: data.slug,
+        sectionsExists: !!data.sections,
+        sectionsType: typeof data.sections,
+        sectionsIsArray: Array.isArray(data.sections),
+        sectionsLength: data.sections?.length,
+        sectionsRaw: data.sections,
+        status: data.status
+      });
+
       return {
         id: data.id,
         name: data.name,
@@ -244,6 +245,35 @@ export class PublicPageRepository {
       return data || [];
     } catch (error) {
       console.error('💥 PUBLIC: Error getting navigation pages:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all published pages for a store (including those not in navigation)
+   * CRITICAL: This fixes the storefront rendering issue where home pages
+   * with navigation_placement='none' were excluded from getNavigationPages()
+   */
+  async getAllPublishedPages(): Promise<any[]> {
+    try {
+      console.log('🌍 PUBLIC: Fetching ALL published pages for store:', this.storeId);
+
+      const { data, error } = await supabasePublic
+        .from('page_documents')
+        .select('id, name, slug, navigation_placement, sections')
+        .eq('store_id', this.storeId)
+        .eq('status', 'published')
+        .order('name');
+
+      if (error) {
+        console.warn('❌ PUBLIC: Error getting all published pages:', error);
+        return [];
+      }
+
+      console.log('✅ PUBLIC: Found all published pages:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('💥 PUBLIC: Error getting all published pages:', error);
       return [];
     }
   }

@@ -7,60 +7,70 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 class SupabaseClientManager {
   private static instance: SupabaseClientManager;
+  private publicClient: SupabaseClient | null = null;
   private adminClient: SupabaseClient | null = null;
   
   // Environment variables
   private readonly supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   private readonly supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  private readonly serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
   private constructor() {
     if (!this.supabaseUrl || !this.supabaseAnonKey) {
       throw new Error('Missing Supabase environment variables');
     }
-    
-    console.log('🔧 SupabaseClientManager: Initializing singleton instance');
   }
 
   static getInstance(): SupabaseClientManager {
     if (!SupabaseClientManager.instance) {
       SupabaseClientManager.instance = new SupabaseClientManager();
-      console.log('✅ SupabaseClientManager: Created new singleton instance');
-    } else {
-      console.log('🔄 SupabaseClientManager: Reusing existing singleton instance');
     }
     return SupabaseClientManager.instance;
   }
 
   /**
-   * Get the admin client (authenticated, persistent session)
+   * Get the admin client (server-side only, service-role key)
    */
   getAdminClient(): SupabaseClient {
+    if (typeof window !== 'undefined') {
+      throw new Error('getAdminClient() called in browser - admin client is server-only');
+    }
+    
+    if (!this.serviceRoleKey) {
+      throw new Error('Service role key required for admin client');
+    }
+    
     if (!this.adminClient) {
-      console.log('🔧 SupabaseClientManager: Creating admin client');
-      this.adminClient = createClient(this.supabaseUrl, this.supabaseAnonKey, {
-        auth: {
-          storageKey: 'supabase-admin-auth-token',
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: true,
-        },
-        global: {
-          headers: {
-            'X-Client-Info': 'sellusgenie-admin',
-          },
-        },
+      this.adminClient = createClient(this.supabaseUrl, this.serviceRoleKey, {
+        auth: { 
+          persistSession: false, 
+          autoRefreshToken: false 
+        }
       });
     }
     return this.adminClient;
   }
 
   /**
-   * Get the public client (same as admin client - RLS handles security)
+   * Get the public client (browser-safe, anonymous key)
    */
   getPublicClient(): SupabaseClient {
-    // Return the same admin client - security is handled by RLS policies
-    console.log('🔧 SupabaseClientManager: Public client request - returning admin client (RLS handles security)');
-    return this.getAdminClient();
+    if (!this.publicClient) {
+      this.publicClient = createClient(this.supabaseUrl, this.supabaseAnonKey, {
+        auth: { 
+          storageKey: 'sb-public-auth', // unique storage key to avoid collisions
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        },
+        global: {
+          headers: {
+            'X-Client-Info': 'sellusgenie-public',
+          },
+        },
+      });
+    }
+    return this.publicClient;
   }
 
   /**
@@ -90,16 +100,16 @@ export { clientManager as SupabaseClientManager };
 export const getAdminClient = () => clientManager.getAdminClient();
 export const getPublicClient = () => clientManager.getPublicClient();
 
-// Backward compatibility exports - use lazy getters to avoid eager initialization
-let _cachedAdminClient: any = null;
+// Main client export for authenticated operations (browser-safe)
+let _cachedPublicClient: any = null;
 export const supabase = new Proxy({}, {
-  get(target, prop) {
-    if (!_cachedAdminClient) {
-      _cachedAdminClient = getAdminClient();
+  get(_target, prop) {
+    if (!_cachedPublicClient) {
+      _cachedPublicClient = getPublicClient();
     }
-    return _cachedAdminClient[prop];
+    return _cachedPublicClient[prop];
   }
 });
 
-// Public client is now the same as admin client
-export const supabasePublic = supabase;
+// Separate public client for storefront/public operations
+export const supabasePublic = getPublicClient();

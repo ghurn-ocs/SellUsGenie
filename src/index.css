@@ -47,6 +47,61 @@
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 
+  /* Storefront Layout Classes */
+  .responsive-content-width {
+    @apply w-full max-w-7xl mx-auto;
+  }
+
+  .storefront-header {
+    @apply w-full;
+  }
+
+  .storefront-header-content {
+    /* Applied via responsive-content-width but ensure proper display */
+    @apply w-full;
+  }
+
+  .storefront-header-brand {
+    /* This is already defined in the component */
+  }
+
+  .storefront-header-title {
+    /* This is already defined in the component */
+  }
+
+  .storefront-header-nav {
+    /* This is already defined in the component */
+  }
+
+  .storefront-header-nav-link {
+    /* This is already defined in the component */
+  }
+
+  .storefront-header-actions {
+    /* This is already defined in the component */
+  }
+
+  .storefront-mobile-nav {
+    /* This is already defined in the component */
+  }
+
+  .storefront-mobile-nav-button {
+    /* This is already defined in the component */
+  }
+
+  .storefront-main {
+    @apply flex-1 min-h-screen;
+  }
+
+  .storefront-footer {
+    @apply w-full;
+  }
+
+  .storefront-footer-content {
+    /* Applied via responsive-content-width but ensure proper display */
+    @apply w-full;
+  }
+
   /* Custom scrollbar for delivery areas */
   .delivery-scroll {
     scrollbar-width: thin;

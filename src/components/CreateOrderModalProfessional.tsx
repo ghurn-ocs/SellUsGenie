@@ -245,9 +245,9 @@ export const CreateOrderModalProfessional: React.FC<CreateOrderModalProfessional
                 <Dialog.Title className="text-xl font-semibold text-white">
                   Create New Order
                 </Dialog.Title>
-                <p className="text-sm text-[#A0A0A0] mt-1">
+                <Dialog.Description className="text-sm text-[#A0A0A0] mt-1">
                   Manual orders are marked "To be paid" and customers receive a payment link
-                </p>
+                </Dialog.Description>
               </div>
             </div>
             <button

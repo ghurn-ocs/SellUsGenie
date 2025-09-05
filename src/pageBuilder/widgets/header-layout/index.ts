@@ -76,7 +76,7 @@ export const defaultHeaderLayoutProps: HeaderLayoutProps = {
     height: 'standard',
     logo: {
       type: 'text',
-      text: 'Your Store',
+      text: null, // Will use current store name dynamically
       position: 'left',
       size: 'medium',
     },

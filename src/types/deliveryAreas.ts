@@ -49,16 +49,16 @@ export interface GoogleMapsCircle {
 
 export interface DeliveryAreaFormData {
   name: string
-  description: string
+  description?: string
   area_type: 'polygon' | 'circle' | 'postal_code' | 'city'
   coordinates?: any
   postal_codes: string[]
   cities: string[]
   delivery_fee: number
-  free_delivery_threshold: number
+  free_delivery_threshold?: number
   estimated_delivery_time_min: number
   estimated_delivery_time_max: number
-  is_active: boolean
+  is_active?: boolean
   max_orders_per_day: number
   operating_hours: {
     [key: string]: {

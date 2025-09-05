@@ -7,10 +7,12 @@
  * - Dynamic navigation based on page visibility settings
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PublicPageRepository } from '../../lib/supabase-public';
 import { PageBuilderRenderer } from './PageBuilderRenderer';
+import { HeaderLayoutView } from '../../pageBuilder/widgets/header-layout/HeaderLayoutView';
+import { FooterLayoutView } from '../../pageBuilder/widgets/footer-layout/FooterLayoutView';
 import type { PageDocument } from '../../pageBuilder/types';
 
 interface VisualPageBuilderStoreFrontProps {
@@ -44,6 +46,39 @@ interface NavigationPage {
 }
 
 /**
+ * Helper function to safely check if a page has valid content to render
+ */
+const safeRender = (page?: PageDocument | null): boolean => {
+  return !!(page && Array.isArray(page.sections) && page.sections.length > 0);
+};
+
+/**
+ * Helper function to extract header layout widget from page data
+ * Returns the complete widget object that HeaderLayoutView expects
+ */
+const extractHeaderWidget = (page: PageDocument) => {
+  const headerWidget = page.sections
+    ?.flatMap(section => section.rows || [])
+    ?.flatMap(row => row.widgets || [])
+    ?.find((widget: any) => widget.type === 'header-layout');
+  
+  return headerWidget || null;
+};
+
+/**
+ * Helper function to extract footer layout widget from page data
+ * Returns the complete widget object that FooterLayoutView expects
+ */
+const extractFooterWidget = (page: PageDocument) => {
+  const footerWidget = page.sections
+    ?.flatMap(section => section.rows || [])
+    ?.flatMap(row => row.widgets || [])
+    ?.find((widget: any) => widget.type === 'footer-layout');
+  
+  return footerWidget || null;
+};
+
+/**
  * Visual Page Builder StoreFront Component
  */
 export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontProps> = ({
@@ -65,10 +100,30 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
   const [currentPage, setCurrentPage] = useState<PageDocument | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
 
-  // Load system pages (Header and Footer)
+  // Latching with dependency tracking to prevent React Strict Mode duplicates
+  const systemPagesRan = useRef<string>('');
+  const currentPageRan = useRef<string>('');
+
+  // Memoize repository instance to prevent object identity churn
+  const publicRepository = useMemo(() => {
+    return storeId ? new PublicPageRepository(storeId) : null;
+  }, [storeId]);
+
+  // Memoize stable parameters for data fetching
+  const fetchParams = useMemo(() => ({
+    storeId,
+    storeName,
+    pagePath: pagePath || '/'
+  }), [storeId, storeName, pagePath]);
+
+  // Load system pages (Header and Footer)  
   useEffect(() => {
+    const depKey = `${storeId}-${storeName}`;
+    if (systemPagesRan.current === depKey) return;
+    systemPagesRan.current = depKey;
+    
     const loadSystemPages = async () => {
-      if (!storeId) {
+      if (!publicRepository) {
         setSystemPages(prev => ({
           ...prev,
           loading: false,
@@ -78,7 +133,6 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
       }
 
       try {
-        const publicRepository = new PublicPageRepository(storeId);
         
         // Load store data, header, footer, and navigation pages concurrently
         const [storeResult, headerResult, footerResult, navigationResult] = await Promise.allSettled([
@@ -98,6 +152,23 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
         const footer = footerResult.status === 'fulfilled' ? footerResult.value : null;
         const navPages = navigationResult.status === 'fulfilled' ? navigationResult.value : [];
 
+        // CRITICAL DEBUG: Log system pages loading results
+        console.log('🚨 SYSTEM PAGES DEBUG:', {
+          headerResult: {
+            status: headerResult.status,
+            hasData: !!header,
+            name: header?.name,
+            sections: header?.sections?.length || 0
+          },
+          footerResult: {
+            status: footerResult.status,
+            hasData: !!footer,
+            name: footer?.name,
+            sections: footer?.sections?.length || 0,
+            rejected: footerResult.status === 'rejected' ? footerResult.reason : null
+          }
+        });
+
         setSystemPages({
           header,
           footer,
@@ -108,18 +179,13 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
         setNavigationPages(navPages);
 
         console.log('🎨 Visual Page Builder StoreFront loaded:', {
-          storeId,
-          storeName,
+          ...fetchParams,
           hasHeader: !!header,
           hasFooter: !!footer,
           headerSections: header?.sections.length || 0,
           footerSections: footer?.sections.length || 0,
-          headerNavigationPlacement: header ? 'System Page' : 'None',
-          footerNavigationPlacement: footer ? 'System Page' : 'None',
-          storeData: store,
-          hasStoreLogo: !!store?.store_logo_url,
-          storeLogo: store?.store_logo_url,
-          navigationPagesCount: navPages.length
+          navigationPagesCount: navPages.length,
+          hasStoreLogo: !!store?.store_logo_url
         });
 
         // Header content processing
@@ -164,68 +230,130 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
     };
 
     loadSystemPages();
-  }, [storeId, storeName]);
+  }, [storeId, storeName, publicRepository]);
 
   // Load current page content based on pagePath
   useEffect(() => {
+    const depKey = `${storeId}-${pagePath}`;
+    if (currentPageRan.current === depKey) return;
+    currentPageRan.current = depKey;
+    
     const loadCurrentPage = async () => {
-      if (!storeId || pagePath === undefined) return;
+      if (!publicRepository || pagePath === undefined) return;
 
       try {
         setPageLoading(true);
-        const publicRepository = new PublicPageRepository(storeId);
         
         // Normalize the path - remove leading slash for slug lookup
         const pageSlug = (pagePath === '/' || pagePath === '') ? '/' : pagePath.replace(/^\//, '');
         
-        console.log('🔍 Loading page for path:', {
-          pagePath,
-          pageSlug,
-          storeId,
-          storeName
-        });
+        console.log('🔍 Loading page for path:', fetchParams.pagePath);
 
         let page = null;
         
-        // Try to get page by slug
+        // FIXED: Use improved page loading logic that doesn't exclude home pages
         if (pageSlug === '/') {
-          // For home page, try different approaches
-          const allPages = await publicRepository.getNavigationPages();
-          page = allPages.find(p => 
-            p.slug === '/' || 
-            p.slug === 'home' || 
-            p.name.toLowerCase().includes('home')
-          );
+          // For home page, try direct approach first
+          console.log('🏠 Loading home page...');
+          page = await publicRepository.getPublishedPageBySlug('/');
           
-          // If no home page found, try to get the first published page
-          if (!page && allPages.length > 0) {
-            page = await publicRepository.getPublishedPageBySlug(allPages[0].slug);
+          // If not found, try alternative home page approaches using ALL published pages
+          if (!page) {
+            console.log('🔍 Home page not found at /, trying alternatives...');
+            const allPages = await publicRepository.getAllPublishedPages();
+            page = allPages.find(p => 
+              p.slug === '/' || 
+              p.slug === '/home' ||
+              p.slug === 'home' || 
+              p.name.toLowerCase().includes('home')
+            );
+            
+            if (page) {
+              console.log('✅ Found home page via alternative search:', page.name);
+            }
+          }
+          
+          // Final fallback: get first published page
+          if (!page) {
+            console.log('⚠️ No home page found, using fallback...');
+            const allPages = await publicRepository.getAllPublishedPages();
+            if (allPages.length > 0) {
+              page = allPages[0];
+              console.log('🔄 Using fallback page:', page.name);
+            }
           }
         } else {
-          // Try to get page by slug
+          // For non-home pages, try direct slug lookup
+          console.log('📄 Loading page with slug:', pageSlug);
           page = await publicRepository.getPublishedPageBySlug(pageSlug);
           
-          // If not found, try with different slug formats
+          // If not found, search through ALL published pages
           if (!page) {
+            console.log('🔍 Page not found, trying alternatives...');
+            const allPages = await publicRepository.getAllPublishedPages();
             const alternativeSlug = pageSlug.replace(/-/g, ' ');
-            const allPages = await publicRepository.getNavigationPages();
-            const matchingPage = allPages.find(p => 
+            page = allPages.find(p => 
               p.name.toLowerCase() === alternativeSlug.toLowerCase() ||
               p.slug === pageSlug ||
-              p.slug === `/${pageSlug}`
+              p.slug === `/${pageSlug}` ||
+              p.slug === pageSlug.replace('/', '')
             );
-            if (matchingPage) {
-              page = await publicRepository.getPublishedPageBySlug(matchingPage.slug);
-            }
           }
         }
 
+        // Enhanced logging and validation
         console.log('📄 Page loading result:', {
           found: !!page,
           pageName: page?.name,
           pageSlug: page?.slug,
-          sectionsCount: page?.sections?.length || 0
+          sectionsCount: page?.sections?.length || 0,
+          navigationPlacement: page?.navigation_placement
         });
+
+        // Detailed sections debugging and validation
+        if (page) {
+          console.log('🔍 SECTIONS DEBUG:', {
+            sectionsExists: !!page.sections,
+            sectionsType: typeof page.sections,
+            sectionsIsArray: Array.isArray(page.sections),
+            sectionsLength: page.sections?.length,
+            firstSectionPreview: page.sections?.[0] ? {
+              id: page.sections[0].id,
+              rowsCount: page.sections[0].rows?.length || 0,
+              widgetCount: page.sections[0].rows?.reduce((acc: number, row: any) => acc + (row.widgets?.length || 0), 0) || 0
+            } : null,
+            pageId: page.id,
+            pageStatus: page.status
+          });
+
+          // Validate sections structure and provide helpful warnings
+          if (!page.sections || !Array.isArray(page.sections) || page.sections.length === 0) {
+            console.warn('⚠️ PAGE CONTENT ISSUE - Page found but has no valid sections:', {
+              pageName: page.name,
+              pageId: page.id,
+              sectionsRaw: page.sections,
+              recommendedActions: [
+                '1. Check if page content was properly saved in page builder',
+                '2. Verify sections field in database is valid JSON array',
+                '3. Ensure page status is "published"',
+                '4. Check RLS policies allow reading this page'
+              ]
+            });
+          } else {
+            console.log('✅ Page content structure looks valid');
+          }
+        } else {
+          console.error('❌ CRITICAL: No page found for slug:', pageSlug, {
+            storeId,
+            storeName,
+            recommendedActions: [
+              '1. Check if any published pages exist for this store',
+              '2. Verify slug format matches database records', 
+              '3. Run sample data creation script if no content exists',
+              '4. Check database connection and RLS policies'
+            ]
+          });
+        }
 
         setCurrentPage(page);
       } catch (error) {
@@ -237,367 +365,72 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
     };
 
     loadCurrentPage();
-  }, [storeId, pagePath]);
+  }, [storeId, pagePath, publicRepository]);
 
-  // Loading state
+  // Loading state - render nothing while loading
   if (systemPages.loading || pageLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading {storeName}...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
-  // Error state  
+  // Error state - render nothing on error
   if (systemPages.error) {
-    return (
-      <div className="min-h-screen bg-red-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-red-600 text-4xl mb-4">⚠️</div>
-          <h1 className="text-xl font-semibold text-red-800 mb-2">Store Loading Error</h1>
-          <p className="text-red-700 mb-4">{systemPages.error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
     <div className="visual-page-builder-storefront">
-      {/* Header - Rendered as System Page */}
+      {/* Header - Direct Rendering */}
       {(() => {
-        console.log('🔍 HEADER DECISION DEBUG:', {
-          hasSystemPagesHeader: !!systemPages.header,
-          headerName: systemPages.header?.name,
-          headerId: systemPages.header?.id,
-          headerSections: systemPages.header?.sections?.length || 0,
-          isUsingFallback: !systemPages.header
-        });
-        return systemPages.header;
-      })() ? (
-        <header className="storefront-header">
-          <PageBuilderRenderer
-            page={systemPages.header}
-            isSystemPage={true}
-            storeData={storeData || undefined}
-          />
-        </header>
-      ) : (
-        /* Enhanced Fallback Header with Theme Styling from Database */
-        <header 
-          className="storefront-header border-b"
-          style={{
-            backgroundColor: systemPages.header?.themeOverrides?.backgroundColor || '#ffffff',
-            color: systemPages.header?.themeOverrides?.textColor || '#1f2937',
-            borderColor: systemPages.header?.themeOverrides?.borderColor || '#e5e7eb'
-          }}
-        >
-          <div 
-            className={`storefront-header-content responsive-content-width flex items-center justify-between ${
-              systemPages.header?.themeOverrides?.horizontalSpacing === 'thin' ? 'py-2 px-3' :
-              systemPages.header?.themeOverrides?.horizontalSpacing === 'expanded' ? 'py-8 px-8' :
-              'py-4 px-6' // standard default
-            }`}
-          >
-            <div className="storefront-header-brand flex items-center space-x-3">
-              {storeData?.store_logo_url ? (
-                <img 
-                  src={storeData.store_logo_url} 
-                  alt={`${storeName} logo`}
-                  className="h-8 w-auto"
-                  onLoad={() => console.log('✅ Logo loaded successfully:', storeData.store_logo_url)}
-                  onError={(e) => console.error('❌ Logo failed to load:', storeData.store_logo_url, e)}
-                />
-              ) : (
-                <h1 
-                  className="storefront-header-title text-xl font-bold"
-                  style={{
-                    color: systemPages.header?.themeOverrides?.textColor || '#1f2937',
-                    fontFamily: systemPages.header?.themeOverrides?.fontFamily || 'inherit'
-                  }}
-                >
-                  {storeName}
-                </h1>
-              )}
-              {/* Debug info - remove in production */}
-              {process.env.NODE_ENV === 'development' && (
-                <small className="text-xs text-gray-500">
-                  Logo: {storeData?.store_logo_url ? 'Found' : 'Not found'} | 
-                  Store ID: {storeId} | 
-                  Store Data: {storeData ? 'Loaded' : 'Missing'}
-                </small>
-              )}
-              {/* Display tagline if provided in theme overrides */}
-              {systemPages.header?.themeOverrides?.tagline && (
-                <span 
-                  className="text-sm opacity-75 ml-2"
-                  style={{
-                    color: systemPages.header?.themeOverrides?.textColor || '#1f2937'
-                  }}
-                >
-                  {systemPages.header?.themeOverrides?.tagline}
-                </span>
-              )}
-            </div>
-            
-            <nav className="storefront-header-nav hidden md:flex space-x-8">
-              {navigationPages.filter(page => 
-                page.navigation_placement === 'header' || page.navigation_placement === 'both'
-              ).length > 0 ? (
-                navigationPages.filter(page => 
-                  page.navigation_placement === 'header' || page.navigation_placement === 'both'
-                ).map(page => {
-                  const navLinkStyle = systemPages.header?.themeOverrides?.navLinkStyle || 'text';
-                  const buttonStyle = systemPages.header?.themeOverrides?.buttonStyle || 'rounded';
-                  const linkColor = systemPages.header?.themeOverrides?.linkColor || '#6b7280';
-                  const linkHoverColor = systemPages.header?.themeOverrides?.linkHoverColor || '#1f2937';
-                  const backgroundColor = systemPages.header?.themeOverrides?.backgroundColor || '#ffffff';
-
-                  // Generate CSS classes based on navLinkStyle and buttonStyle
-                  let linkClassName = 'storefront-header-nav-link transition-all duration-200';
-                  const linkStyle: React.CSSProperties = {
-                    color: linkColor,
-                    fontFamily: systemPages.header?.themeOverrides?.fontFamily || 'inherit'
-                  };
-
-                  if (navLinkStyle === 'bordered') {
-                    // Bordered style with border radius based on buttonStyle
-                    const borderRadius = buttonStyle === 'round' ? 'rounded-full' : 
-                                        buttonStyle === 'square' ? 'rounded-none' : 'rounded';
-                    linkClassName += ` px-3 py-1 ${borderRadius} border`;
-                    linkStyle.borderColor = linkColor;
-                    linkStyle.backgroundColor = 'transparent';
-                  } else {
-                    // Text style with bold font
-                    linkClassName += ' font-semibold px-3 py-2';
-                  }
-
-                  // Extract store base path from current location
-                  const storeMatch = location.match(/^(\/store\/[^\/]+)/);
-                  const storeBasePath = storeMatch ? storeMatch[1] : '/store/unknown';
-                  
-                  const href = page.slug === '/' || page.slug === ''
-                    ? storeBasePath
-                    : `${storeBasePath}/${page.slug}`;
-                    
-                  console.log('🔗 Header Navigation Link:', {
-                    pageName: page.name,
-                    pageSlug: page.slug,
-                    href,
-                    storeBasePath,
-                    currentLocation: location
-                  });
-                  
-                  return (
-                    <Link 
-                      key={page.id}
-                      href={href} 
-                      className={linkClassName}
-                      style={linkStyle}
-                      onClick={(e) => {
-                        console.log('🖱️ Navigation Link Clicked:', {
-                          pageName: page.name,
-                          href,
-                          event: e.type
-                        });
-                      }}
-                      onMouseEnter={(e) => {
-                        if (navLinkStyle === 'bordered') {
-                          e.currentTarget.style.backgroundColor = linkColor;
-                          e.currentTarget.style.color = backgroundColor;
-                        } else {
-                          e.currentTarget.style.color = linkHoverColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (navLinkStyle === 'bordered') {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = linkColor;
-                        } else {
-                          e.currentTarget.style.color = linkColor;
-                        }
-                      }}
-                    >
-                      {page.name}
-                    </Link>
-                  );
-                })
-              ) : (
-                <span className="text-sm text-gray-500">No published pages available for navigation</span>
-              )}
-            </nav>
-            
-            <div className="storefront-header-actions">
-              {/* Cart icon will be positioned here by ShoppingCartSystem */}
-            </div>
-          </div>
-          
-          {/* Mobile Navigation */}
-          <div className="storefront-mobile-nav md:hidden">
-            <button 
-              className="storefront-mobile-nav-button flex items-center justify-center p-2" 
-              type="button"
-              style={{
-                color: systemPages.header?.themeOverrides?.textColor || '#6b7280'
-              }}
-            >
-              <span className="sr-only">Open main menu</span>
-              <svg 
-                className="h-6 w-6" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-                style={{
-                  color: systemPages.header?.themeOverrides?.textColor || '#6b7280'
-                }}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-        </header>
-      )}
+        if (!safeRender(systemPages.header)) {
+          console.log('🔝 No valid header page found or sections empty');
+          return null;
+        }
+        
+        const headerWidget = extractHeaderWidget(systemPages.header!);
+        if (!headerWidget) {
+          console.log('🔝 No header-layout widget found in header page');
+          return null;
+        }
+        
+        return (
+          <header className="storefront-header">
+            <HeaderLayoutView widget={headerWidget} />
+          </header>
+        );
+      })()}
 
       {/* Main Content Area - Regular Page Builder Content */}
       <main className="storefront-main">
-        {currentPage ? (
+        {safeRender(currentPage) ? (
           <PageBuilderRenderer
-            page={currentPage}
+            page={currentPage!}
             isSystemPage={false}
             storeData={storeData || undefined}
           />
         ) : children ? (
           children
-        ) : (
-          <div className="py-16">
-            <div className="text-center max-w-md mx-auto px-4">
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <div className="text-6xl mb-4">🏗️</div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Page Not Found</h1>
-                <p className="text-gray-600 mb-4">
-                  The page "{pagePath}" could not be found.
-                </p>
-                <p className="text-sm text-gray-500">
-                  Please check that the page has been published in the Visual Page Builder.
-                </p>
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded text-left">
-                    <h3 className="font-semibold text-sm text-gray-700 mb-2">Debug Info:</h3>
-                    <div className="text-xs text-gray-600 space-y-1">
-                      <div>Store ID: {storeId}</div>
-                      <div>Page Path: {pagePath}</div>
-                      <div>Store Name: {storeName}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        ) : null}
       </main>
 
-      {/* Footer - Rendered as System Page */}
-      {systemPages.footer ? (
-        <footer className="storefront-footer">
-          <PageBuilderRenderer
-            page={systemPages.footer}
-            isSystemPage={true}
-            storeData={storeData || undefined}
-          />
-        </footer>
-      ) : (
-        /* Enhanced Fallback Footer with Theme Styling from Database */
-        <footer 
-          className="storefront-footer border-t"
-          style={{
-            backgroundColor: systemPages.footer?.themeOverrides?.backgroundColor || '#f9fafb',
-            color: systemPages.footer?.themeOverrides?.textColor || '#6b7280',
-            borderColor: systemPages.footer?.themeOverrides?.borderColor || '#e5e7eb'
-          }}
-        >
-          <div 
-            className={`storefront-footer-content ${
-              systemPages.footer?.themeOverrides?.horizontalSpacing === 'thin' ? 'py-4 px-3' :
-              systemPages.footer?.themeOverrides?.horizontalSpacing === 'expanded' ? 'py-12 px-8' :
-              'py-8 px-6' // standard default
-            }`}
-          >
-            <div className="text-center">
-              <p 
-                className="mb-2"
-                style={{
-                  color: systemPages.footer?.themeOverrides?.textColor || '#6b7280',
-                  fontFamily: systemPages.footer?.themeOverrides?.fontFamily || 'inherit'
-                }}
-              >
-                {systemPages.footer?.themeOverrides?.footerText || `© 2024 ${storeName}. All rights reserved.`}
-              </p>
-              <div className="flex justify-center space-x-6 text-sm">
-                {navigationPages.filter(page => 
-                  page.navigation_placement === 'footer' || page.navigation_placement === 'both'
-                ).length > 0 ? (
-                  navigationPages.filter(page => 
-                    page.navigation_placement === 'footer' || page.navigation_placement === 'both'
-                  ).map(page => {
-                    // Extract store base path from current location
-                    const storeMatch = location.match(/^(\/store\/[^\/]+)/);
-                    const storeBasePath = storeMatch ? storeMatch[1] : '/store/unknown';
-                    
-                    const href = page.slug === '/' || page.slug === ''
-                      ? storeBasePath
-                      : `${storeBasePath}/${page.slug}`;
-                      
-                    console.log('🔗 Footer Navigation Link:', {
-                      pageName: page.name,
-                      pageSlug: page.slug,
-                      href,
-                      storeBasePath,
-                      currentLocation: location
-                    });
-                    
-                    return (
-                      <Link 
-                        key={page.id}
-                        href={href} 
-                        className="transition-colors"
-                        onClick={(e) => {
-                          console.log('🖱️ Footer Link Clicked:', {
-                            pageName: page.name,
-                            href,
-                            event: e.type
-                          });
-                        }}
-                      style={{
-                        color: systemPages.footer?.themeOverrides?.linkColor || '#9ca3af',
-                        fontFamily: systemPages.footer?.themeOverrides?.fontFamily || 'inherit'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = systemPages.footer?.themeOverrides?.linkHoverColor || '#4b5563';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = systemPages.footer?.themeOverrides?.linkColor || '#9ca3af';
-                      }}
-                      >
-                        {page.name}
-                      </Link>
-                    );
-                  })
-                ) : (
-                  <span className="text-sm opacity-60">No published pages available for footer navigation</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </footer>
-      )}
+      {/* Footer - Direct Rendering */}
+      {(() => {
+        if (!safeRender(systemPages.footer)) {
+          console.log('🦶 No valid footer page found or sections empty');
+          return null;
+        }
+        
+        const footerWidget = extractFooterWidget(systemPages.footer!);
+        if (!footerWidget) {
+          console.log('🦶 No footer-layout widget found in footer page');
+          return null;
+        }
+        
+        return (
+          <footer className="storefront-footer">
+            <FooterLayoutView widget={footerWidget} />
+          </footer>
+        );
+      })()}
 
     </div>
   );

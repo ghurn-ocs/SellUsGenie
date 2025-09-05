@@ -4,7 +4,7 @@
  * Respects the Page Builder architecture for widgets, themes, and navigation settings
  */
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import type { PageDocument } from '../../pageBuilder/types';
 import { widgetRegistry } from '../../pageBuilder/widgets/registry';
 
@@ -22,6 +22,9 @@ import '../../pageBuilder/widgets/cart/index';
 import '../../pageBuilder/widgets/product-listing/index';
 import '../../pageBuilder/widgets/subscribe/index';
 import '../../pageBuilder/widgets/featured-products/index';
+// Import header and footer layout widgets for system pages
+import '../../pageBuilder/widgets/header-layout/index';
+import '../../pageBuilder/widgets/footer-layout/index';
 
 interface PageBuilderRendererProps {
   page: PageDocument;
@@ -60,27 +63,53 @@ const WidgetRenderer: React.FC<{
         availableWidgets: widgetRegistry.getTypes(),
         requestedType: widget.type
       });
-      return (
-        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
-          <p className="text-yellow-800">Unknown widget type: {widget.type}</p>
-          <p className="text-yellow-600 text-xs mt-1">Available: {widgetRegistry.getTypes().join(', ')}</p>
-        </div>
-      );
+      return null;
     }
 
     const WidgetView = widgetConfig.View;
     
     // Process widget props to replace placeholders with store data
     const processedWidget = { ...widget };
-    if (storeData && widget.props?.content && typeof widget.props.content === 'string') {
-      // Replace store name placeholders
-      processedWidget.props = {
-        ...widget.props,
-        content: widget.props.content
+    
+    if (storeData) {
+      processedWidget.props = { ...widget.props };
+      
+      // Replace store name in content strings
+      if (widget.props?.content && typeof widget.props.content === 'string') {
+        processedWidget.props.content = widget.props.content
+          // Standard placeholders
           .replace(/{{store_name}}/gi, storeData.store_name)
           .replace(/{{storeName}}/gi, storeData.store_name)
-          .replace(/Testingmy/g, storeData.store_name) // Replace hardcoded store names
-      };
+          // Hardcoded store names (case-insensitive)
+          .replace(/Testingmy/gi, storeData.store_name)
+          .replace(/Your Store/gi, storeData.store_name)
+          // Generic placeholders
+          .replace(/\{\{store\.name\}\}/gi, storeData.store_name)
+          .replace(/\[\[store_name\]\]/gi, storeData.store_name);
+      }
+      
+      // For header and footer layout widgets, inject dynamic store data
+      if (widget.type === 'header-layout' && widget.props) {
+        // Use store name if logo text is null/empty
+        if (processedWidget.props.logo && (!processedWidget.props.logo.text || processedWidget.props.logo.text === null)) {
+          processedWidget.props.logo.text = storeData.store_name;
+        }
+        // Replace "Your Store" with actual store name
+        if (processedWidget.props.logo?.text === 'Your Store') {
+          processedWidget.props.logo.text = storeData.store_name;
+        }
+      }
+      
+      if (widget.type === 'footer-layout' && widget.props) {
+        // Use store name if company name is null/empty
+        if (processedWidget.props.company && (!processedWidget.props.company.name || processedWidget.props.company.name === null)) {
+          processedWidget.props.company.name = storeData.store_name;
+        }
+        // Replace "Your Store" with actual store name
+        if (processedWidget.props.company?.name === 'Your Store') {
+          processedWidget.props.company.name = storeData.store_name;
+        }
+      }
     }
     
     // Apply column span classes
@@ -90,7 +119,7 @@ const WidgetRenderer: React.FC<{
     if (widget.colSpan?.lg) colSpanClasses.push(`lg:col-span-${widget.colSpan.lg}`);
 
     // Add debug logging for system pages
-    if (isSystemPage && process.env.NODE_ENV === 'development') {
+    if (isSystemPage && import.meta.env.DEV) {
       console.log('🔧 System Page Widget:', {
         type: widget.type,
         props: widget.props,
@@ -106,12 +135,12 @@ const WidgetRenderer: React.FC<{
 
     const renderedWidget = (
       <div className={`${colSpanClasses.join(' ')} ${systemPageClass}`} data-widget-type={widget.type}>
-        <WidgetView widget={processedWidget} theme={theme} storeData={storeData} />
+        <WidgetView widget={processedWidget} theme={theme} />
       </div>
     );
 
     // Debug theme passing for navigation widgets
-    if (widget.type === 'navigation' && process.env.NODE_ENV === 'development') {
+    if (widget.type === 'navigation' && import.meta.env.DEV) {
       console.log('🔗 Navigation widget theme passing:', {
         widgetType: widget.type,
         hasTheme: !!theme,
@@ -123,14 +152,7 @@ const WidgetRenderer: React.FC<{
     return renderedWidget;
   } catch (error) {
     console.error(`Error rendering widget ${widget.type}:`, error);
-    return (
-      <div className="bg-red-50 border border-red-200 p-4 rounded">
-        <p className="text-red-800">Error rendering {widget.type} widget</p>
-        {process.env.NODE_ENV === 'development' && (
-          <pre className="mt-2 text-xs text-red-600">{error?.toString()}</pre>
-        )}
-      </div>
-    );
+    return null;
   }
 };
 
@@ -186,8 +208,12 @@ const SectionRenderer: React.FC<{
   if (isSystemPage) {
     const horizontalSpacing = theme?.horizontalSpacing || 'standard';
     
-    // Apply horizontal spacing for header and footer system pages
-    if (pageType === 'header' || pageType === 'footer') {
+    // Prioritize Visual Page Builder section padding for precise control
+    if (section.padding) {
+      // Use exact padding from Visual Page Builder (overrides theme defaults)
+      paddingClass = section.padding;
+    } else if (pageType === 'header' || pageType === 'footer') {
+      // Fallback to theme-based horizontal spacing
       switch (horizontalSpacing) {
         case 'thin':
           paddingClass = 'py-2 px-3';
@@ -197,7 +223,8 @@ const SectionRenderer: React.FC<{
           break;
         case 'standard':
         default:
-          paddingClass = 'py-4 px-6';
+          // Minimal padding for footer to respect page builder layout
+          paddingClass = pageType === 'footer' ? 'py-0 px-0' : 'py-4 px-6';
           break;
       }
     } else {
@@ -220,12 +247,15 @@ const SectionRenderer: React.FC<{
       sectionStyle.color = theme.textColor;
     }
     
-    // Only use fallback styling if no theme overrides are available
-    if (!theme?.backgroundColor && !bgClass) {
+    // Only use minimal fallback styling if absolutely no theme data exists
+    // IMPORTANT: Don't override Visual Page Builder styling with borders/backgrounds
+    if (!theme?.backgroundColor && !bgClass && !section.backgroundColor) {
       if (pageType === 'header') {
-        bgClass = 'bg-white border-b border-gray-200';
+        // Minimal header styling - no borders to respect page builder design
+        bgClass = '';
       } else if (pageType === 'footer') {
-        bgClass = 'bg-gray-50 border-t border-gray-200';
+        // Minimal footer styling - no borders to respect page builder design  
+        bgClass = '';
       }
     }
   }
@@ -235,7 +265,7 @@ const SectionRenderer: React.FC<{
       className={`${paddingClass} ${bgClass} ${isSystemPage ? 'page-builder-system-page' : ''}`}
       style={sectionStyle}
     >
-      <div className={`${isSystemPage ? 'responsive-content-width px-4 sm:px-6 lg:px-8' : 'responsive-content-width'} ${pageType === 'header' ? 'flex items-center min-h-[80px]' : ''}`}>
+      <div className={`${isSystemPage ? 'responsive-content-width' : 'responsive-content-width'} ${pageType === 'header' ? 'flex items-center min-h-[80px] px-4 sm:px-6 lg:px-8' : ''}`}>
         {(section.rows || []).map((row: any) => (
           <div key={row.id} className={`${isSystemPage ? 'mb-2 last:mb-0' : 'mb-6 last:mb-0'} ${pageType === 'header' ? 'w-full' : ''}`}>
             <RowRenderer row={row} theme={theme} isSystemPage={isSystemPage} pageType={pageType} storeData={storeData} />
@@ -249,14 +279,14 @@ const SectionRenderer: React.FC<{
 /**
  * Main Page Builder Renderer Component
  */
-export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
+const PageBuilderRendererComponent: React.FC<PageBuilderRendererProps> = ({
   page,
   isSystemPage = false,
   className = '',
   storeData
 }) => {
-  // Extract theme from page theme overrides
-  const pageTheme = {
+  // Memoize theme to prevent object identity churn
+  const pageTheme = useMemo(() => ({
     '--color-primary': '#2563eb',
     '--color-primary-hover': '#1d4ed8',
     '--color-bg-primary': '#ffffff',
@@ -267,7 +297,7 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
     '--color-text-muted': '#6b7280',
     '--color-border': '#e5e7eb',
     ...page.themeOverrides
-  };
+  }), [page.themeOverrides]);
 
   console.log('🎨 PageBuilderRenderer:', {
     pageName: page.name,
@@ -332,4 +362,6 @@ export const PageBuilderRenderer: React.FC<PageBuilderRendererProps> = ({
   );
 };
 
+// Memoize the component to prevent unnecessary re-renders
+export const PageBuilderRenderer = memo(PageBuilderRendererComponent);
 export default PageBuilderRenderer;

@@ -138,6 +138,34 @@ export const useUpdateLead = (storeId: string) => {
   })
 }
 
+export const useImportLeads = (storeId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (leadsData: CreateLeadForm[]): Promise<CustomerLead[]> => {
+      const { data, error } = await supabase
+        .from('customer_leads')
+        .insert(
+          leadsData.map(lead => ({
+            ...lead,
+            store_id: storeId,
+            status: 'new' as const,
+            lead_score: 0,
+            subscribed_to_newsletter: true
+          }))
+        )
+        .select()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', storeId] })
+      queryClient.invalidateQueries({ queryKey: ['lead-analytics', storeId] })
+    }
+  })
+}
+
 // Incomplete Orders Hooks
 export const useIncompleteOrders = (storeId: string, filters?: IncompleteOrderFilters) => {
   return useQuery({

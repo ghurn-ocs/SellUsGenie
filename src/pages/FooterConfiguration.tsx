@@ -4,9 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Save, Palette, Type, Link2, Info, Settings } from 'lucide-react';
+import { Save, Palette, Type, Link2, Info, Settings, Edit3 } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 import { supabase } from '../lib/supabase';
+import { useFooterColumnConfig, useUpdateFooterColumnConfig } from '../hooks/useFooterColumnConfig';
 
 interface FooterSettings {
   // a) Page Colors
@@ -48,6 +49,13 @@ export const FooterConfiguration: React.FC = () => {
   const [settings, setSettings] = useState<FooterSettings>(defaultSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [pages, setPages] = useState<any[]>([]);
+  
+  // Footer column configuration
+  const { data: columnConfig, isLoading: columnConfigLoading } = useFooterColumnConfig();
+  const updateColumnConfig = useUpdateFooterColumnConfig();
+  const [editingColumn, setEditingColumn] = useState<number | null>(null);
+  const [tempColumnValue, setTempColumnValue] = useState<string>('');
+  const [selectedColumnCount, setSelectedColumnCount] = useState<number>(4);
 
   useEffect(() => {
     const loadFooterSettings = async () => {
@@ -72,7 +80,7 @@ export const FooterConfiguration: React.FC = () => {
         // Load pages for navigation preview
         const { data: pagesData, error: pagesError } = await supabase
           .from('page_documents')
-          .select('id, name, slug, navigation_placement')
+          .select('id, name, slug, navigation_placement, footer_column')
           .eq('store_id', currentStore.id)
           .eq('status', 'published');
 
@@ -87,7 +95,25 @@ export const FooterConfiguration: React.FC = () => {
             { id: '5', name: 'Contact', slug: 'contact', navigationPlacement: 'both' }
           ]);
         } else {
-          setPages(pagesData || []);
+          // Map database fields to expected format
+          const mappedPages = (pagesData || []).map(page => ({
+            ...page,
+            navigationPlacement: page.navigation_placement,
+            footerColumn: page.footer_column
+          }));
+          setPages(mappedPages);
+        }
+
+        // Load footer column count setting
+        const { data: columnCountData, error: columnCountError } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('store_id', currentStore.id)
+          .eq('setting_key', 'footer_column_count')
+          .single();
+
+        if (!columnCountError && columnCountData?.setting_value) {
+          setSelectedColumnCount(columnCountData.setting_value);
         }
       } catch (error) {
         console.error('Error in loadFooterSettings:', error);
@@ -190,6 +216,81 @@ export const FooterConfiguration: React.FC = () => {
     }
   };
 
+  // Footer column helpers
+  const getDefaultColumnTitle = (columnNumber: number): string => {
+    const defaults = { 1: 'Company', 2: 'General', 3: 'Support', 4: 'Legal' };
+    return defaults[columnNumber as 1 | 2 | 3 | 4] || 'Column';
+  };
+
+  const getCurrentColumnTitle = (columnNumber: 1 | 2 | 3 | 4): string => {
+    const config = columnConfig?.find(c => c.column_number === columnNumber);
+    return config?.column_title || getDefaultColumnTitle(columnNumber);
+  };
+
+  const handleStartEditColumn = (columnNumber: 1 | 2 | 3 | 4, currentTitle: string) => {
+    setEditingColumn(columnNumber);
+    setTempColumnValue(currentTitle);
+  };
+
+  const handleSaveColumnEdit = async (columnNumber: 1 | 2 | 3 | 4) => {
+    try {
+      await updateColumnConfig.mutateAsync({
+        column_number: columnNumber,
+        column_title: tempColumnValue.trim() || getDefaultColumnTitle(columnNumber),
+        is_enabled: true
+      });
+      setEditingColumn(null);
+      setTempColumnValue('');
+    } catch (error) {
+      console.error('Failed to update column title:', error);
+    }
+  };
+
+  const handleCancelColumnEdit = () => {
+    setEditingColumn(null);
+    setTempColumnValue('');
+  };
+
+  const saveColumnCountSetting = async (count: number) => {
+    if (!currentStore) return;
+    
+    try {
+      const { error } = await supabase
+        .from('store_settings')
+        .upsert({
+          store_id: currentStore.id,
+          setting_key: 'footer_column_count',
+          setting_value: count,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'store_id,setting_key'
+        });
+
+      if (error) {
+        console.error('Failed to save column count setting:', error);
+      }
+    } catch (error) {
+      console.error('Error saving column count setting:', error);
+    }
+  };
+
+  // Get pages grouped by footer column
+  const getColumnGroupedPages = () => {
+    const footerPages = getFooterPages();
+    const grouped = {
+      1: footerPages.filter(p => p.footerColumn === 1),
+      2: footerPages.filter(p => p.footerColumn === 2),
+      3: footerPages.filter(p => p.footerColumn === 3),
+      4: footerPages.filter(p => p.footerColumn === 4)
+    };
+    
+    // Handle unassigned pages (default to column 2 - General)
+    const unassigned = footerPages.filter(p => !p.footerColumn);
+    grouped[2].push(...unassigned);
+    
+    return grouped;
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-6xl mx-auto p-6">
@@ -227,7 +328,12 @@ export const FooterConfiguration: React.FC = () => {
                 color: settings.textColor 
               }}
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className={`grid gap-6 ${
+                selectedColumnCount === 1 ? 'grid-cols-1' :
+                selectedColumnCount === 2 ? 'grid-cols-1 md:grid-cols-2' :
+                selectedColumnCount === 3 ? 'grid-cols-1 md:grid-cols-3' :
+                'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+              }`}>
                 {/* Left Column - Logo, Store Name, and Tagline aligned top-left */}
                 <div className="flex items-start space-x-3">
                   {settings.displayStoreLogo && currentStore?.store_logo_url && (
@@ -245,95 +351,57 @@ export const FooterConfiguration: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Middle Column - General Pages */}
-                <div>
-                  {(() => {
-                    const { general, legal } = getGroupedFooterPages();
-                    return general.length > 0 ? (
-                      <>
-                        <h4 className="font-semibold text-sm uppercase tracking-wide mb-3" style={{ color: settings.textColor }}>
-                          General
-                        </h4>
-                        <nav className="space-y-2">
-                          {general.map((page) => {
-                            const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
-                            const linkClasses = `block px-0 py-1 transition-all duration-200 text-sm ${borderRadius} ${
-                              settings.navLinkBorder ? 'border' : ''
-                            }`;
-                            const linkStyle: React.CSSProperties = {
-                              color: settings.navLinkTextColor,
-                              borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
-                              backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
-                            };
+                {/* Dynamic Column System - Only show enabled columns */}
+                {[2, 3, 4].filter(columnNumber => columnNumber <= selectedColumnCount).map((columnNumber) => {
+                  const typedColumnNumber = columnNumber as 2 | 3 | 4;
+                  const columnPages = getColumnGroupedPages()[typedColumnNumber];
+                  const columnTitle = getCurrentColumnTitle(typedColumnNumber);
+                  
+                  return (
+                    <div key={columnNumber}>
+                      {(columnPages?.length > 0 || columnNumber === 2) && ( // Always show column 2 even if empty
+                        <>
+                          <h4 className="font-semibold text-sm uppercase tracking-wide mb-3" style={{ color: settings.textColor }}>
+                            {columnTitle}
+                          </h4>
+                          <nav className="space-y-2">
+                            {columnPages?.length > 0 ? columnPages.map((page) => {
+                              const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
+                              const linkClasses = `block px-0 py-1 transition-all duration-200 text-sm ${borderRadius} ${
+                                settings.navLinkBorder ? 'border' : ''
+                              }`;
+                              const linkStyle: React.CSSProperties = {
+                                color: settings.navLinkTextColor,
+                                borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
+                                backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
+                              };
 
-                            return (
-                              <a 
-                                key={page.slug}
-                                href="#" 
-                                className={linkClasses}
-                                style={linkStyle}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.color = settings.navLinkHoverColor;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.color = settings.navLinkTextColor;
-                                }}
-                                title={`Navigate to ${page.name}`}
-                              >
-                                {page.name}
-                              </a>
-                            );
-                          })}
-                        </nav>
-                      </>
-                    ) : null;
-                  })()}
-                </div>
-
-                {/* Right Column - Legal Pages */}
-                <div>
-                  {(() => {
-                    const { general, legal } = getGroupedFooterPages();
-                    return legal.length > 0 ? (
-                      <>
-                        <h4 className="font-semibold text-sm uppercase tracking-wide mb-3" style={{ color: settings.textColor }}>
-                          Legal
-                        </h4>
-                        <nav className="space-y-2">
-                          {legal.map((page) => {
-                            const borderRadius = getBorderRadius(settings.navLinkBorderStyle);
-                            const linkClasses = `block px-0 py-1 transition-all duration-200 text-sm ${borderRadius} ${
-                              settings.navLinkBorder ? 'border' : ''
-                            }`;
-                            const linkStyle: React.CSSProperties = {
-                              color: settings.navLinkTextColor,
-                              borderColor: settings.navLinkBorder ? settings.navLinkTextColor : 'transparent',
-                              backgroundColor: settings.navLinkBorderTransparent ? 'transparent' : undefined
-                            };
-
-                            return (
-                              <a 
-                                key={page.slug}
-                                href="#" 
-                                className={linkClasses}
-                                style={linkStyle}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.color = settings.navLinkHoverColor;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.color = settings.navLinkTextColor;
-                                }}
-                                title={`Navigate to ${page.name}`}
-                              >
-                                {page.name}
-                              </a>
-                            );
-                          })}
-                        </nav>
-                      </>
-                    ) : null;
-                  })()}
-                </div>
+                              return (
+                                <a 
+                                  key={page.id}
+                                  href="#" 
+                                  className={linkClasses}
+                                  style={linkStyle}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = settings.navLinkHoverColor;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = settings.navLinkTextColor;
+                                  }}
+                                  title={`Navigate to ${page.name}`}
+                                >
+                                  {page.name}
+                                </a>
+                              );
+                            }) : (
+                              <p className="text-sm opacity-60">No pages assigned to this column</p>
+                            )}
+                          </nav>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Copyright section */}
@@ -558,6 +626,163 @@ export const FooterConfiguration: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Footer Columns Configuration */}
+        <div className="mt-6 bg-gray-800 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <Settings className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-semibold text-white">Footer Columns Configuration</h3>
+            </div>
+            
+            {/* Column Count Selector */}
+            <div className="flex items-center space-x-3">
+              <label className="text-sm font-medium text-gray-300">Columns to Display:</label>
+              <select
+                value={selectedColumnCount}
+                onChange={(e) => {
+                  const newCount = Number(e.target.value);
+                  setSelectedColumnCount(newCount);
+                  saveColumnCountSetting(newCount);
+                }}
+                className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value={1}>1 Column</option>
+                <option value={2}>2 Columns</option>
+                <option value={3}>3 Columns</option>
+                <option value={4}>4 Columns</option>
+              </select>
+            </div>
+          </div>
+          
+          {columnConfigLoading ? (
+            <div className="animate-pulse text-gray-400">Loading footer configuration...</div>
+          ) : (
+            <div className="space-y-4">
+              {/* Column 1: Company Details (Always enabled) */}
+              <div className="flex items-center space-x-4 p-4 bg-gray-700 rounded-lg border border-gray-600">
+                <div className="flex items-center justify-center w-10 h-10 bg-purple-100 text-purple-800 font-bold text-sm rounded-full flex-shrink-0">
+                  #1
+                </div>
+                <div className="flex-1">
+                  <span className="font-semibold text-white text-lg">Company Details</span>
+                  <p className="text-sm text-gray-400 mt-1">Logo, name, and tagline - automatically positioned</p>
+                </div>
+                <div className="text-xs text-green-400 bg-green-900/30 px-2 py-1 rounded">
+                  Active
+                </div>
+              </div>
+
+              {/* Columns 2, 3, 4: User-configurable with enable/disable based on selection */}
+              {[2, 3, 4].map((columnNumber) => {
+                const typedColumnNumber = columnNumber as 2 | 3 | 4;
+                const currentTitle = getCurrentColumnTitle(typedColumnNumber);
+                const isEditing = editingColumn === columnNumber;
+                const isEnabled = columnNumber <= selectedColumnCount;
+                
+                return (
+                  <div 
+                    key={columnNumber} 
+                    className={`flex items-center space-x-4 p-4 rounded-lg border transition-all ${
+                      isEnabled 
+                        ? 'bg-gray-700 border-gray-600' 
+                        : 'bg-gray-800/50 border-gray-700 opacity-60'
+                    }`}
+                  >
+                    {/* Fixed Column Number */}
+                    <div className={`flex items-center justify-center w-10 h-10 font-bold text-sm rounded-full flex-shrink-0 ${
+                      isEnabled 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : 'bg-gray-500 text-gray-300'
+                    }`}>
+                      #{columnNumber}
+                    </div>
+                    
+                    {/* Editable Column Name */}
+                    <div className="flex-1">
+                      {isEnabled ? (
+                        <>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={tempColumnValue}
+                              onChange={(e) => setTempColumnValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveColumnEdit(typedColumnNumber);
+                                } else if (e.key === 'Escape') {
+                                  handleCancelColumnEdit();
+                                }
+                              }}
+                              className="w-full px-3 py-2 text-sm bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              placeholder="Enter column name"
+                              autoFocus
+                            />
+                          ) : (
+                            <div className="flex items-center space-x-3">
+                              <span className="font-semibold text-white text-lg">{currentTitle}</span>
+                              <button
+                                onClick={() => handleStartEditColumn(typedColumnNumber, currentTitle)}
+                                className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-gray-600 rounded-md transition-colors"
+                                title="Edit column name"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div>
+                          <span className="font-semibold text-gray-400 text-lg">{currentTitle}</span>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Not used in footer design - only {selectedColumnCount} column{selectedColumnCount !== 1 ? 's' : ''} selected
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Status Indicator */}
+                    <div className={`text-xs px-2 py-1 rounded flex-shrink-0 ${
+                      isEnabled 
+                        ? 'text-green-400 bg-green-900/30' 
+                        : 'text-gray-500 bg-gray-700/30'
+                    }`}>
+                      {isEnabled ? 'Active' : 'Disabled'}
+                    </div>
+                    
+                    {/* Save/Cancel Actions */}
+                    {isEditing && isEnabled && (
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleSaveColumnEdit(typedColumnNumber)}
+                          disabled={updateColumnConfig.isPending}
+                          className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Save changes"
+                        >
+                          {updateColumnConfig.isPending ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={handleCancelColumnEdit}
+                          className="px-3 py-1.5 text-xs bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                          title="Cancel editing"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              
+              <div className="mt-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-md">
+                <p className="text-xs text-blue-200">
+                  <strong>How to assign pages to columns:</strong> Edit any page in the Visual Page Builder, 
+                  set "Navigation Placement" to "Footer" or "Both", then select the desired column from the "Footer Column" dropdown.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

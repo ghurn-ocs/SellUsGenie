@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useStore } from '../../contexts/StoreContext'
-import { useLeads, useLeadAnalytics, useCreateLead, useUpdateLead } from '../../hooks/useNurture'
+import { useLeads, useLeadAnalytics, useCreateLead, useUpdateLead, useImportLeads } from '../../hooks/useNurture'
 import { CustomerLead, LeadFilters, CreateLeadForm } from '../../types/nurture'
 import { User, Mail, Phone, Star, Calendar, Tag, Filter, Search, Plus, Download, Edit3, Eye, Trash2, AlertCircle, CheckCircle, Clock, X } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -10,13 +10,26 @@ export const LeadsTab: React.FC = () => {
   const [filters, setFilters] = useState<LeadFilters>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [selectedLead, setSelectedLead] = useState<CustomerLead | null>(null)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
   
   // Data hooks
   const { data: leads = [], isLoading, error } = useLeads(currentStore?.id || '', filters)
   const { data: analytics } = useLeadAnalytics(currentStore?.id || '')
   const createLead = useCreateLead(currentStore?.id || '')
   const updateLead = useUpdateLead(currentStore?.id || '')
+  const importLeads = useImportLeads(currentStore?.id || '')
+
+  // Auto-dismiss notifications after 5 seconds
+  React.useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
 
   // Filter leads based on search query
   const filteredLeads = leads.filter(lead => {
@@ -47,6 +60,81 @@ export const LeadsTab: React.FC = () => {
     }
   }
 
+  const handleImportLeads = async (csvContent: string) => {
+    try {
+      const lines = csvContent.trim().split('\n')
+      if (lines.length < 2) {
+        throw new Error('CSV file must have a header row and at least one data row')
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+      const emailIndex = headers.findIndex(h => h.includes('email'))
+      
+      if (emailIndex === -1) {
+        throw new Error('CSV file must contain an "email" column')
+      }
+
+      const leadsData: CreateLeadForm[] = []
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''))
+        
+        if (!values[emailIndex] || !values[emailIndex].includes('@')) {
+          continue // Skip invalid email rows
+        }
+
+        const leadData: CreateLeadForm = {
+          email: values[emailIndex]
+        }
+
+        // Map other common columns
+        const firstNameIndex = headers.findIndex(h => h.includes('first') && h.includes('name'))
+        const lastNameIndex = headers.findIndex(h => h.includes('last') && h.includes('name'))
+        const phoneIndex = headers.findIndex(h => h.includes('phone'))
+        const notesIndex = headers.findIndex(h => h.includes('note'))
+
+        if (firstNameIndex >= 0 && values[firstNameIndex]) {
+          leadData.first_name = values[firstNameIndex]
+        }
+        if (lastNameIndex >= 0 && values[lastNameIndex]) {
+          leadData.last_name = values[lastNameIndex]
+        }
+        if (phoneIndex >= 0 && values[phoneIndex]) {
+          leadData.phone = values[phoneIndex]
+        }
+        if (notesIndex >= 0 && values[notesIndex]) {
+          leadData.notes = values[notesIndex]
+        }
+
+        leadsData.push(leadData)
+      }
+
+      if (leadsData.length === 0) {
+        throw new Error('No valid leads found in CSV file')
+      }
+
+      setNotification({
+        type: 'info',
+        message: `Importing ${leadsData.length} leads...`
+      })
+
+      await importLeads.mutateAsync(leadsData)
+      setIsImportModalOpen(false)
+      
+      setNotification({
+        type: 'success',
+        message: `Successfully imported ${leadsData.length} leads`
+      })
+      
+    } catch (error: any) {
+      console.error('Failed to import leads:', error)
+      setNotification({
+        type: 'error',
+        message: error.message || 'Failed to import leads. Please check the file format and try again.'
+      })
+    }
+  }
+
   const getStatusColor = (status: CustomerLead['status']) => {
     switch (status) {
       case 'new': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
@@ -73,7 +161,10 @@ export const LeadsTab: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Lead Management</h3>
           <div className="flex items-center space-x-3">
-            <button className="px-4 py-2 bg-[#00AEEF] text-white hover:bg-[#007AFF] rounded-lg font-medium transition-colors flex items-center space-x-2">
+            <button 
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-4 py-2 bg-[#00AEEF] text-white hover:bg-[#007AFF] rounded-lg font-medium transition-colors flex items-center space-x-2"
+            >
               <Download className="w-4 h-4" />
               <span>Import Leads</span>
             </button>
@@ -323,6 +414,14 @@ export const LeadsTab: React.FC = () => {
         isLoading={createLead.isPending}
       />
 
+      {/* Import Leads Modal */}
+      <ImportLeadsModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSubmit={handleImportLeads}
+        isLoading={importLeads.isPending}
+      />
+
       {/* Lead Details Modal */}
       {selectedLead && (
         <LeadDetailsModal 
@@ -330,6 +429,45 @@ export const LeadsTab: React.FC = () => {
           onClose={() => setSelectedLead(null)}
           onUpdate={handleUpdateLeadStatus}
         />
+      )}
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className={`
+            px-4 py-3 rounded-lg shadow-lg max-w-md
+            ${notification.type === 'success' ? 'bg-green-600 text-white' : ''}
+            ${notification.type === 'error' ? 'bg-red-600 text-white' : ''}
+            ${notification.type === 'info' ? 'bg-blue-600 text-white' : ''}
+          `}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {notification.type === 'success' && (
+                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                    <CheckCircle className="w-3 h-3 text-white" />
+                  </div>
+                )}
+                {notification.type === 'error' && (
+                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                    <AlertCircle className="w-3 h-3 text-white" />
+                  </div>
+                )}
+                {notification.type === 'info' && (
+                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                    <Clock className="w-3 h-3 text-white" />
+                  </div>
+                )}
+                <span className="text-sm font-medium">{notification.message}</span>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-4 text-white/70 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -370,7 +508,12 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onSu
         <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-60 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-xl p-6 w-full max-w-md z-50">
           <div className="flex items-center justify-between mb-6">
-            <Dialog.Title className="text-xl font-semibold text-white">Add New Lead</Dialog.Title>
+            <div>
+              <Dialog.Title className="text-xl font-semibold text-white">Add New Lead</Dialog.Title>
+              <Dialog.Description className="text-sm text-[#A0A0A0] mt-1">
+                Add a potential customer to your leads database
+              </Dialog.Description>
+            </div>
             <button
               onClick={handleClose}
               disabled={isLoading}
@@ -565,6 +708,136 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, onClose, onUp
                 </div>
               )}
             </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
+// Import Leads Modal Component
+interface ImportLeadsModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (csvContent: string) => void
+  isLoading: boolean
+}
+
+const ImportLeadsModal: React.FC<ImportLeadsModalProps> = ({ isOpen, onClose, onSubmit, isLoading }) => {
+  const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvContent, setCsvContent] = useState<string>('')
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && file.type === 'text/csv') {
+      setCsvFile(file)
+      
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const content = event.target?.result as string
+        setCsvContent(content)
+      }
+      reader.readAsText(file)
+    } else {
+      alert('Please select a valid CSV file')
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (csvContent) {
+      onSubmit(csvContent)
+    }
+  }
+
+  const handleClose = () => {
+    if (!isLoading) {
+      setCsvFile(null)
+      setCsvContent('')
+      onClose()
+    }
+  }
+
+  return (
+    <Dialog.Root open={isOpen} onOpenChange={handleClose}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-60 z-50" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-xl p-6 w-full max-w-2xl z-50">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <Dialog.Title className="text-xl font-semibold text-white">Import Leads</Dialog.Title>
+              <Dialog.Description className="text-sm text-[#A0A0A0] mt-1">
+                Upload a CSV file to bulk import leads to your database
+              </Dialog.Description>
+            </div>
+            <button
+              onClick={handleClose}
+              disabled={isLoading}
+              className="text-[#A0A0A0] hover:text-white transition-colors disabled:opacity-50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* CSV Format Instructions */}
+            <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <h4 className="text-blue-400 font-medium mb-2">CSV Format Requirements</h4>
+              <ul className="text-sm text-[#E0E0E0] space-y-1">
+                <li>• <span className="font-medium">email</span> column is required</li>
+                <li>• Optional columns: <span className="font-medium">first_name, last_name, phone, notes</span></li>
+                <li>• First row should contain column headers</li>
+                <li>• Save as CSV format from Excel or Google Sheets</li>
+              </ul>
+            </div>
+
+            {/* File Upload */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+                  Select CSV File *
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  disabled={isLoading}
+                  className="w-full px-3 py-2 bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#9B51E0] file:text-white hover:file:bg-[#8A47D0] focus:outline-none focus:ring-2 focus:ring-[#9B51E0]"
+                  required
+                />
+              </div>
+
+              {csvFile && (
+                <div className="p-3 bg-[#1E1E1E] rounded-lg border border-[#3A3A3A]">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <span className="text-sm text-white">
+                      Ready to import: <span className="font-medium">{csvFile.name}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-[#3A3A3A]">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="px-4 py-2 text-[#A0A0A0] hover:text-white border border-[#3A3A3A] hover:border-[#4A4A4A] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !csvContent}
+                  className="px-4 py-2 bg-[#00AEEF] text-white hover:bg-[#007AFF] rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2"
+                >
+                  {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  <Download className="w-4 h-4" />
+                  <span>{isLoading ? 'Importing...' : 'Import Leads'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

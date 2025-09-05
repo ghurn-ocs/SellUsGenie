@@ -111,9 +111,9 @@ export const useCustomers = (storeId: string) => {
         .select('id')
         .eq('store_id', storeId)
         .eq('email', email)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking customer:', error)
         return false
       }

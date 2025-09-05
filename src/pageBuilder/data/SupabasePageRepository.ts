@@ -45,10 +45,11 @@ export class SupabasePageRepository implements PageRepository {
         globalStyles: data.global_styles || {},
         // System page properties
         pageType: data.page_type,
-        isSystemPage: data.isSystemPage,
-        systemPageType: data.systemPageType,
+        isSystemPage: data["isSystemPage"],
+        systemPageType: data["systemPageType"],
         editingRestrictions: data.editingRestrictions,
         navigationPlacement: data.navigation_placement,
+        footerColumn: data.footer_column,
         history: [] // History loaded separately if needed
       };
     } catch (error) {
@@ -78,10 +79,11 @@ export class SupabasePageRepository implements PageRepository {
           global_styles: doc.globalStyles || {},
           // System page properties
           page_type: doc.pageType || 'page',
-          isSystemPage: doc.isSystemPage || false,
-          systemPageType: doc.systemPageType || null,
+          "isSystemPage": doc.isSystemPage || false,
+          "systemPageType": doc.systemPageType || null,
           editingRestrictions: doc.editingRestrictions || null,
           navigation_placement: doc.navigationPlacement || 'both',
+          footer_column: doc.footerColumn || null,
           updated_at: new Date().toISOString()
         });
 
@@ -141,9 +143,11 @@ export class SupabasePageRepository implements PageRepository {
         globalStyles: item.global_styles || {},
         // System page properties
         pageType: item.page_type,
-        isSystemPage: item.isSystemPage,
-        systemPageType: item.systemPageType,
+        isSystemPage: item["isSystemPage"],
+        systemPageType: item["systemPageType"],
         editingRestrictions: item.editingRestrictions,
+        navigationPlacement: item.navigation_placement,
+        footerColumn: item.footer_column,
         history: []
       }));
     } catch (error) {
@@ -337,6 +341,8 @@ export class SupabasePageRepository implements PageRepository {
         isSystemPage: pageData.isSystemPage,
         systemPageType: pageData.systemPageType,
         editingRestrictions: pageData.editingRestrictions,
+        navigationPlacement: pageData.navigation_placement,
+        footerColumn: pageData.footer_column,
         history: []
       };
     } catch (error) {
@@ -374,14 +380,19 @@ export class SupabasePageRepository implements PageRepository {
 
   async getPageBySlug(slug: string): Promise<PageDocument | null> {
     try {
-      // Handle slug variations - remove leading slash and handle empty/home
-      const normalizedSlug = slug.startsWith('/') ? slug.substring(1) : slug;
+      // Normalize slug: ensure it starts with / (or is just / for home)
+      let normalizedSlug = slug;
+      if (slug === '' || slug === null) {
+        normalizedSlug = '/';
+      } else if (!slug.startsWith('/')) {
+        normalizedSlug = `/${slug}`;
+      }
       
       const { data, error } = await supabase
         .from('page_documents')
         .select('*')
         .eq('store_id', this.storeId)
-        .eq('slug', `/${normalizedSlug}`)
+        .eq('slug', normalizedSlug)
         .single();
 
       if (error) {
@@ -411,13 +422,183 @@ export class SupabasePageRepository implements PageRepository {
         globalStyles: data.global_styles || {},
         // System page properties
         pageType: data.page_type,
-        isSystemPage: data.isSystemPage,
-        systemPageType: data.systemPageType,
+        isSystemPage: data["isSystemPage"],
+        systemPageType: data["systemPageType"],
         editingRestrictions: data.editingRestrictions,
+        navigationPlacement: data.navigation_placement,
+        footerColumn: data.footer_column,
         history: []
       };
     } catch (error) {
       console.error('Error getting page by slug:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * List system pages (header/footer) for the current store
+   */
+  async listSystemPages(): Promise<{ header: PageDocument | null; footer: PageDocument | null }> {
+    try {
+      console.log('🔍 Listing system pages for store:', this.storeId);
+      
+      const { data, error } = await supabase
+        .from('page_documents')
+        .select('*')
+        .eq('store_id', this.storeId)
+        .in('page_type', ['header', 'footer']);
+
+      if (error) {
+        console.error('❌ Error listing system pages:', error);
+        throw error;
+      }
+
+      const pages = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        slug: item.slug,
+        version: item.version,
+        sections: item.sections || [],
+        themeOverrides: item.theme_overrides || {},
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        status: item.status,
+        publishedAt: item.published_at,
+        scheduledFor: item.scheduled_for,
+        seo: item.seo || {},
+        analytics: item.analytics || {},
+        performance: item.performance || {},
+        accessibility: item.accessibility || {},
+        customCode: item.custom_code || {},
+        globalStyles: item.global_styles || {},
+        // System page properties
+        pageType: item.page_type,
+        isSystemPage: item["isSystemPage"],
+        systemPageType: item["systemPageType"],
+        editingRestrictions: item.editingRestrictions,
+        navigationPlacement: item.navigation_placement,
+        footerColumn: item.footer_column,
+        history: []
+      }));
+
+      const result = {
+        header: pages.find((p: any) => p.pageType === 'header') || null,
+        footer: pages.find((p: any) => p.pageType === 'footer') || null
+      };
+
+      console.log('✅ System pages loaded:', {
+        hasHeader: !!result.header,
+        hasFooter: !!result.footer,
+        headerName: result.header?.name,
+        footerName: result.footer?.name
+      });
+
+      return result;
+    } catch (error) {
+      console.error('❌ Error listing system pages:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a system page (header or footer)
+   */
+  async createSystemPage(pageType: 'header' | 'footer'): Promise<PageDocument> {
+    try {
+      console.log(`🔧 Creating ${pageType} system page for store:`, this.storeId);
+
+      // Check if a system page of this type already exists
+      const existing = await this.listSystemPages();
+      if (existing[pageType]) {
+        throw new Error(`A ${pageType} page already exists for this store`);
+      }
+
+      const now = new Date().toISOString();
+      const pageId = crypto.randomUUID();
+      
+      const systemPageName = pageType === 'header' ? 'Site Header' : 'Site Footer';
+      
+      // Create basic system page structure
+      const newPage: PageDocument = {
+        id: pageId,
+        name: systemPageName,
+        slug: undefined, // System pages don't have slugs
+        version: 1,
+        pageType: pageType,
+        isSystemPage: true,
+        systemPageType: pageType,
+        status: 'published', // System pages are published by default
+        sections: [{
+          id: crypto.randomUUID(),
+          title: `${systemPageName} Section`,
+          rows: [{
+            id: crypto.randomUUID(),
+            widgets: [{
+              id: crypto.randomUUID(),
+              type: 'text',
+              version: 1,
+              colSpan: { sm: 12, md: 12, lg: 12 },
+              props: {
+                content: pageType === 'header' 
+                  ? `<div class="bg-white border-b border-gray-200 py-4 px-6">
+                      <div class="flex justify-between items-center max-w-7xl mx-auto">
+                        <h1 class="text-2xl font-bold text-gray-900">Your Store</h1>
+                        <nav class="space-x-6">
+                          <a href="/" class="text-gray-600 hover:text-gray-900">Home</a>
+                          <a href="/about" class="text-gray-600 hover:text-gray-900">About</a>
+                          <a href="/contact" class="text-gray-600 hover:text-gray-900">Contact</a>
+                        </nav>
+                      </div>
+                    </div>`
+                  : `<div class="bg-gray-900 text-white py-8 px-6">
+                      <div class="max-w-7xl mx-auto text-center">
+                        <p class="text-gray-300">© 2024 Your Store. All rights reserved.</p>
+                      </div>
+                    </div>`,
+                allowHtml: true
+              }
+            }]
+          }]
+        }],
+        themeOverrides: {},
+        createdAt: now,
+        updatedAt: now,
+        publishedAt: now,
+        seo: {
+          metaTitle: `${systemPageName}`,
+          metaDescription: `${systemPageName} for the store`
+        },
+        analytics: {
+          trackingId: '',
+          events: [],
+          heatmap: false,
+          scrollTracking: false
+        },
+        performance: {
+          lazyLoading: true,
+          imageOptimization: true,
+          minifyCSS: true,
+          minifyJS: true
+        },
+        accessibility: {
+          altTextRequired: true,
+          contrastChecking: true,
+          keyboardNavigation: true,
+          screenReaderSupport: true
+        }
+      };
+
+      // Save the system page
+      await this.saveDraft(newPage);
+      
+      // Immediately publish it
+      await this.publish(newPage.id);
+
+      console.log(`✅ Created and published ${pageType} system page:`, newPage.name);
+      
+      return newPage;
+    } catch (error) {
+      console.error(`❌ Error creating ${pageType} system page:`, error);
       throw error;
     }
   }

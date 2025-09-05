@@ -370,6 +370,54 @@ export const useCreateEmailSegment = (storeId: string) => {
   })
 }
 
+export const useUpdateEmailSegment = (storeId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ segmentId, segmentData }: { segmentId: string, segmentData: Partial<CreateEmailSegmentForm> }): Promise<EmailSegment> => {
+      const { data, error } = await supabase
+        .from('email_segments')
+        .update({
+          ...segmentData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', segmentId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Recalculate member count if criteria changed
+      if (segmentData.criteria && data.id) {
+        await supabase.rpc('calculate_segment_members', { segment_id: data.id })
+      }
+
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-segments', storeId] })
+    }
+  })
+}
+
+export const useDeleteEmailSegment = (storeId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (segmentId: string): Promise<void> => {
+      const { error } = await supabase
+        .from('email_segments')
+        .delete()
+        .eq('id', segmentId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-segments', storeId] })
+    }
+  })
+}
+
 // Campaign Analytics Hooks
 export const useEmailCampaignAnalytics = (campaignId: string) => {
   return useQuery({

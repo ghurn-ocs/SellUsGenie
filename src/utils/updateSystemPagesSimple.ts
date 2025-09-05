@@ -62,7 +62,8 @@ export async function recreateMissingSystemPages(storeId: string): Promise<Updat
       // Core essential pages (always PUBLISHED)
       { name: 'Site Header', slug: null, type: 'header', isCore: true, alternativeNames: ['Header'] },
       { name: 'Home Page', slug: '/', type: 'home', isCore: true, alternativeNames: ['Home'] },
-      { name: 'Footer', slug: null, type: 'footer', isCore: true, alternativeNames: ['Site Footer'] },
+      // REMOVED: Footer - Users should create footers using Visual Page Builder widgets instead
+      // { name: 'Footer', slug: null, type: 'footer', isCore: true, alternativeNames: ['Site Footer'] },
       // Additional system pages
       { name: 'About Us', slug: '/about', type: 'about', isCore: false, alternativeNames: ['About'] },
       { name: 'Privacy Policy', slug: '/privacy', type: 'privacy', isCore: false, alternativeNames: ['Privacy'] },
@@ -425,55 +426,8 @@ async function createSystemPageContent(pageInfo: { name: string; slug: string | 
       };
       break;
 
-    case 'footer':
-      sections = [{
-        id: crypto.randomUUID(),
-        title: 'Footer Section',
-        padding: 'py-8 px-4',
-        rows: [{
-          id: crypto.randomUUID(),
-          widgets: [{
-            id: crypto.randomUUID(),
-            type: 'text',
-            version: 1,
-            colSpan: { sm: 12, md: 12, lg: 12 },
-            props: {
-              content: `<footer class="bg-gray-800 text-white">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div>
-                      <h3 class="text-lg font-semibold mb-4">${storeName}</h3>
-                      <p class="text-gray-300">Quality products and exceptional service.</p>
-                    </div>
-                    <div>
-                      <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
-                      <ul class="space-y-2">
-                        <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/about">About Us</span></li>
-                        <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/contact">Contact</span></li>
-                        <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/privacy">Privacy Policy</span></li>
-                        <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/terms">Terms & Conditions</span></li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
-                      <p class="text-gray-300">Customize your contact information here.</p>
-                    </div>
-                  </div>
-                  <div class="border-t border-gray-700 pt-6 mt-6 text-center">
-                    <p class="text-gray-300">&copy; ${new Date().getFullYear()} All rights reserved.</p>
-                  </div>
-                </div>
-              </footer>`,
-              allowHtml: true
-            }
-          }]
-        }]
-      }];
-      seo = {
-        metaTitle: `${storeName} - Footer`,
-        metaDescription: `Site footer for ${storeName}`
-      };
-      break;
+    // REMOVED: 'footer' case - Users should create footers using Visual Page Builder widgets instead
+    // This prevents conflicts between system-generated footers and Visual Page Builder footers
 
     default:
       throw new Error(`Unknown page type: ${pageInfo.type}`);
@@ -513,12 +467,12 @@ export async function fixEmptySystemPages(storeId: string): Promise<UpdateResult
       return result;
     }
 
-    // Get existing header and footer pages
+    // Get existing header pages only (footer pages handled by Visual Page Builder)
     const { data: systemPages, error: fetchError } = await supabase
       .from('page_documents')
       .select('id, name, slug, sections')
       .eq('store_id', storeId)
-      .in('name', ['Site Header', 'Site Footer']);
+      .in('name', ['Site Header']); // Removed 'Site Footer' - handled by Visual Page Builder
 
     if (fetchError) {
       result.success = false;
@@ -584,51 +538,8 @@ export async function fixEmptySystemPages(storeId: string): Promise<UpdateResult
               }]
             }]
           }];
-        } else if (page.name === 'Site Footer') {
-          updatedSections = [{
-            id: crypto.randomUUID(),
-            title: 'Footer Section',
-            padding: 'py-0 px-0',
-            rows: [{
-              id: crypto.randomUUID(),
-              widgets: [{
-                id: crypto.randomUUID(),
-                type: 'text',
-                version: 1,
-                colSpan: { sm: 12, md: 12, lg: 12 },
-                props: {
-                  content: `<div class="bg-gray-800 text-white">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div>
-                          <h3 class="text-lg font-semibold mb-4">${store.store_name}</h3>
-                          <p class="text-gray-300">Quality products and exceptional service.</p>
-                        </div>
-                        <div>
-                          <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
-                          <ul class="space-y-2">
-                            <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/about">About Us</span></li>
-                            <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/contact">Contact</span></li>
-                            <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/privacy">Privacy Policy</span></li>
-                            <li><span class="text-gray-300 hover:text-white cursor-pointer" data-nav="/terms">Terms & Conditions</span></li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
-                          <p class="text-gray-300">Get in touch with us today!</p>
-                        </div>
-                      </div>
-                      <div class="border-t border-gray-700 pt-6 mt-6 text-center">
-                        <p class="text-gray-300">&copy; ${new Date().getFullYear()} All rights reserved.</p>
-                      </div>
-                    </div>
-                  </div>`,
-                  allowHtml: true
-                }
-              }]
-            }]
-          }];
         }
+        // REMOVED: Site Footer handling - footers should be created using Visual Page Builder widgets
         
         if (updatedSections) {
           // Update the page with new content
@@ -692,7 +603,7 @@ export async function publishCoreSystemPages(storeId: string): Promise<UpdateRes
       .from('page_documents')
       .select('id, name, store_id, status')
       .eq('store_id', storeId)
-      .in('name', ['Site Header', 'Home Page', 'Footer']);
+      .in('name', ['Site Header', 'Home Page']); // Removed 'Footer' - handled by Visual Page Builder
 
     if (fetchError) {
       result.success = false;
@@ -701,7 +612,7 @@ export async function publishCoreSystemPages(storeId: string): Promise<UpdateRes
     }
 
     // Find core pages that are not published
-    const corePageNames = ['Site Header', 'Home Page', 'Footer'];
+    const corePageNames = ['Site Header', 'Home Page']; // Removed 'Footer' - handled by Visual Page Builder
     const pagesToPublish = existingPages?.filter(page => 
       corePageNames.includes(page.name) && page.status !== 'published'
     ) || [];

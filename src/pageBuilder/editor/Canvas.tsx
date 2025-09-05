@@ -24,6 +24,7 @@ import { widgetRegistry } from '../widgets/registry';
 import { CanvasSection } from './CanvasSection';
 import { CanvasRow } from './CanvasRow';
 import { CanvasWidget } from './CanvasWidget';
+import { PageRenderer } from '../../components/public/PageRenderer';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 
 interface CanvasProps {
@@ -425,6 +426,34 @@ export const Canvas: React.FC<CanvasProps> = ({
     </DragOverlay>
   );
 
+
+  // Detect if this is a Header or Footer page in preview mode
+  const isHeaderPage = document.systemPageType === 'header' || 
+                       document.name?.toLowerCase().includes('header') ||
+                       document.name === 'Site Header';
+                       
+  const isFooterPage = document.systemPageType === 'footer' || 
+                       document.name?.toLowerCase().includes('footer') ||
+                       document.name === 'Site Footer' ||
+                       document.name === 'Footer';
+
+  // Use PageRenderer for Header/Footer pages in preview mode
+  if (isPreviewMode && (isHeaderPage || isFooterPage)) {
+    return (
+      <div className="flex-1 bg-gray-50">
+        <div 
+          className="p-8 pb-24" 
+          style={{ minHeight: '100vh' }}
+        >
+          <div className="relative mx-auto max-w-4xl">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <PageRenderer document={document} isPreviewMode={true} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-gray-50">

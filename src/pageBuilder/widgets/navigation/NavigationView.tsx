@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { Link } from 'wouter';
 import type { WidgetBase } from '../../types';
@@ -21,8 +21,15 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
   const { links = [], className = '', linkClassName = '', activeLinkClassName = '' } = widget.props;
   const [publishedPages, setPublishedPages] = useState<Array<{ name: string; href: string }>>([]);
   const [pagesLoading, setPagesLoading] = useState(true);
+  
+  // Latching to prevent React Strict Mode duplicate calls
+  const navigationRan = useRef<string>('');
+
   // Load published pages from Supabase for navigation
   useEffect(() => {
+    const depKey = `${location}-${storeData?.id || 'no-store'}`;
+    if (navigationRan.current === depKey) return;
+    navigationRan.current = depKey;
     const loadPublishedPages = async () => {
       try {
         let storeId = null;
@@ -31,7 +38,7 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
         // First, try to use storeData if available (passed from parent component)
         if (storeData?.id) {
           storeId = storeData.id;
-          if (process.env.NODE_ENV === 'development') {
+          if (import.meta.env.DEV) {
             console.log('🔗 Navigation: Using storeData from parent:', { 
               storeId, 
               storeName: storeData.store_name 

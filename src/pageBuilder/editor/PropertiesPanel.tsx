@@ -8,6 +8,7 @@ import type { PageDocument, WidgetBase } from '../types';
 import { widgetRegistry } from '../widgets/registry';
 import { PageColorSettings } from '../components/PageColorSettings';
 import { ExpandableSection } from '../components/ExpandableSection';
+import { useFooterColumnHeaders } from '../../hooks/useFooterColumnConfig';
 import { 
   Settings, 
   Layout, 
@@ -74,6 +75,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     : null;
 
   const widgetConfig = selectedWidget ? widgetRegistry.get(selectedWidget.type) : null;
+  const { columnHeaders } = useFooterColumnHeaders();
 
   const updateDocument = (updates: Partial<PageDocument>) => {
     onDocumentChange({
@@ -110,24 +112,37 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Page URL Slug
         </label>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">/</span>
+        <div className="relative">
           <input
             type="text"
             value={document.slug || ''}
             onChange={(e) => {
-              const slug = e.target.value.toLowerCase()
-                .replace(/[^a-z0-9-]/g, '-')
-                .replace(/--+/g, '-')
-                .replace(/^-|-$/g, '');
+              let slug = e.target.value;
+              
+              // Special handling for home page
+              if (slug === '' || slug === '/') {
+                slug = '/';
+              } else {
+                // For non-home pages, ensure slug starts with /
+                if (!slug.startsWith('/')) {
+                  slug = '/' + slug;
+                }
+                
+                // Sanitize the slug (but preserve the leading /)
+                slug = slug.toLowerCase()
+                  .replace(/[^a-z0-9\/-]/g, '-')
+                  .replace(/--+/g, '-')
+                  .replace(/-$/, ''); // Remove trailing dash only
+              }
+              
               updateDocument({ slug });
             }}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="page-url-slug"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="/page-url-slug (use / for home page)"
           />
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          The URL path for this page (e.g., /about-us, /products)
+          The URL path for this page. Use "/" for home page, "/about" for about page, etc.
         </p>
       </div>
 
@@ -164,6 +179,28 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           Controls where this page appears in site navigation menus
         </p>
       </div>
+
+      {/* Footer Column Selection - Only show if page appears in footer */}
+      {(document.navigationPlacement === 'footer' || document.navigationPlacement === 'both') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Footer Column
+          </label>
+          <select
+            value={document.footerColumn || 2}
+            onChange={(e) => updateDocument({ footerColumn: parseInt(e.target.value) as 1 | 2 | 3 | 4 })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value={1}>Column 1: {columnHeaders[1]}</option>
+            <option value={2}>Column 2: {columnHeaders[2]}</option>
+            <option value={3}>Column 3: {columnHeaders[3]}</option>
+            <option value={4}>Column 4: {columnHeaders[4]}</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Choose which footer column this page link should appear in
+          </p>
+        </div>
+      )}
     </ExpandableSection>
   );
 

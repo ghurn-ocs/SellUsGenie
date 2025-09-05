@@ -66,6 +66,10 @@ export const useOrders = (storeId: string) => {
         status: orderDataForDB.status,
         payment_status: orderDataForDB.payment_status,
         subtotal: orderDataForDB.subtotal,
+        tax_amount: orderDataForDB.tax,        // Map to tax_amount
+        shipping_amount: orderDataForDB.shipping, // Map to shipping_amount  
+        total_amount: orderDataForDB.total,    // Map to total_amount
+        // Also set the legacy fields for backward compatibility
         tax: orderDataForDB.tax,
         shipping: orderDataForDB.shipping,
         total: orderDataForDB.total,

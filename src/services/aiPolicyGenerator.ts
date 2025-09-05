@@ -27,15 +27,26 @@ interface AIGenerationResponse {
 
 class AIPolicyGeneratorService {
   private async getGoogleCloudAPIKey(): Promise<string> {
-    // For now, use the key from environment variables until system_settings table is created
-    // This ensures immediate functionality for production deployment
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-    
-    if (!apiKey) {
-      throw new Error('Google Cloud AI API key not configured. Please contact support.')
+    try {
+      // Use secure RPC function to get API key (runs with service role permissions)
+      const { data, error } = await supabase.rpc('get_system_api_key', {
+        key_name: 'google_ai_api'
+      })
+
+      if (error) {
+        console.error('Error calling get_system_api_key function:', error)
+        throw new Error('Failed to retrieve Google AI API key from secure function.')
+      }
+
+      if (!data) {
+        throw new Error('Google AI API key not found in database. Please verify the key is stored correctly.')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error fetching Google AI API key:', error)
+      throw new Error('Failed to retrieve Google AI API key. Please contact support.')
     }
-    
-    return apiKey
   }
 
   private async getEnhancedStoreInfo(storeId: string): Promise<any> {

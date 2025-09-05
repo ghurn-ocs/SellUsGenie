@@ -4,6 +4,7 @@
 import React, { useState } from 'react'
 import { useComprehensiveAnalytics } from '../../hooks/useComprehensiveAnalytics'
 import { useStore } from '../../contexts/StoreContext'
+import * as Dialog from '@radix-ui/react-dialog'
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -25,7 +26,8 @@ import {
   Database,
   ArrowRight,
   CheckCircle,
-  Crown
+  Crown,
+  X
 } from 'lucide-react'
 
 interface WorldClassAnalyticsDashboardProps {
@@ -83,12 +85,78 @@ const hasWebsiteData = (analytics: any) => analytics?.website?.visitors > 0
 export const WorldClassAnalyticsDashboard: React.FC<WorldClassAnalyticsDashboardProps> = ({ storeId }) => {
   const { currentStore } = useStore()
   const [activeTab, setActiveTab] = useState('overview')
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     end: new Date()
   })
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
+
+  // Auto-dismiss notifications after 5 seconds
+  React.useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
 
   const { analytics, isLoading, createSegment, calculateRFM, generateInsights } = useComprehensiveAnalytics(storeId, dateRange)
+
+  // Helper function to get date range label
+  const getDateRangeLabel = () => {
+    const diffTime = Math.abs(dateRange.end.getTime() - dateRange.start.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays <= 1) return 'Last 24 hours'
+    if (diffDays <= 7) return 'Last 7 days'
+    if (diffDays <= 30) return 'Last 30 days'
+    if (diffDays <= 90) return 'Last 90 days'
+    return `${diffDays} days`
+  }
+
+  // Handle export functionality
+  const handleExport = () => {
+    try {
+      if (!analytics) {
+        setNotification({ type: 'error', message: 'No data available to export' })
+        return
+      }
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        dateRange: {
+          start: dateRange.start.toISOString(),
+          end: dateRange.end.toISOString()
+        },
+        store: currentStore?.store_name || 'Unknown Store',
+        analytics: {
+          revenue: analytics.revenue,
+          customers: analytics.customers,
+          website: analytics.website,
+          predictions: analytics.predictions,
+          attribution: analytics.attribution,
+          products: analytics.products
+        }
+      }
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `analytics-export-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      setNotification({ type: 'success', message: 'Analytics data exported successfully' })
+    } catch (error) {
+      console.error('Export failed:', error)
+      setNotification({ type: 'error', message: 'Failed to export analytics data' })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -140,17 +208,19 @@ export const WorldClassAnalyticsDashboard: React.FC<WorldClassAnalyticsDashboard
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-3 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors">
-            <Calendar className="w-4 h-4" />
-            <span>Last 30 days</span>
+          <button 
+            onClick={() => setIsDatePickerOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#2A2A2A] border border-[#4A4A4A] text-white rounded-lg hover:bg-[#3A3A3A] hover:border-[#9B51E0]/50 transition-all duration-200 shadow-sm"
+          >
+            <Calendar className="w-4 h-4 text-[#9B51E0]" />
+            <span className="font-medium">{getDateRangeLabel()}</span>
           </button>
-          <button className="flex items-center space-x-2 px-3 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors">
+          <button 
+            onClick={handleExport}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] hover:shadow-lg hover:shadow-[#9B51E0]/25 transition-all duration-200 font-medium"
+          >
             <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
-          <button className="flex items-center space-x-2 px-3 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors">
-            <Settings className="w-4 h-4" />
-            <span>Configure</span>
+            <span>Export Data</span>
           </button>
         </div>
       </div>
@@ -378,12 +448,9 @@ export const WorldClassAnalyticsDashboard: React.FC<WorldClassAnalyticsDashboard
               <div className="flex space-x-3">
                 <button
                   onClick={() => console.log('Calculate RFM')}
-                  className="px-4 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2.5 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] hover:shadow-lg hover:shadow-[#9B51E0]/25 transition-all duration-200 font-medium"
                 >
-                  Analyze Customers
-                </button>
-                <button className="px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors">
-                  Create Segment
+                  <span>Analyze Customers</span>
                 </button>
               </div>
             </div>
@@ -723,6 +790,96 @@ export const WorldClassAnalyticsDashboard: React.FC<WorldClassAnalyticsDashboard
         </div>
       )}
 
+      {/* Date Range Picker Modal */}
+      <Dialog.Root open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-60 z-50" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-xl w-full max-w-md z-50">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <Dialog.Title className="text-lg font-semibold text-white">Select Date Range</Dialog.Title>
+                  <Dialog.Description className="text-sm text-[#A0A0A0] mt-1">
+                    Choose a date range for your analytics data
+                  </Dialog.Description>
+                </div>
+                <button 
+                  onClick={() => setIsDatePickerOpen(false)} 
+                  className="text-[#A0A0A0] hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Preset Date Ranges */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-white">Quick Select</h4>
+                  {[
+                    { label: 'Last 7 days', days: 7 },
+                    { label: 'Last 30 days', days: 30 },
+                    { label: 'Last 90 days', days: 90 },
+                    { label: 'Last 6 months', days: 180 },
+                    { label: 'Last year', days: 365 }
+                  ].map((preset) => (
+                    <button
+                      key={preset.days}
+                      onClick={() => {
+                        const newEnd = new Date()
+                        const newStart = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000)
+                        setDateRange({ start: newStart, end: newEnd })
+                        setIsDatePickerOpen(false)
+                        setNotification({ type: 'success', message: `Date range updated to ${preset.label}` })
+                      }}
+                      className="w-full text-left px-3 py-2 bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg text-[#A0A0A0] hover:bg-[#3A3A3A] hover:text-white transition-colors"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Current Selection Display */}
+                <div className="mt-6 p-3 bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg">
+                  <h4 className="text-sm font-medium text-white mb-2">Current Selection</h4>
+                  <div className="text-sm text-[#A0A0A0]">
+                    <p>From: {dateRange.start.toLocaleDateString()}</p>
+                    <p>To: {dateRange.end.toLocaleDateString()}</p>
+                    <p className="text-[#9B51E0] mt-1">{getDateRangeLabel()}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed bottom-4 right-4 p-4 rounded-lg border backdrop-blur-sm z-[60] ${
+          notification.type === 'success' 
+            ? 'bg-green-500/20 border-green-500/30 text-green-400'
+            : notification.type === 'error'
+            ? 'bg-red-500/20 border-red-500/30 text-red-400'
+            : 'bg-blue-500/20 border-blue-500/30 text-blue-400'
+        }`}>
+          <div className="flex items-center space-x-3">
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : notification.type === 'error' ? (
+              <AlertTriangle className="w-5 h-5" />
+            ) : (
+              <ExternalLink className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-4 text-current hover:opacity-70 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -104,6 +104,11 @@ export interface WidgetBase {
   };
 }
 
+// Generic Widget type with typed props
+export type Widget<T = unknown> = Omit<WidgetBase, 'props'> & {
+  props: T;
+};
+
 export interface Row {
   id: string;
   widgets: WidgetBase[];
@@ -139,6 +144,7 @@ export interface PageDocument {
   systemPageType?: string;
   editingRestrictions?: Record<string, any>;
   navigationPlacement?: 'header' | 'footer' | 'both' | 'none';
+  footerColumn?: 1 | 2 | 3 | 4;
   history?: { 
     id: string; 
     createdAt: string; 

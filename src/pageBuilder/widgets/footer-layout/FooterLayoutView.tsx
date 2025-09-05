@@ -3,9 +3,12 @@
  * Provides comprehensive footer layout editing within Visual Page Builder
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 import type { Widget } from '../../types';
+import { useFooterColumnHeaders } from '../../../hooks/useFooterColumnConfig';
+import { useStore } from '../../../contexts/StoreContext';
+import { supabase } from '../../../lib/supabase';
 
 export interface FooterLayoutProps {
   // Layout Configuration
@@ -30,9 +33,10 @@ export interface FooterLayoutProps {
     showIcons: boolean;
   };
   
-  // Navigation Links
+  // Navigation Links - New 4-column system
   navigation: {
     enabled: boolean;
+    useColumnSystem: boolean; // Enable new 4-column footer system
     columns: Array<{
       id: string;
       title: string;
@@ -44,6 +48,30 @@ export interface FooterLayoutProps {
       }>;
     }>;
     autoDetectPages: boolean;
+  };
+  
+  // New 4-Column Footer System with numbered columns
+  footerColumns?: {
+    1: Array<{
+      id: string;
+      label: string;
+      href: string;
+    }>;
+    2: Array<{
+      id: string;
+      label: string;
+      href: string;
+    }>;
+    3: Array<{
+      id: string;
+      label: string;
+      href: string;
+    }>;
+    4: Array<{
+      id: string;
+      label: string;
+      href: string;
+    }>;
   };
   
   // Social Media
@@ -111,23 +139,63 @@ const SocialIcon = ({ platform }: { platform: string }) => {
 
 export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> = ({ widget }) => {
   const { props } = widget;
+  const { columnHeaders } = useFooterColumnHeaders();
+  const { currentStore } = useStore();
+  const [selectedColumnCount, setSelectedColumnCount] = useState<number>(4); // Default to 4 columns
+
+  useEffect(() => {
+    const loadFooterSettings = async () => {
+      if (!currentStore) return;
+
+      try {
+        // Load footer column count from store settings
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('store_id', currentStore.id)
+          .eq('setting_key', 'footer_column_count')
+          .single();
+
+        if (!settingsError && settingsData?.setting_value) {
+          setSelectedColumnCount(settingsData.setting_value);
+        } else {
+          setSelectedColumnCount(4); // Default to 4 columns
+        }
+      } catch (error) {
+        console.error('Error in loadFooterSettings:', error);
+      }
+    };
+
+    loadFooterSettings();
+  }, [currentStore]);
+
+  // Use configured footer columns from widget props
+  const getColumnGroupedPages = () => {
+    // Use the footerColumns from props if available, otherwise return empty groups
+    return props.footerColumns || {
+      1: [],
+      2: [],
+      3: [],
+      4: []
+    };
+  };
   
   const getLayoutClasses = () => {
     const baseClasses = "w-full px-4 md:px-6 lg:px-8";
     const paddingClasses = {
       compact: "py-8",
-      standard: "py-12",
+      standard: "py-12", 
       spacious: "py-16"
     };
     
-    const gridClasses = {
-      'single-column': "text-center",
-      'two-column': "grid md:grid-cols-2 gap-8",
-      'three-column': "grid md:grid-cols-3 gap-8",
-      'four-column': "grid md:grid-cols-2 lg:grid-cols-4 gap-8"
-    };
+    // Dynamic grid based on selected column count
+    const gridClasses = selectedColumnCount === 1 ? 'text-center' :
+                        selectedColumnCount === 2 ? 'grid md:grid-cols-2 gap-8' :
+                        selectedColumnCount === 3 ? 'grid md:grid-cols-3 gap-8' :
+                        'grid md:grid-cols-2 lg:grid-cols-4 gap-8';
     
-    return `${baseClasses} ${paddingClasses[props.styling?.padding || 'standard']} ${gridClasses[props.layout || 'three-column']}`;
+    const padding = paddingClasses[props.styling?.padding as keyof typeof paddingClasses] || paddingClasses.standard;
+    return `${baseClasses} ${padding} ${gridClasses}`;
   };
   
   const renderCompanySection = () => {
@@ -212,11 +280,11 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
     
     return (
       <>
-        {props.navigation.columns.map((column) => (
+        {props.navigation.columns.map((column: any) => (
           <div key={column.id} className="space-y-4">
             <h4 className="font-semibold">{column.title}</h4>
             <ul className="space-y-2 text-sm">
-              {column.links.map((link) => (
+              {column.links.map((link: any) => (
                 <li key={link.id}>
                   <a
                     href={link.href}
@@ -230,6 +298,44 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
             </ul>
           </div>
         ))}
+      </>
+    );
+  };
+  
+  const renderNewFooterColumns = () => {
+    // Default to using column system if not explicitly disabled
+    const useColumnSystem = props.navigation?.useColumnSystem !== false;
+    if (!useColumnSystem) return null;
+    
+    const columnGroupedPages = getColumnGroupedPages();
+    
+    return (
+      <>
+        {/* Dynamic Columns 2, 3, 4 - Only show enabled columns */}
+        {[2, 3, 4].filter(columnNumber => columnNumber <= selectedColumnCount).map((columnNumber) => {
+          const typedColumnNumber = columnNumber as 2 | 3 | 4;
+          const columnPages = columnGroupedPages[typedColumnNumber];
+          const columnTitle = columnHeaders[typedColumnNumber];
+          
+          return columnPages?.length > 0 ? (
+            <div key={columnNumber} className="space-y-4">
+              <h4 className="font-semibold">{columnTitle}</h4>
+              <ul className="space-y-2 text-sm">
+                {columnPages.map((link: any) => (
+                  <li key={link.id}>
+                    <a
+                      href={link.href}
+                      className="hover:opacity-80 transition-opacity"
+                      style={{ color: props.styling?.linkColor }}
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null;
+        })}
       </>
     );
   };
@@ -275,7 +381,7 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
         )}
         
         <div className="flex space-x-3">
-          {props.social.platforms.map((platform) => (
+          {props.social.platforms.map((platform: any) => (
             <a
               key={platform.id}
               href={platform.url}
@@ -291,7 +397,7 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
         
         {props.social.showLabels && (
           <div className="flex flex-wrap gap-2">
-            {props.social.platforms.map((platform) => (
+            {props.social.platforms.map((platform: any) => (
               <a
                 key={`${platform.id}-label`}
                 href={platform.url}
@@ -326,7 +432,7 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
           {/* Legal Links */}
           {props.legal.links?.length > 0 && (
             <div className="flex space-x-4">
-              {props.legal.links.map((link) => (
+              {props.legal.links.map((link: any) => (
                 <a
                   key={link.id}
                   href={link.href}
@@ -359,7 +465,7 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
           }`}>
             {renderCompanySection()}
             {renderContactSection()}
-            {renderNavigationColumns()}
+            {(props.navigation?.useColumnSystem !== false) ? renderNewFooterColumns() : renderNavigationColumns()}
             {renderNewsletterSection()}
             {props.social?.position !== 'bottom' && renderSocialLinks()}
           </div>

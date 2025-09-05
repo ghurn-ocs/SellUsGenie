@@ -447,7 +447,12 @@ const AutomationSetupModal: React.FC<AutomationSetupModalProps> = ({ isOpen, onC
         <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-60 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-xl p-6 w-full max-w-2xl z-50 max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
-            <Dialog.Title className="text-xl font-semibold text-white">Cart Recovery Automation</Dialog.Title>
+            <div>
+              <Dialog.Title className="text-xl font-semibold text-white">Cart Recovery Automation</Dialog.Title>
+              <Dialog.Description className="text-sm text-[#A0A0A0] mt-1">
+                Set up automated emails to recover abandoned carts
+              </Dialog.Description>
+            </div>
             <button onClick={onClose} className="text-[#A0A0A0] hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>

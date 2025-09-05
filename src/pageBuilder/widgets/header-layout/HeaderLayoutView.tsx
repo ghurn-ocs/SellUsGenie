@@ -6,6 +6,7 @@
 import React from 'react';
 import { ShoppingCart, Menu } from 'lucide-react';
 import type { Widget } from '../../types';
+import { useStore } from '../../../contexts/StoreContext';
 
 export interface HeaderLayoutProps {
   // Layout Configuration
@@ -21,6 +22,7 @@ export interface HeaderLayoutProps {
     position: 'left' | 'center' | 'right';
     size: 'small' | 'medium' | 'large';
     link?: string;
+    showTagline?: boolean; // Control tagline display
   };
   
   // Navigation Configuration
@@ -36,6 +38,11 @@ export interface HeaderLayoutProps {
       isActive?: boolean;
     }>;
     autoDetectPages: boolean; // Automatically include published pages
+    // Navigation Link Styling
+    borderEnabled?: boolean;
+    borderStyle?: 'rounded' | 'square';
+    borderColor?: string;
+    borderTransparent?: boolean;
   };
   
   // Shopping Cart Configuration
@@ -76,6 +83,7 @@ export interface HeaderLayoutProps {
 
 export const HeaderLayoutView: React.FC<{ widget: Widget<HeaderLayoutProps> }> = ({ widget }) => {
   const { props } = widget;
+  const { currentStore } = useStore();
   
   const renderLogo = () => {
     if (!props.logo.type) return null;
@@ -85,20 +93,32 @@ export const HeaderLayoutView: React.FC<{ widget: Widget<HeaderLayoutProps> }> =
         props.logo.size === 'small' ? 'h-8' : 
         props.logo.size === 'large' ? 'h-16' : 'h-12'
       }`}>
-        {(props.logo.type === 'image' || props.logo.type === 'both') && props.logo.imageUrl && (
+        {(props.logo.type === 'image' || props.logo.type === 'both') && 
+         props.logo.imageUrl !== null && (currentStore?.store_logo_url || props.logo.imageUrl) && (
           <img 
-            src={props.logo.imageUrl} 
+            src={currentStore?.store_logo_url || props.logo.imageUrl} 
             alt={props.logo.imageAlt || 'Company Logo'}
             className="h-full w-auto object-contain"
           />
         )}
-        {(props.logo.type === 'text' || props.logo.type === 'both') && props.logo.text && (
-          <span className={`font-bold ${
-            props.logo.size === 'small' ? 'text-lg' : 
-            props.logo.size === 'large' ? 'text-3xl' : 'text-xl'
-          } ${props.logo.type === 'both' ? 'ml-2' : ''}`}>
-            {props.logo.text}
-          </span>
+        {(props.logo.type === 'text' || props.logo.type === 'both') && 
+         props.logo.text !== null && (currentStore?.store_name || props.logo.text) && (
+          <div className={`flex flex-col ${props.logo.type === 'both' ? 'ml-2' : ''}`}>
+            <span className={`font-bold ${
+              props.logo.size === 'small' ? 'text-lg' : 
+              props.logo.size === 'large' ? 'text-3xl' : 'text-xl'
+            }`}>
+              {currentStore?.store_name || props.logo.text}
+            </span>
+            {props.logo.showTagline && currentStore?.store_tagline && (
+              <span className={`text-sm opacity-75 ${
+                props.logo.size === 'small' ? 'text-xs' : 
+                props.logo.size === 'large' ? 'text-base' : 'text-sm'
+              }`}>
+                {currentStore.store_tagline}
+              </span>
+            )}
+          </div>
         )}
       </div>
     );
@@ -123,18 +143,39 @@ export const HeaderLayoutView: React.FC<{ widget: Widget<HeaderLayoutProps> }> =
     
     return (
       <nav className="flex items-center space-x-6">
-        {props.navigation.links.map((link) => (
-          <a
-            key={link.id}
-            href={link.href}
-            className={`text-sm font-medium transition-colors hover:text-opacity-80 ${
-              link.isActive ? 'text-opacity-100 border-b-2 border-current' : 'text-opacity-70'
-            }`}
-            style={{ color: props.styling.linkColor }}
-          >
-            {link.label}
-          </a>
-        ))}
+        {props.navigation.links.map((link) => {
+          const borderRadius = props.navigation.borderStyle === 'square' ? 'rounded-none' : 'rounded-md';
+          const linkClasses = `text-sm font-medium transition-colors px-3 py-2 ${borderRadius} ${
+            props.navigation.borderEnabled ? 'border' : ''
+          } ${
+            link.isActive ? 'text-opacity-100 border-b-2 border-current' : 'text-opacity-70 hover:text-opacity-80'
+          }`;
+          
+          const linkStyle: React.CSSProperties = {
+            color: props.styling.linkColor,
+            ...(props.navigation.borderEnabled && {
+              borderColor: props.navigation.borderColor || props.styling.linkColor,
+              backgroundColor: props.navigation.borderTransparent ? 'transparent' : undefined
+            })
+          };
+
+          return (
+            <a
+              key={link.id}
+              href={link.href}
+              className={linkClasses}
+              style={linkStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = props.styling.linkHoverColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = props.styling.linkColor;
+              }}
+            >
+              {link.label}
+            </a>
+          );
+        })}
       </nav>
     );
   };

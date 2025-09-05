@@ -17,7 +17,7 @@ export interface EmailTemplate {
     primary_color?: string
     secondary_color?: string
     font_family?: string
-    logo_url?: string
+    store_logo_url?: string
     header_image?: string
   }
   is_global: boolean
@@ -529,7 +529,7 @@ export interface CreateEmailTemplateForm {
     primary_color?: string
     secondary_color?: string
     font_family?: string
-    logo_url?: string
+    store_logo_url?: string
   }
 }
 

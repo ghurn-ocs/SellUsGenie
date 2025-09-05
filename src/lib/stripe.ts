@@ -1,13 +1,6 @@
-import { loadStripe } from '@stripe/stripe-js'
-
-// This is the public key - safe to expose in frontend
-const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-
-if (!stripePublishableKey) {
-  console.warn('Stripe publishable key not found. Payment functionality will be disabled.')
-}
-
-export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null)
+// Re-export from the new system-based Stripe implementation
+// This maintains backward compatibility while using database-first configuration
+export { stripePromise, stripeSystem } from './stripe-system'
 
 export const STRIPE_CONFIG = {
   currency: 'usd',

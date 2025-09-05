@@ -6,13 +6,8 @@
 import React from 'react';
 import { z } from 'zod';
 import { FooterLayoutView, FooterLayoutProps } from './FooterLayoutView';
+import { FooterLayoutEditor } from './FooterLayoutEditor';
 import type { WidgetConfig, WidgetType, WidgetBase } from '../../types';
-
-// Note: FooterLayoutEditor would be implemented similar to HeaderLayoutEditor
-// For now, we'll use a simple placeholder
-const FooterLayoutEditor = ({ widget, updateWidget }: any) => {
-  return null; // Placeholder - will be implemented later
-};
 
 // Zod schema for props validation
 const FooterLayoutPropsSchema = z.object({
@@ -37,6 +32,7 @@ const FooterLayoutPropsSchema = z.object({
   
   navigation: z.object({
     enabled: z.boolean().default(true),
+    useColumnSystem: z.boolean().default(false),
     columns: z.array(z.object({
       id: z.string(),
       title: z.string(),
@@ -102,23 +98,24 @@ export const defaultFooterLayoutProps: FooterLayoutProps = {
     layout: 'three-column',
     
     company: {
-      name: 'Your Store',
-      description: 'Quality products and exceptional service since 2024.',
+      name: null, // Will use current store name dynamically
+      description: null, // Will be empty by default
       logo: {
         showText: true,
       },
     },
     
     contact: {
-      enabled: true,
-      email: 'hello@yourstore.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Main Street\nYour City, State 12345',
+      enabled: false, // Disabled by default - no hardcoded contact info
+      email: null,
+      phone: null,
+      address: null,
       showIcons: true,
     },
     
     navigation: {
       enabled: true,
+      useColumnSystem: false,
       columns: [
         {
           id: '1',
@@ -143,20 +140,16 @@ export const defaultFooterLayoutProps: FooterLayoutProps = {
     },
     
     social: {
-      enabled: true,
-      platforms: [
-        { id: '1', platform: 'facebook', url: 'https://facebook.com/yourstore' },
-        { id: '2', platform: 'twitter', url: 'https://twitter.com/yourstore' },
-        { id: '3', platform: 'instagram', url: 'https://instagram.com/yourstore' },
-      ],
+      enabled: false, // Disabled by default - no hardcoded social links
+      platforms: [],
       showLabels: false,
       position: 'bottom',
     },
     
     newsletter: {
-      enabled: true,
-      title: 'Stay Updated',
-      description: 'Get the latest news and exclusive offers',
+      enabled: false, // Disabled by default
+      title: null,
+      description: null,
       placeholder: 'Enter your email',
       buttonText: 'Subscribe',
     },

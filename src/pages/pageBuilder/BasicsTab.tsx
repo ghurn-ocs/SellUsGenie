@@ -17,7 +17,7 @@ export const BasicsTab: React.FC = () => {
   // Local state for form values
   const [formData, setFormData] = useState({
     store_name: currentStore?.store_name || '',
-    store_tagline: (currentStore as any)?.description || '', // Map description to tagline for UI
+    store_tagline: currentStore?.store_tagline || '', // Use correct store_tagline field
     store_logo_url: currentStore?.store_logo_url || ''
   });
 
@@ -26,7 +26,7 @@ export const BasicsTab: React.FC = () => {
     if (currentStore) {
       setFormData({
         store_name: currentStore.store_name || '',
-        store_tagline: (currentStore as any)?.description || '',
+        store_tagline: currentStore.store_tagline || '', // Use correct store_tagline field
         store_logo_url: currentStore.store_logo_url || ''
       });
       setUnsavedChanges({});
@@ -42,7 +42,7 @@ export const BasicsTab: React.FC = () => {
       // Map form fields to database columns
       const dbUpdates: Record<string, any> = {};
       if ('store_name' in updates) dbUpdates.store_name = updates.store_name;
-      if ('store_tagline' in updates) dbUpdates.description = updates.store_tagline; // Map tagline to description
+      if ('store_tagline' in updates) dbUpdates.store_tagline = updates.store_tagline; // Use correct store_tagline field
       if ('store_logo_url' in updates) dbUpdates.store_logo_url = updates.store_logo_url;
       
       console.log('Mapped database updates:', dbUpdates);

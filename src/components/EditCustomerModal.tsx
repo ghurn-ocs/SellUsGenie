@@ -204,9 +204,14 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               <div className="w-10 h-10 bg-[#9B51E0]/20 rounded-lg flex items-center justify-center">
                 <User className="w-5 h-5 text-[#9B51E0]" />
               </div>
-              <Dialog.Title className="text-xl font-semibold text-white">
-                Edit Customer
-              </Dialog.Title>
+              <div>
+                <Dialog.Title className="text-xl font-semibold text-white">
+                  Edit Customer
+                </Dialog.Title>
+                <Dialog.Description className="text-sm text-[#A0A0A0] mt-1">
+                  Update customer information and contact details
+                </Dialog.Description>
+              </div>
             </div>
             <button
               onClick={handleClose}

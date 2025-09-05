@@ -967,7 +967,20 @@ Project: jizobmpcyrzprrwsyedv
 | systemPageType | text | YES | NULL |
 | editingRestrictions | jsonb | YES | NULL |
 | navigation_placement | text | YES | 'both'::text |
+| footer_column | integer | YES | NULL |
 | page_type | text | YES | 'page'::text |
+
+### public.footer_column_config
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|----------|
+| id | integer | NO | nextval('footer_column_config_id_seq'::regclass) |
+| store_id | uuid | NO | NULL |
+| column_number | integer | NO | NULL |
+| column_title | text | NO | ''::text |
+| is_enabled | boolean | NO | true |
+| created_at | timestamp with time zone | YES | now() |
+| updated_at | timestamp with time zone | YES | now() |
 
 ### public.page_history
 
