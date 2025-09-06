@@ -6,14 +6,39 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 
 **MANDATORY**: At the start of EVERY new Claude Code session, you MUST:
 
-1. **Read Planning**: `Project-Orchestration/planning.md` - Current sprint goals, priorities, and project status
-2. **Check Tasks**: `Project-Orchestration/tasks.md` - Active tasks, blockers, and completion tracking
-3. **Review PRD**: `Project-Orchestration/SellUsGenie-PRD.md` - Full project requirements and context
-4. **Task Management**: 
+1. **Read Documentation Hub**: `Documentation/README.md` - Central documentation index and navigation
+2. **Check Current Sprint**: `Documentation/Project-Management/sprint-planning.md` - Current sprint goals, priorities, and project status  
+3. **Review Active Tasks**: `Documentation/Project-Management/task-management.md` - Active tasks, blockers, and completion tracking
+4. **Review PRD**: `Documentation/Project-Management/product-requirements.md` - Full project requirements and context
+5. **Technical Context**: `Documentation/Technical-Specifications/system-architecture.md` - System architecture and technical overview
+6. **Task Management**: 
    - Mark completed tasks immediately with ✅ and date
    - Add new discovered tasks during work
    - Update task priorities based on current needs
    - Move completed tasks to "Recently Completed" section
+
+## 📋 CENTRALIZED DOCUMENTATION SYSTEM
+
+**NEW**: All documentation has been centralized into three main categories:
+
+### 1. Technical & Functional Specifications (`Documentation/Technical-Specifications/`)
+- **System Architecture**: Complete platform design and architecture patterns
+- **API Specifications**: Comprehensive API documentation and endpoints
+- **Security Specifications**: Authentication, authorization, and security policies
+- **Performance Specifications**: Performance requirements and benchmarks
+
+### 2. Database Schema (`Documentation/Database-Schema/`)  
+- **Complete Schema**: Full database schema with all tables and relationships
+- **RLS Policies**: Row Level Security policy definitions and implementation
+- **Migration Scripts**: Database change management and version history
+- **Performance Optimization**: Database optimization strategies and indexing
+
+### 3. Project Management (`Documentation/Project-Management/`)
+- **Project Objectives**: Vision, mission, goals, and success criteria
+- **Product Requirements**: Complete PRD with functional requirements
+- **Project Roadmap**: Strategic roadmap and development phases  
+- **Sprint Planning**: Current and upcoming sprint planning
+- **Task Management**: Active tasks and completion tracking
 
 ## Project Overview
 
