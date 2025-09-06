@@ -33,15 +33,17 @@ import { IntegrationsSettings } from '../components/settings/IntegrationsSetting
 import { PageBuilderSettings } from '../components/settings/PageBuilderSettings'
 import { SettingsSubTabs, SettingsSubTabContent } from '../components/settings/SettingsSubTabs'
 import { PageBuilderMain } from './pageBuilder/PageBuilderMain'
+import { BasicsTab } from './pageBuilder/BasicsTab'
 import { useSubscription } from '../hooks/useSubscription'
 import { useCustomDomain } from '../hooks/useCustomDomain'
 import { useRealAnalytics } from '../hooks/useRealAnalytics'
 import { useAnalyticsTracker } from '../lib/analyticsTracker'
 import DocumentationRouter from '../components/documentation/DocumentationRouter'
 import { GenieMascot, GenieLogotype } from '../components/ui/GenieMascot'
+import { SelfServiceHelpCenter } from '../components/help/SelfServiceHelpCenter'
 import { TabNav } from '../components/ui/TabNav'
 import { TabSection, TertiaryTabContainer } from '../components/ui/TabSection'
-import { Building2 } from 'lucide-react'
+import { Building2, Store } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
@@ -108,10 +110,18 @@ const StoreOwnerDashboard: React.FC = () => {
   const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false)
   const [newStoreName, setNewStoreName] = useState('')
   const [newStoreSlug, setNewStoreSlug] = useState('')
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check URL parameters for initial tab
+    const params = new URLSearchParams(window.location.search)
+    return params.get('tab') || 'overview'
+  })
   const [productsSubTab, setProductsSubTab] = useState('products')
-  const [settingsSubTab, setSettingsSubTab] = useState('general')
-  const [businessTertiaryTab, setBusinessTertiaryTab] = useState('financial')
+  const [settingsSubTab, setSettingsSubTab] = useState(() => {
+    // Check URL parameters for settings section
+    const params = new URLSearchParams(window.location.search)
+    return params.get('section') || 'general'
+  })
+  const [businessTertiaryTab, setBusinessTertiaryTab] = useState('branding')
   const [documentationModal, setDocumentationModal] = useState<{
     isOpen: boolean
     page: 'getting-started' | 'tutorials' | 'api' | null
@@ -1023,16 +1033,16 @@ const StoreOwnerDashboard: React.FC = () => {
                 </div>
                   </SettingsSubTabContent>
 
-                  {/* Business Tab */}
+                  {/* Online Store Tab */}
                   <SettingsSubTabContent value="business">
                     <div className="space-y-6">
                       {/* Header */}
                       <div className="flex items-center space-x-3">
-                        <Building2 className="w-6 h-6 text-[#9B51E0]" />
+                        <Store className="w-6 h-6 text-[#9B51E0]" />
                         <div>
-                          <h3 className="text-lg font-semibold text-white">Business Settings</h3>
+                          <h3 className="text-lg font-semibold text-white">Online Store</h3>
                           <p className="text-sm text-[#A0A0A0]">
-                            Configure your store's business information and financial settings
+                            Configure your store branding, logo, tagline, and business information
                           </p>
                         </div>
                       </div>
@@ -1040,6 +1050,7 @@ const StoreOwnerDashboard: React.FC = () => {
                       {/* Category Filter */}
                       <div className="flex space-x-1 bg-[#1E1E1E] p-1 rounded-lg border border-[#3A3A3A]">
                         {[
+                          { id: 'branding', label: 'Store Branding' },
                           { id: 'financial', label: 'Financial Year' },
                           { id: 'address', label: 'Store Address' }
                         ].map((category) => (
@@ -1058,6 +1069,11 @@ const StoreOwnerDashboard: React.FC = () => {
                       </div>
 
                       {/* Content */}
+                      {businessTertiaryTab === 'branding' && (
+                        <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
+                          <BasicsTab />
+                        </div>
+                      )}
                       {businessTertiaryTab === 'financial' && (
                         <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
                           <FinancialYearSettings storeId={currentStore.id} />
@@ -1108,687 +1124,30 @@ const StoreOwnerDashboard: React.FC = () => {
 
 
               <Tabs.Content value="help" className="space-y-6">
-                {/* Main Welcome Section */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">Business Success Center</h3>
-                  </div>
-                  
-                  <div className="text-center mb-8">
-                    <div className="flex justify-center items-center mb-4">
-                      <GenieMascot mood="helpful" size="xl" showBackground />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">We're Here to Help You Succeed</h2>
-                    <p className="text-[#A0A0A0] max-w-2xl mx-auto">
-                      Everything you need to grow your business, from quick setup guides to advanced marketing strategies. Let's get your store thriving!
-                    </p>
-                  </div>
-
-                  {/* Quick Search */}
-                  <div className="max-w-lg mx-auto">
-                    <div className="relative">
-                      <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#A0A0A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <input
-                        type="text"
-                        placeholder="Search guides, tips, and FAQs..."
-                        className="w-full pl-10 pr-4 py-3 bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg text-white placeholder-[#A0A0A0] focus:outline-none focus:border-[#9B51E0] transition-colors"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* System Health Dashboard */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#A0A0A0]">Store Status</p>
-                        <p className="text-2xl font-bold text-white">Live</p>
-                        <p className="text-sm text-green-400">
-                          ● Online since {new Date().toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#A0A0A0]">API Status</p>
-                        <p className="text-2xl font-bold text-white">Healthy</p>
-                        <p className="text-sm text-green-400">
-                          ● 99.9% uptime
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#A0A0A0]">Database</p>
-                        <p className="text-2xl font-bold text-white">Connected</p>
-                        <p className="text-sm text-green-400">
-                          ● {Math.floor(Math.random() * 50 + 10)}ms response
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#A0A0A0]">CDN Status</p>
-                        <p className="text-2xl font-bold text-white">Active</p>
-                        <p className="text-sm text-green-400">
-                          ● Global coverage
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Getting Started Wizard */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">Getting Started</h3>
-                        <p className="text-sm text-[#A0A0A0]">Complete your store setup in 6 easy steps</p>
-                      </div>
-                    </div>
-                    <div className="text-sm text-[#A0A0A0]">
-                      {(() => {
-                        let completed = 1 // Account setup is always complete
-                        if (currentStore) completed += 1 // Store setup
-                        if (analytics?.orderStats?.financialYear?.isConfigured) completed += 1 // Financial year
-                        if (products.length > 0) completed += 1 // Products added
-                        // Payment setup - we'll count it as done if they have orders (implies payment is set up)
-                        if (orders.length > 0) completed += 1 // Payment setup implied by having orders
-                        if (orders.length > 0) completed += 1 // First sale
-                        return `${completed}/6`
-                      })()} Complete
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Step 1: Account Setup */}
-                    <div className="flex items-center p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
-                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-white">Create Your Account</div>
-                        <div className="text-sm text-[#A0A0A0]">Set up your StreamSell account and verify your email</div>
-                      </div>
-                      <div className="text-green-400 text-sm font-medium">Complete</div>
-                    </div>
-
-                    {/* Step 2: Store Setup */}
-                    <div className="flex items-center p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
-                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-white">Configure Your Store</div>
-                        <div className="text-sm text-[#A0A0A0]">Set up store name, description, and basic settings</div>
-                      </div>
-                      <div className="text-green-400 text-sm font-medium">Complete</div>
-                    </div>
-
-                    {/* Step 3: Configure Financial Year */}
-                    <div className={`flex items-center p-4 bg-[#1E1E1E] rounded-lg ${!analytics?.orderStats?.financialYear?.isConfigured ? 'border border-[#9B51E0]/30' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${analytics?.orderStats?.financialYear?.isConfigured ? 'bg-green-500/20' : 'bg-[#9B51E0]/20'}`}>
-                        {analytics?.orderStats?.financialYear?.isConfigured ? (
-                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <span className="text-[#9B51E0] text-sm font-bold">3</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-white">Set Financial Year Period</div>
-                        <div className="text-sm text-[#A0A0A0]">Configure your business financial year for accurate reporting</div>
-                      </div>
-                      {analytics?.orderStats?.financialYear?.isConfigured ? (
-                        <div className="text-green-400 text-sm font-medium">Complete</div>
-                      ) : (
-                        <button 
-                          onClick={() => setActiveTab('settings')}
-                          className="px-4 py-2 bg-[#9B51E0] text-white text-sm rounded-lg hover:bg-[#A051E0] transition-colors"
-                        >
-                          Configure
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Step 4: Add Products */}
-                    <div className={`flex items-center p-4 bg-[#1E1E1E] rounded-lg ${products.length === 0 ? 'border border-[#9B51E0]/30' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${products.length > 0 ? 'bg-green-500/20' : 'bg-[#9B51E0]/20'}`}>
-                        {products.length > 0 ? (
-                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <span className="text-[#9B51E0] text-sm font-bold">4</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-white">Add Your First Products</div>
-                        <div className="text-sm text-[#A0A0A0]">Upload products with descriptions, prices, and images</div>
-                      </div>
-                      {products.length > 0 ? (
-                        <div className="text-green-400 text-sm font-medium">Complete</div>
-                      ) : (
-                        <button 
-                          onClick={() => setActiveTab('products')}
-                          className="px-4 py-2 bg-[#9B51E0] text-white text-sm rounded-lg hover:bg-[#A051E0] transition-colors"
-                        >
-                          Add Products
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Step 5: Payment Setup */}
-                    <div className="flex items-center p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center mr-4">
-                        <span className="text-yellow-400 text-sm font-bold">5</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-white">Configure Payment Processing</div>
-                        <div className="text-sm text-[#A0A0A0]">Set up Stripe to accept payments from customers</div>
-                      </div>
-                      <button 
-                        onClick={() => setActiveTab('settings')}
-                        className="px-4 py-2 bg-[#9B51E0] text-white text-sm rounded-lg hover:bg-[#A051E0] transition-colors"
-                      >
-                        Configure
-                      </button>
-                    </div>
-
-                    {/* Step 6: First Sale */}
-                    <div className="flex items-center p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${orders.length > 0 ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
-                        {orders.length > 0 ? (
-                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <span className="text-yellow-400 text-sm font-bold">6</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-white">Make Your First Sale</div>
-                        <div className="text-sm text-[#A0A0A0]">Share your store and celebrate your first order!</div>
-                      </div>
-                      {orders.length > 0 ? (
-                        <div className="text-green-400 text-sm font-medium">Complete! 🎉</div>
-                      ) : (
-                        <button 
-                          onClick={() => window.open(`/store/${currentStore?.store_slug}`, '_blank')}
-                          className="px-4 py-2 bg-[#9B51E0] text-white text-sm rounded-lg hover:bg-[#A051E0] transition-colors"
-                        >
-                          View Store
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Help Resources */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Documentation & Learning */}
-                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                    <div className="flex items-center mb-6">
-                      <div className="w-10 h-10 bg-[#9B51E0]/20 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-5 h-5 text-[#9B51E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-semibold text-white">Documentation & Learning</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <button 
-                        onClick={() => setDocumentationModal({ isOpen: true, page: 'getting-started' })}
-                        className="w-full flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      >
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-[#A0A0A0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-white">Getting Started Guide</div>
-                            <div className="text-sm text-[#A0A0A0]">Learn the basics of setting up your store</div>
-                          </div>
-                        </div>
-                        <svg className="w-4 h-4 text-[#A0A0A0] group-hover:text-[#9B51E0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-
-                      <button 
-                        onClick={() => setDocumentationModal({ isOpen: true, page: 'tutorials' })}
-                        className="w-full flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      >
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-[#A0A0A0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-white">Video Tutorials</div>
-                            <div className="text-sm text-[#A0A0A0]">Step-by-step video guides and walkthroughs</div>
-                          </div>
-                        </div>
-                        <svg className="w-4 h-4 text-[#A0A0A0] group-hover:text-[#9B51E0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-
-                      <button 
-                        onClick={() => setDocumentationModal({ isOpen: true, page: 'api' })}
-                        className="w-full flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      >
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-[#A0A0A0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-white">API Documentation</div>
-                            <div className="text-sm text-[#A0A0A0]">Technical reference for developers</div>
-                          </div>
-                        </div>
-                        <svg className="w-4 h-4 text-[#A0A0A0] group-hover:text-[#9B51E0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Support & Community */}
-                  <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                    <div className="flex items-center mb-6">
-                      <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-semibold text-white">Support & Community</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <a 
-                        href="https://support.sellusgenie.com" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      >
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-[#A0A0A0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-white">Contact Support</div>
-                            <div className="text-sm text-[#A0A0A0]">Get help from our support team</div>
-                          </div>
-                        </div>
-                        <svg className="w-4 h-4 text-[#A0A0A0] group-hover:text-[#9B51E0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-
-                      <a 
-                        href="https://community.sellusgenie.com" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      >
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-[#A0A0A0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-white">Community Forum</div>
-                            <div className="text-sm text-[#A0A0A0]">Connect with other store owners</div>
-                          </div>
-                        </div>
-                        <svg className="w-4 h-4 text-[#A0A0A0] group-hover:text-[#9B51E0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-
-                      <button 
-                        className="flex items-center justify-between w-full p-3 bg-[#1E1E1E] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                        onClick={() => window.open(`/store/${currentStore.store_slug}`, '_blank')}
-                      >
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-[#A0A0A0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-white">View Live Store</div>
-                            <div className="text-sm text-[#A0A0A0]">See how customers see your store</div>
-                          </div>
-                        </div>
-                        <svg className="w-4 h-4 text-[#A0A0A0] group-hover:text-[#9B51E0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                      className="flex items-center justify-center space-x-3 p-4 border border-[#3A3A3A] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      onClick={() => setActiveTab('analytics')}
-                    >
-                      <svg className="w-5 h-5 text-[#9B51E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      <span className="text-white font-medium">View Analytics</span>
-                    </button>
-
-                    <button 
-                      className="flex items-center justify-center space-x-3 p-4 border border-[#3A3A3A] rounded-lg hover:bg-[#3A3A3A] transition-colors group"
-                      onClick={() => setActiveTab('products')}
-                    >
-                      <svg className="w-5 h-5 text-[#9B51E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <span className="text-white font-medium">Add Product</span>
-                    </button>
-
-                    <button 
-                      className="flex items-center justify-center space-x-3 p-4 border border-[#3A3A3A] rounded-lg hover:bg-red-500/10 border-red-500/20 transition-colors group"
-                      onClick={async () => {
-                        const confirmed = await modal.showConfirmation({
-                          title: 'Sign Out',
-                          message: 'Are you sure you want to sign out of your account?\n\nYou\'ll need to sign in again to access your stores and data.',
-                          type: 'info',
-                          confirmText: 'Sign Out',
-                          cancelText: 'Stay Signed In'
-                        });
-                        
-                        if (confirmed) {
-                          handleSignOut()
-                        }
-                      }}
-                    >
-                      <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      <span className="text-red-400 font-medium">Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* FAQ Section */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">Frequently Asked Questions</h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <details className="group">
-                      <summary className="flex items-center justify-between p-4 bg-[#1E1E1E] rounded-lg cursor-pointer hover:bg-[#3A3A3A] transition-colors">
-                        <span className="font-medium text-white">How do I add products to my store?</span>
-                        <svg className="w-5 h-5 text-[#A0A0A0] transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
-                      <div className="mt-3 p-4 text-sm text-[#A0A0A0] bg-[#1A1A1A] rounded-lg">
-                        Go to the Products tab and click "Add Product". Fill in the product details including name, description, price, and upload high-quality images. Don't forget to set your inventory quantity and enable the product when ready.
-                      </div>
-                    </details>
-
-                    <details className="group">
-                      <summary className="flex items-center justify-between p-4 bg-[#1E1E1E] rounded-lg cursor-pointer hover:bg-[#3A3A3A] transition-colors">
-                        <span className="font-medium text-white">How do I accept payments?</span>
-                        <svg className="w-5 h-5 text-[#A0A0A0] transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
-                      <div className="mt-3 p-4 text-sm text-[#A0A0A0] bg-[#1A1A1A] rounded-lg">
-                        Connect your Stripe account in the Settings tab under Payment Processing. Stripe handles all payment processing securely and deposits funds directly to your bank account. You'll need to complete Stripe's verification process.
-                      </div>
-                    </details>
-
-                    <details className="group">
-                      <summary className="flex items-center justify-between p-4 bg-[#1E1E1E] rounded-lg cursor-pointer hover:bg-[#3A3A3A] transition-colors">
-                        <span className="font-medium text-white">Can I customize my store's appearance?</span>
-                        <svg className="w-5 h-5 text-[#A0A0A0] transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
-                      <div className="mt-3 p-4 text-sm text-[#A0A0A0] bg-[#1A1A1A] rounded-lg">
-                        Yes! Use the Page Builder to customize your store's layout, colors, and content. You can add custom sections, modify the homepage, and create a unique brand experience for your customers.
-                      </div>
-                    </details>
-
-                    <details className="group">
-                      <summary className="flex items-center justify-between p-4 bg-[#1E1E1E] rounded-lg cursor-pointer hover:bg-[#3A3A3A] transition-colors">
-                        <span className="font-medium text-white">How do I track my sales and analytics?</span>
-                        <svg className="w-5 h-5 text-[#A0A0A0] transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
-                      <div className="mt-3 p-4 text-sm text-[#A0A0A0] bg-[#1A1A1A] rounded-lg">
-                        The Analytics tab provides comprehensive insights including sales revenue, customer behavior, product performance, and website traffic. Real-time data helps you make informed decisions about your business.
-                      </div>
-                    </details>
-
-                    <details className="group">
-                      <summary className="flex items-center justify-between p-4 bg-[#1E1E1E] rounded-lg cursor-pointer hover:bg-[#3A3A3A] transition-colors">
-                        <span className="font-medium text-white">What happens if I need help or encounter issues?</span>
-                        <svg className="w-5 h-5 text-[#A0A0A0] transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
-                      <div className="mt-3 p-4 text-sm text-[#A0A0A0] bg-[#1A1A1A] rounded-lg">
-                        Our support team is available 24/7 via live chat, email, and our community forum. We also have extensive documentation, video tutorials, and step-by-step guides to help you succeed.
-                      </div>
-                    </details>
-                  </div>
-                </div>
-
-                {/* Keyboard Shortcuts */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v1m-4 0h4m-4 0v4a2 2 0 004 0V5m0 0h12a2 2 0 012 2v10a2 2 0 01-2 2H9a2 2 0 01-2-2V5z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">Keyboard Shortcuts</h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg">
-                        <span className="text-white">Navigate to Products</span>
-                        <kbd className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Alt + P</kbd>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg">
-                        <span className="text-white">Navigate to Orders</span>
-                        <kbd className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Alt + O</kbd>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg">
-                        <span className="text-white">Navigate to Analytics</span>
-                        <kbd className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Alt + A</kbd>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg">
-                        <span className="text-white">Add New Product</span>
-                        <kbd className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Ctrl + N</kbd>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg">
-                        <span className="text-white">Search</span>
-                        <kbd className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">Ctrl + K</kbd>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-[#1E1E1E] rounded-lg">
-                        <span className="text-white">Open Help</span>
-                        <kbd className="px-2 py-1 bg-[#3A3A3A] text-[#A0A0A0] text-xs rounded">F1</kbd>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* What's New / Changelog */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">What's New</h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg border-l-4 border-[#9B51E0]">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">Enhanced Analytics Dashboard</span>
-                        <span className="text-xs text-[#A0A0A0] bg-[#3A3A3A] px-2 py-1 rounded">v2.1.0</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Real-time customer analytics, improved conversion tracking, and comprehensive business metrics now available.
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg border-l-4 border-blue-500">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">Advanced Page Builder</span>
-                        <span className="text-xs text-[#A0A0A0] bg-[#3A3A3A] px-2 py-1 rounded">v2.0.5</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Drag-and-drop interface improvements, new templates, and better mobile responsiveness.
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg border-l-4 border-green-500">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">Improved Order Management</span>
-                        <span className="text-xs text-[#A0A0A0] bg-[#3A3A3A] px-2 py-1 rounded">v2.0.3</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Bulk order processing, automated status updates, and enhanced customer communication features.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Store Optimization Tips */}
-                <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-6">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white">Store Optimization Tips</h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="flex items-center mb-3">
-                        <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center mr-2">
-                          <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="font-medium text-white">High-Quality Images</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Use clear, well-lit product photos from multiple angles. Images should be at least 1200x1200 pixels for best results.
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="flex items-center mb-3">
-                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center mr-2">
-                          <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="font-medium text-white">Detailed Descriptions</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Write compelling product descriptions that highlight benefits, not just features. Include sizing, materials, and care instructions.
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="flex items-center mb-3">
-                        <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center mr-2">
-                          <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="font-medium text-white">SEO Optimization</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Use relevant keywords in product titles and descriptions. Add alt text to images and optimize your store's meta tags.
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#1E1E1E] rounded-lg">
-                      <div className="flex items-center mb-3">
-                        <div className="w-6 h-6 bg-orange-500/20 rounded-full flex items-center justify-center mr-2">
-                          <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="font-medium text-white">Fast Response Time</span>
-                      </div>
-                      <p className="text-sm text-[#A0A0A0]">
-                        Respond to customer inquiries within 24 hours. Quick communication builds trust and improves customer satisfaction.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <SelfServiceHelpCenter 
+                  onNavigateToSection={(section: string) => {
+                    // Handle navigation to different sections based on help article
+                    switch (section) {
+                      case 'troubleshooting':
+                        // Could expand to show troubleshooting content or navigate to support
+                        console.log('Navigating to troubleshooting section')
+                        break
+                      case 'getting-started-guides':
+                        // Navigate to a specific getting started section
+                        setActiveTab('help')
+                        break
+                      case 'video-tutorials':
+                        // Could open video tutorial modal or navigate to tutorials
+                        console.log('Opening video tutorials')
+                        break
+                      default:
+                        // Default handler for other sections
+                        console.log(`Navigating to section: ${section}`)
+                        break
+                    }
+                  }}
+                  onNavigateToTab={(tab: string) => setActiveTab(tab)}
+                />
               </Tabs.Content>
             </Tabs.Root>
           </div>

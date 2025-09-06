@@ -228,50 +228,50 @@ export const QuickSolutionsContent: React.FC<QuickSolutionsContentProps> = ({
   // Quick Fixes
   const quickFixes = [
     {
-      title: 'Website Not Loading',
-      description: 'Store appears down or won\'t load',
+      title: 'My Store Won\'t Load',
+      description: 'Your website appears to be down or won\'t open',
       icon: Monitor,
-      solution: 'Check your internet connection and try refreshing the page. If the issue persists, contact support.',
+      solution: 'First, check your internet connection. Try refreshing the page or opening it in a different browser. Try clearing your browser cache or using an incognito window.',
       time: '2 minutes',
-      category: 'Technical'
+      category: 'Website'
     },
     {
-      title: 'Can\'t Log In',
-      description: 'Unable to access your dashboard',
+      title: 'I Can\'t Log In',
+      description: 'Can\'t get into your store dashboard',
       icon: Lock,
-      solution: 'Reset your password using the "Forgot Password" link. Check that caps lock is off.',
+      solution: 'Click "Forgot Password" to reset it. Make sure caps lock is off and you\'re typing your email correctly. Try typing your password in a text editor first to see if it\'s correct.',
       time: '5 minutes',
-      category: 'Account'
+      category: 'Login'
     },
     {
-      title: 'Email Not Sending',
-      description: 'Order confirmations not being delivered',
+      title: 'Customer Emails Not Working',
+      description: 'Order confirmations aren\'t being sent out',
       icon: Mail,
-      solution: 'Check spam folders first. Verify email settings in your dashboard and test with a different email.',
+      solution: 'Check your spam folder first - they might be going there. Then check your email settings in the dashboard. Try sending a test email.',
       time: '10 minutes',
-      category: 'Communication'
+      category: 'Email'
     },
     {
-      title: 'Mobile Display Issues',
-      description: 'Store doesn\'t look right on phones',
+      title: 'Store Looks Weird On Phones',
+      description: 'Your website doesn\'t display properly on mobile',
       icon: Smartphone,
-      solution: 'Clear mobile browser cache. Check responsive design settings in your store customization.',
+      solution: 'Try clearing your phone\'s browser cache (Google "clear cache" + your phone type). Check if your store theme is mobile-friendly in settings.',
       time: '15 minutes',
-      category: 'Design'
+      category: 'Mobile'
     },
     {
-      title: 'Slow Loading Times',
-      description: 'Pages taking too long to load',
+      title: 'My Store Loads Really Slow',
+      description: 'Pages take forever to load for customers',
       icon: Clock,
-      solution: 'Optimize product images, reduce file sizes, and check your internet connection speed.',
+      solution: 'Your product photos might be too big. Resize them to be smaller files. Also check your internet speed - slow internet makes everything feel slow.',
       time: '20 minutes',
-      category: 'Performance'
+      category: 'Speed'
     },
     {
-      title: 'Order Not Processing',
-      description: 'Orders stuck in pending status',
+      title: 'Orders Are Stuck',
+      description: 'Orders aren\'t processing properly',
       icon: AlertCircle,
-      solution: 'Check payment processing status. Verify inventory levels and contact support if needed.',
+      solution: 'Check if your payment setup is working in Settings → Payment Methods. Make sure you have inventory for the products. Review the order details page for specific error messages.',
       time: '10 minutes',
       category: 'Orders'
     }
@@ -324,10 +324,10 @@ export const QuickSolutionsContent: React.FC<QuickSolutionsContentProps> = ({
           <div className="flex justify-center items-center mb-6">
             <GenieMascot mood="helpful" size="xl" showBackground />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Quick Solutions & Troubleshooting</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">Fix Problems Fast (No Tech Skills Needed)</h1>
           <p className="text-lg text-[#A0A0A0] max-w-3xl mx-auto mb-8">
-            Fast answers to common problems. Get your store running smoothly again with our 
-            step-by-step troubleshooting guides and quick fixes.
+            Something not working? Don't panic. Most problems have simple solutions. 
+            We'll walk you through fixing common issues step-by-step, in plain English.
           </p>
           
           {/* Search Bar */}
@@ -568,15 +568,16 @@ export const QuickSolutionsContent: React.FC<QuickSolutionsContentProps> = ({
         </div>
         
         <div className="mt-8 text-center">
-          <div className="text-lg font-bold text-white mb-2">Need Immediate Help?</div>
+          <div className="text-lg font-bold text-white mb-2">Still Having Issues?</div>
+          <div className="text-[#A0A0A0] mb-4">Try our interactive troubleshooting guides and comprehensive help documentation first</div>
           <div className="flex justify-center space-x-4">
-            <button className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-              <Phone className="w-4 h-4 inline mr-2" />
-              Call Support
-            </button>
             <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <Mail className="w-4 h-4 inline mr-2" />
-              Email Support
+              <BookOpen className="w-4 h-4 inline mr-2" />
+              Browse All Guides
+            </button>
+            <button className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+              <Search className="w-4 h-4 inline mr-2" />
+              Search Help Center
             </button>
           </div>
         </div>

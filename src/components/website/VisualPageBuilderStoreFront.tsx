@@ -14,6 +14,8 @@ import { PageBuilderRenderer } from './PageBuilderRenderer';
 import { HeaderLayoutView } from '../../pageBuilder/widgets/header-layout/HeaderLayoutView';
 import { FooterLayoutView } from '../../pageBuilder/widgets/footer-layout/FooterLayoutView';
 import type { PageDocument } from '../../pageBuilder/types';
+import { useAnalyticsIntegrations } from '../../hooks/useAnalyticsConfig';
+import { googleAnalytics } from '../../lib/googleAnalytics';
 
 interface VisualPageBuilderStoreFrontProps {
   storeId: string;
@@ -108,6 +110,48 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
   const publicRepository = useMemo(() => {
     return storeId ? new PublicPageRepository(storeId) : null;
   }, [storeId]);
+
+  // Fetch analytics integrations for GA4 initialization
+  const { data: integrations = [] } = useAnalyticsIntegrations(storeId);
+  const ga4Integration = integrations.find(i => i.integration_type === 'google_analytics');
+
+  // Initialize Google Analytics 4 when integration is configured
+  useEffect(() => {
+    if (ga4Integration && ga4Integration.config.tracking_id && ga4Integration.status === 'active') {
+      const initializeGA4 = async () => {
+        try {
+          await googleAnalytics.initialize({
+            measurementId: ga4Integration.config.tracking_id,
+            enhancedEcommerce: ga4Integration.config.enhanced_ecommerce ?? true,
+            conversionTracking: ga4Integration.config.conversion_tracking ?? true,
+            audienceTracking: ga4Integration.config.audience_tracking ?? false,
+            customDimensions: {},
+            customMetrics: {}
+          });
+
+          // Track initial page view
+          googleAnalytics.trackPageView(
+            currentPage?.name || storeName,
+            window.location.href
+          );
+        } catch (error) {
+          console.error('Failed to initialize Google Analytics 4:', error);
+        }
+      };
+
+      initializeGA4();
+    }
+  }, [ga4Integration, storeName]);
+
+  // Track page views when page changes
+  useEffect(() => {
+    if (ga4Integration && currentPage && googleAnalytics.isReady()) {
+      googleAnalytics.trackPageView(
+        currentPage.name || 'Page',
+        window.location.href
+      );
+    }
+  }, [currentPage, ga4Integration]);
 
   // Memoize stable parameters for data fetching
   const fetchParams = useMemo(() => ({

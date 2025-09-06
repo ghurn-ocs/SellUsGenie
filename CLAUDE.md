@@ -82,20 +82,228 @@ Located in `database/schema.sql` - contains complete multi-tenant schema with:
 - Subscription management tables
 - Page builder content storage
 
-## Page Builder System
+## Visual Page Builder System
 
-The platform includes a sophisticated visual page builder:
-- **Drag & Drop Interface**: Widgets can be dragged between rows and sections
-- **Responsive Design**: Breakpoint-specific styling (sm/md/lg)
-- **Widget System**: Extensible widget registry with Editor/View components
-- **Version Control**: Page versioning with history and restore capabilities
-- **SEO Features**: Built-in meta tags, structured data, and optimization
+SellUsGenie includes a sophisticated visual page builder that enables store owners to create and customize their storefronts without coding knowledge.
 
-### Adding New Widgets
-1. Create widget files in `src/pageBuilder/widgets/[widget-name]/`
-2. Implement `WidgetEditor` and `WidgetView` components
-3. Define Zod schema for props validation
-4. Register in `src/pageBuilder/widgets/registry.ts`
+### Core Architecture
+
+#### **Page Document Structure**
+- **Pages**: Individual documents containing sections, rows, and widgets
+- **Sections**: Vertical containers with optional backgrounds and styling
+- **Rows**: Horizontal containers using a 12-column grid system
+- **Widgets**: Individual components (text, images, buttons, etc.) with configurable properties
+
+#### **Widget System**
+- **Widget Registry**: Centralized registry managing all available widgets
+- **Editor/View Pattern**: Each widget has separate Editor (configuration) and View (render) components
+- **Type Safety**: Complete TypeScript coverage with generic `Widget<T>` types
+- **Props Validation**: Zod schemas ensure data integrity
+
+#### **System Pages**
+- **Header/Footer**: Special system-level pages using `header-layout` and `footer-layout` widgets
+- **Direct Rendering**: System pages bypass PageBuilderRenderer for consistent display
+- **Store Integration**: Automatic injection of store data (name, logo, etc.)
+
+### Key Features
+
+#### **Responsive Design**
+- **Breakpoints**: Mobile (sm), Tablet (md), Desktop (lg) with individual styling
+- **Column Spans**: Configurable widget widths per breakpoint (1-12 columns)
+- **Visibility Controls**: Show/hide widgets based on screen size
+
+#### **Content Management**
+- **Draft/Published States**: Pages can be saved as drafts or published live
+- **Version History**: Complete versioning with restore capabilities
+- **SEO Optimization**: Built-in meta tags, structured data, and analytics
+
+#### **Widget Types**
+- **Content**: Text, buttons, images, heroes, forms
+- **Media**: Galleries, carousels, videos
+- **Commerce**: Product listings, featured products, shopping cart
+- **Layout**: Spacers, dividers, navigation components
+- **System**: Header layouts, footer layouts (not shown in user library)
+
+#### **Styling System**
+- **CSS-in-JS**: Style configuration through props, not separate CSS files
+- **Color Palettes**: Predefined color schemes with automatic application
+- **Custom CSS**: Advanced users can add custom CSS per widget
+- **Animations**: Built-in animation system with triggers and easing
+
+### Implementation Guide
+
+#### **Creating New Widgets**
+1. **File Structure**:
+   ```
+   src/pageBuilder/widgets/[widget-name]/
+   ├── index.ts          # Widget registration and config
+   ├── [Name]Editor.tsx  # Configuration interface
+   ├── [Name]View.tsx    # Display component
+   └── types.ts          # Widget-specific types (optional)
+   ```
+
+2. **Widget Registration**:
+   ```typescript
+   // src/pageBuilder/widgets/[widget-name]/index.ts
+   import { widgetRegistry } from '../registry';
+   import { WidgetEditor } from './WidgetEditor';
+   import { WidgetView } from './WidgetView';
+   
+   widgetRegistry.register({
+     type: 'widget-name',
+     name: 'Widget Display Name',
+     description: 'Widget description',
+     icon: 'icon-name',
+     category: 'content', // content | media | commerce | layout
+     defaultColSpan: { sm: 12, md: 6, lg: 4 },
+     schema: z.object({ /* Zod validation schema */ }),
+     defaultProps: { /* Default properties */ },
+     Editor: WidgetEditor,
+     View: WidgetView,
+     systemWidget: false // Set true to hide from user library
+   });
+   ```
+
+3. **Editor Component**:
+   ```typescript
+   // src/pageBuilder/widgets/[widget-name]/WidgetEditor.tsx
+   export const WidgetEditor: React.FC<WidgetEditorProps> = ({ 
+     widget, 
+     onChange, 
+     onDelete, 
+     onDuplicate 
+   }) => {
+     const updateProps = (newProps: Partial<WidgetProps>) => {
+       onChange({ props: { ...widget.props, ...newProps } });
+     };
+     
+     return (
+       <div className="widget-editor">
+         {/* Configuration UI */}
+       </div>
+     );
+   };
+   ```
+
+4. **View Component**:
+   ```typescript
+   // src/pageBuilder/widgets/[widget-name]/WidgetView.tsx
+   export const WidgetView: React.FC<WidgetViewProps> = ({ widget, theme }) => {
+     const { props } = widget as Widget<WidgetProps>;
+     
+     return (
+       <div className="widget-view">
+         {/* Rendered widget content */}
+       </div>
+     );
+   };
+   ```
+
+#### **Storefront Integration**
+- **PageBuilderRenderer**: Generic renderer for regular page content
+- **VisualPageBuilderStoreFront**: Main storefront component handling system pages
+- **Direct Rendering**: System pages (header/footer) render directly using their View components
+- **Store Data Injection**: Automatic replacement of placeholders with actual store data
+
+#### **Database Integration**
+- **SupabasePageRepository**: Handles all page CRUD operations
+- **Multi-Tenant Security**: RLS policies ensure store data isolation
+- **System Page Management**: Special handling for header/footer pages
+
+### Development Patterns
+
+#### **Widget Props Pattern**
+```typescript
+export interface WidgetProps {
+  // Configuration properties
+  title?: string;
+  content?: string;
+  // Styling properties
+  backgroundColor?: string;
+  textColor?: string;
+  // Behavior properties
+  clickAction?: 'none' | 'link' | 'modal';
+  linkUrl?: string;
+}
+
+export const WidgetView: React.FC<WidgetViewProps> = ({ widget }) => {
+  const { props } = widget as Widget<WidgetProps>;
+  // Use props with type safety
+};
+```
+
+#### **Store Data Integration**
+```typescript
+import { useStore } from '../../../contexts/StoreContext';
+
+export const WidgetView: React.FC<WidgetViewProps> = ({ widget }) => {
+  const { currentStore } = useStore();
+  const { props } = widget as Widget<WidgetProps>;
+  
+  // Use currentStore data or fallback to props
+  const displayName = currentStore?.store_name || props.fallbackName;
+};
+```
+
+#### **Responsive Styling**
+```typescript
+const getResponsiveClasses = (colSpan: BreakpointSpan) => {
+  return `
+    col-span-${colSpan.sm || 12}
+    md:col-span-${colSpan.md || colSpan.sm || 12}
+    lg:col-span-${colSpan.lg || colSpan.md || colSpan.sm || 12}
+  `;
+};
+```
+
+### Testing Strategy
+
+#### **Widget Testing**
+- **Editor Component Tests**: Verify configuration UI works correctly
+- **View Component Tests**: Ensure proper rendering with various props
+- **Integration Tests**: Test widget within page builder context
+- **Responsive Tests**: Verify behavior across all breakpoints
+
+#### **System Integration**
+- **Storefront Rendering**: Test header/footer display in actual storefronts
+- **Multi-Store Isolation**: Ensure widgets respect store boundaries
+- **Performance**: Monitor rendering performance with complex page layouts
+
+### Troubleshooting Guide
+
+#### **Common Issues**
+1. **Widget Not Appearing**: Check widget registration in registry
+2. **Props Not Updating**: Verify onChange handler implementation in editor
+3. **Styling Issues**: Ensure Tailwind classes are properly applied
+4. **Type Errors**: Use generic `Widget<T>` type for proper typing
+5. **Store Data Not Loading**: Check useStore() hook implementation
+
+#### **Debug Patterns**
+```typescript
+// Debug widget props
+console.log('Widget props:', widget.props);
+console.log('Store data:', currentStore);
+
+// Debug rendering
+const isValidWidget = widget && widget.type && widget.props;
+if (!isValidWidget) {
+  console.warn('Invalid widget:', widget);
+  return null;
+}
+```
+
+### Performance Considerations
+
+#### **Optimization Strategies**
+- **Lazy Loading**: Only load widget editors when needed
+- **Memoization**: Use React.memo for widget components
+- **Bundle Splitting**: Separate widget bundles to reduce initial load
+- **Image Optimization**: Automatic image optimization for media widgets
+
+#### **Monitoring**
+- **Render Times**: Track page builder rendering performance
+- **Memory Usage**: Monitor component lifecycle and cleanup
+- **Network Requests**: Optimize API calls for page loading
 
 ## Authentication Flow
 

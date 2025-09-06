@@ -42,46 +42,46 @@ export const HappyCustomersContent: React.FC<HappyCustomersContentProps> = ({
   // Customer Service Excellence
   const serviceExcellence = [
     {
-      title: '24/7 Support Availability',
-      description: 'Be there when customers need you',
+      title: 'Always Be Available',
+      description: 'When customers have problems, they want help NOW - be there for them',
       icon: Clock,
-      benefit: 'Higher Satisfaction',
-      time: 'Immediate'
+      benefit: 'Happy Customers',
+      time: 'Set up once'
     },
     {
-      title: 'Multiple Contact Channels',
-      description: 'Let customers reach you their preferred way',
+      title: 'Make It Easy To Reach You',
+      description: 'Email, phone, chat - let customers contact you however they prefer',
       icon: MessageCircle,
-      benefit: 'Better Accessibility',
+      benefit: 'More Contact',
       time: '1 day'
     },
     {
-      title: 'Proactive Communication',
-      description: 'Keep customers informed at every step',
+      title: 'Keep Them In The Loop',
+      description: 'Send updates about orders - silence makes customers nervous',
       icon: Mail,
-      benefit: 'Reduced Anxiety',
-      time: 'Ongoing'
+      benefit: 'Less Worry',
+      time: 'Automated'
     },
     {
-      title: 'Easy Returns Process',
-      description: 'Make returns simple and hassle-free',
+      title: 'Make Returns Super Easy',
+      description: 'Worried customers don\'t buy. Easy returns = more confident buyers',
       icon: Shield,
-      benefit: 'Increased Trust',
+      benefit: 'More Sales',
       time: '1 week'
     },
     {
-      title: 'Personal Touch',
-      description: 'Add handwritten notes and small gifts',
+      title: 'Add A Personal Touch',
+      description: 'A handwritten "thank you" note costs 50¢ but feels like a million bucks',
       icon: Gift,
-      benefit: 'Memorable Experience',
-      time: 'Per Order'
+      benefit: 'Unforgettable',
+      time: 'Per order'
     },
     {
-      title: 'Follow-Up After Delivery',
-      description: 'Check in to ensure satisfaction',
+      title: 'Follow Up After Delivery',
+      description: 'A simple "How did we do?" email shows you care and catches problems early',
       icon: CheckCircle,
-      benefit: 'Higher Retention',
-      time: '3 days'
+      benefit: 'Repeat Buyers',
+      time: '3 days later'
     }
   ]
 
@@ -167,10 +167,10 @@ export const HappyCustomersContent: React.FC<HappyCustomersContentProps> = ({
           <div className="flex justify-center items-center mb-6">
             <GenieMascot mood="happy" size="xl" showBackground />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Create Happy, Loyal Customers</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">Turn Customers Into Raving Fans</h1>
           <p className="text-lg text-[#A0A0A0] max-w-3xl mx-auto mb-8">
-            Transform your customer service from good to exceptional. Build lasting relationships 
-            that drive repeat purchases and turn customers into brand advocates.
+            Happy customers buy again, tell their friends, and write great reviews. 
+            Learn simple ways to make every customer feel special and keep them coming back.
           </p>
           
           {/* Success Stats */}

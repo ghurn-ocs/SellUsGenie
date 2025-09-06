@@ -6,7 +6,6 @@
 import React, { useState } from 'react';
 import { FileText, Settings, Wand2 } from 'lucide-react';
 import { EmbeddedVisualPageBuilder } from './EmbeddedVisualPageBuilder';
-import { BasicsTab } from './BasicsTab';
 import { AIGeneratorTab } from './AIGeneratorTab';
 
 interface Tab {
@@ -22,12 +21,6 @@ const TABS: Tab[] = [
     name: 'Pages',
     icon: FileText,
     description: 'Create and manage your store pages with the Visual Page Builder'
-  },
-  {
-    id: 'basics',
-    name: 'Basics',
-    icon: Settings,
-    description: 'Configure your store branding, logo, tagline, and SEO settings'
   },
   {
     id: 'ai-generator',
@@ -48,8 +41,6 @@ export const PageBuilderMain: React.FC = () => {
             <EmbeddedVisualPageBuilder />
           </div>
         );
-      case 'basics':
-        return <BasicsTab />;
       case 'ai-generator':
         return <AIGeneratorTab />;
       default:

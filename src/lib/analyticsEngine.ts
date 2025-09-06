@@ -1,4 +1,4 @@
-// World-Class Analytics Engine
+// Store Analytics Engine
 // Advanced analytics with customer segmentation, attribution, and predictive insights
 
 import { supabase } from './supabase'

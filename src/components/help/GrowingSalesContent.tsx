@@ -43,49 +43,49 @@ export const GrowingSalesContent: React.FC<GrowingSalesContentProps> = ({
   // Quick Wins
   const quickWins = [
     {
-      title: 'Add Customer Reviews',
-      description: 'Display customer reviews on product pages to build trust',
-      impact: '+15% conversion rate',
+      title: 'Show Customer Reviews',
+      description: 'People trust other customers more than your sales copy - show their honest reviews',
+      impact: '15% more sales',
       time: '30 minutes',
       icon: Star,
       action: 'Add Reviews'
     },
     {
-      title: 'Optimize Product Photos',
-      description: 'Use professional, high-quality product images',
-      impact: '+25% conversion rate',
+      title: 'Better Product Photos',
+      description: 'Good photos sell products - customers need to see what they\'re buying',
+      impact: '25% more sales',
       time: '2 hours',
       icon: Camera,
       action: 'Update Photos'
     },
     {
-      title: 'Add Urgency Elements',
-      description: 'Use countdown timers and limited-time offers',
-      impact: '+20% conversion rate',
+      title: 'Create Some Urgency',
+      description: 'Limited-time offers push people to buy now instead of "thinking about it"',
+      impact: '20% more sales',
       time: '1 hour',
       icon: Clock,
       action: 'Add Urgency'
     },
     {
-      title: 'Simplify Checkout',
-      description: 'Reduce checkout steps and add guest checkout',
-      impact: '+30% completion rate',
+      title: 'Make Checkout Easy',
+      description: 'The harder it is to buy, the more people abandon their cart. Keep it simple.',
+      impact: '30% more completed orders',
       time: '45 minutes',
       icon: ShoppingCart,
       action: 'Optimize Checkout'
     },
     {
-      title: 'Add Trust Badges',
-      description: 'Display security and trust indicators',
-      impact: '+18% conversion rate',
+      title: 'Show You\'re Trustworthy',
+      description: 'Security badges and guarantees help nervous customers feel safe buying from you',
+      impact: '18% more sales',
       time: '15 minutes',
       icon: Shield,
       action: 'Add Badges'
     },
     {
-      title: 'Create Product Bundles',
-      description: 'Offer related products together at a discount',
-      impact: '+35% average order value',
+      title: 'Bundle Products Together',
+      description: '"Would you like fries with that?" works online too - suggest related items',
+      impact: '35% higher order value',
       time: '1 hour',
       icon: Package,
       action: 'Create Bundles'
@@ -174,10 +174,10 @@ export const GrowingSalesContent: React.FC<GrowingSalesContentProps> = ({
           <div className="flex justify-center items-center mb-6">
             <GenieMascot mood="happy" size="xl" showBackground />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Grow Your Sales & Revenue</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">Turn Your Store Into a Sales Machine</h1>
           <p className="text-lg text-[#A0A0A0] max-w-3xl mx-auto mb-8">
-            Proven strategies to increase your conversion rates, attract more customers, 
-            and boost your average order value. Turn your store into a revenue-generating machine.
+            Simple, proven strategies that real business owners use to double their sales. 
+            No marketing jargon - just practical steps that actually work for your business.
           </p>
           
           {/* Success Stats */}

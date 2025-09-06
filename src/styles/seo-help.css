@@ -1,0 +1,251 @@
+/* SEO Help Page Styles */
+
+/* Sticky TOC Styles */
+.seo-help-toc {
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+.seo-help-toc-link {
+  @apply block py-2 px-3 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors duration-200;
+}
+
+.seo-help-toc-link.active {
+  @apply text-blue-600 bg-blue-50 border-l-2 border-blue-600;
+}
+
+.seo-help-toc-link.level-2 {
+  @apply ml-4;
+}
+
+.seo-help-toc-link.level-3 {
+  @apply ml-8;
+}
+
+/* Content Section Styles */
+.seo-help-section {
+  scroll-margin-top: 2rem;
+}
+
+.seo-help-section h2 {
+  @apply text-2xl font-bold text-gray-900 mb-4;
+}
+
+.seo-help-section h3 {
+  @apply text-xl font-semibold text-gray-800 mb-3;
+}
+
+.seo-help-section p {
+  @apply text-gray-700 leading-relaxed mb-4;
+}
+
+.seo-help-section ul {
+  @apply space-y-2 mb-4;
+}
+
+.seo-help-section li {
+  @apply text-gray-700 leading-relaxed;
+}
+
+/* Checklist Styles */
+.seo-checklist {
+  @apply space-y-3 mb-6;
+}
+
+.seo-checklist-item {
+  @apply flex items-start gap-3 p-3 bg-gray-50 rounded border border-gray-200;
+}
+
+.seo-checklist-item::before {
+  content: '';
+  @apply flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2;
+}
+
+/* Video Card Styles */
+.video-card {
+  @apply bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200;
+}
+
+.video-card-title {
+  @apply font-semibold text-blue-900 mb-2;
+}
+
+.video-card-description {
+  @apply text-sm text-blue-700 mb-3;
+}
+
+.video-card-link {
+  @apply inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors duration-200;
+}
+
+/* Template Block Styles */
+.template-block {
+  @apply bg-gray-50 border-l-4 border-blue-500 p-4 mb-4;
+}
+
+.template-block-title {
+  @apply font-medium text-gray-900 mb-2;
+}
+
+.template-block-content {
+  @apply font-mono text-sm text-gray-700 leading-relaxed;
+}
+
+/* Keyword Example Table Styles */
+.keyword-table {
+  @apply w-full border-collapse border border-gray-300 rounded-lg overflow-hidden;
+}
+
+.keyword-table th {
+  @apply bg-gray-50 border border-gray-300 px-4 py-2 text-left font-semibold text-gray-900;
+}
+
+.keyword-table td {
+  @apply border border-gray-300 px-4 py-2 text-gray-700;
+}
+
+/* Troubleshooting Matrix Styles */
+.troubleshooting-grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4 mb-6;
+}
+
+.troubleshooting-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200;
+}
+
+.troubleshooting-symptom {
+  @apply font-semibold text-red-600 mb-2;
+}
+
+.troubleshooting-cause {
+  @apply text-gray-600 text-sm mb-2;
+}
+
+.troubleshooting-fix {
+  @apply text-green-700 text-sm font-medium;
+}
+
+/* KPI Card Styles */
+.kpi-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4;
+}
+
+.kpi-metric {
+  @apply font-bold text-lg text-gray-900 mb-1;
+}
+
+.kpi-description {
+  @apply text-gray-600 text-sm mb-2;
+}
+
+.kpi-goal {
+  @apply text-green-600 text-xs font-medium mb-1;
+}
+
+.kpi-source {
+  @apply text-gray-500 text-xs;
+}
+
+/* Mobile TOC Dropdown Styles */
+@media (max-width: 1279px) {
+  .mobile-toc-dropdown {
+    @apply block lg:hidden mb-6;
+  }
+  
+  .mobile-toc-button {
+    @apply w-full flex items-center justify-between p-3 bg-white border border-gray-300 rounded-lg text-left;
+  }
+  
+  .mobile-toc-content {
+    @apply absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto;
+  }
+  
+  .desktop-toc {
+    @apply hidden xl:block;
+  }
+}
+
+/* Scroll-spy Animation */
+@keyframes highlight {
+  0% { background-color: transparent; }
+  50% { background-color: rgb(219 234 254); }
+  100% { background-color: transparent; }
+}
+
+.toc-link-highlight {
+  animation: highlight 0.3s ease-in-out;
+}
+
+/* Toast Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(calc(100% + 1rem));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hide {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes swipeOut {
+  from {
+    transform: translateX(var(--radix-toast-swipe-end-x));
+  }
+  to {
+    transform: translateX(calc(100% + 1rem));
+  }
+}
+
+[data-state='open'][data-swipe-direction='right'] {
+  animation: slideIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-state='closed'] {
+  animation: hide 100ms ease-in;
+}
+
+[data-swipe='end'] {
+  animation: swipeOut 100ms ease-out;
+}
+
+/* Focus Styles */
+.seo-help-toc-link:focus,
+.video-card-link:focus,
+button:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* Print Styles */
+@media print {
+  .seo-help-toc,
+  .mobile-toc-dropdown,
+  button {
+    display: none !important;
+  }
+  
+  .seo-help-section {
+    page-break-inside: avoid;
+    scroll-margin-top: 0;
+  }
+  
+  .video-card {
+    border: 1px solid #000 !important;
+    background: white !important;
+  }
+  
+  .video-card::after {
+    content: " (Link: " attr(href) ")";
+    font-size: 12px;
+    color: #666;
+  }
+}

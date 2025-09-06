@@ -1,4 +1,4 @@
-// World-Class Analytics Dashboard
+// Store Analytics Dashboard
 // Advanced analytics with GA4, Meta Pixel, TikTok Ads, customer segmentation, and predictive insights
 
 import React, { useState } from 'react'
@@ -164,7 +164,7 @@ export const WorldClassAnalyticsDashboard: React.FC<WorldClassAnalyticsDashboard
         <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-8">
           <div className="flex items-center justify-center space-x-3">
             <Activity className="w-6 h-6 text-[#9B51E0] animate-pulse" />
-            <span className="text-white text-lg">Loading world-class analytics...</span>
+            <span className="text-white text-lg">Loading store analytics...</span>
           </div>
         </div>
       </div>
@@ -201,7 +201,7 @@ export const WorldClassAnalyticsDashboard: React.FC<WorldClassAnalyticsDashboard
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center space-x-3">
             <Brain className="w-7 h-7 text-[#9B51E0]" />
-            <span>World-Class Analytics</span>
+            <span>Store Analytics</span>
           </h1>
           <p className="text-[#A0A0A0] mt-1">
             Advanced insights powered by GA4, Meta Pixel, TikTok Ads, and AI-driven predictions

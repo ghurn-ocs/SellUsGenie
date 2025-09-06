@@ -59,42 +59,32 @@ export const ComprehensiveHelpCenter: React.FC<ComprehensiveHelpCenterProps> = (
   const [clickedButtons, setClickedButtons] = useState<Set<string>>(new Set())
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [, navigate] = useLocation()
-  const { setActiveTab: setDashboardTab } = useStore()
+  // Note: StoreContext doesn't provide setActiveTab function, using URL navigation instead
 
-  // Action handlers
+  // Action handlers - using URL params to specify tab
   const handleNavigateToProducts = () => {
-    setDashboardTab('products')
-    navigate('/dashboard')
+    navigate('/dashboard?tab=products')
   }
 
   const handleNavigateToSettings = (section?: string) => {
-    setDashboardTab('settings')
-    navigate('/dashboard')
-    // Could store the specific settings section in context or local storage
-    // for more precise navigation when implemented
-    if (section) {
-      console.log(`Navigating to settings section: ${section}`)
-    }
+    const url = section ? `/dashboard?tab=settings&section=${section}` : '/dashboard?tab=settings'
+    navigate(url)
   }
 
   const handleNavigateToPageBuilder = () => {
-    setDashboardTab('page-builder')
-    navigate('/dashboard')
+    navigate('/dashboard?tab=page-builder')
   }
 
   const handleNavigateToCustomers = () => {
-    setDashboardTab('customers')
-    navigate('/dashboard')
+    navigate('/dashboard?tab=customers')
   }
 
   const handleNavigateToAnalytics = () => {
-    setDashboardTab('analytics')
-    navigate('/dashboard')
+    navigate('/dashboard?tab=analytics')
   }
 
   const handleNavigateToNurture = () => {
-    setDashboardTab('nurture')
-    navigate('/dashboard')
+    navigate('/dashboard?tab=nurture')
   }
 
   const handleOpenExternalLink = (url: string) => {
@@ -995,7 +985,7 @@ export const ComprehensiveHelpCenter: React.FC<ComprehensiveHelpCenterProps> = (
                       className="w-full px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors text-sm font-medium"
                       onClick={() => {
                         if (action.action.includes('Add Product')) handleNavigateToProducts()
-                        else if (action.action.includes('Setup Payments')) handleNavigateToSettings('payments')
+                        else if (action.action.includes('Setup Payments')) handleNavigateToSettings('payment')
                         else if (action.action.includes('Customize Store')) handleNavigateToPageBuilder()
                         else if (action.action.includes('Go Live')) handleNavigateToSettings('general')
                       }}
@@ -1123,7 +1113,7 @@ export const ComprehensiveHelpCenter: React.FC<ComprehensiveHelpCenterProps> = (
                         setActiveGuide(null)
                         // Navigate to the appropriate dashboard section after reading the guide
                         if (activeGuide?.includes('Products')) handleNavigateToProducts()
-                        else if (activeGuide?.includes('Payment')) handleNavigateToSettings('payments')
+                        else if (activeGuide?.includes('Payment')) handleNavigateToSettings('payment')
                         else if (activeGuide?.includes('Shipping')) handleNavigateToSettings('delivery')
                         else if (activeGuide?.includes('Reports')) handleNavigateToAnalytics()
                         else if (activeGuide?.includes('Email')) handleNavigateToNurture()
@@ -1681,10 +1671,10 @@ export const ComprehensiveHelpCenter: React.FC<ComprehensiveHelpCenterProps> = (
                       onClick={() => {
                         if (strategy.title.includes('Processing')) handleNavigateToCustomers()
                         else if (strategy.title.includes('Communication')) handleNavigateToNurture()
-                        else if (strategy.title.includes('Returns')) handleNavigateToSettings('policies')
-                        else if (strategy.title.includes('Personal')) handleNavigateToSettings('branding')
+                        else if (strategy.title.includes('Returns')) handleNavigateToSettings('general')
+                        else if (strategy.title.includes('Personal')) handleNavigateToSettings('general')
                         else if (strategy.title.includes('Follow-Up')) handleNavigateToNurture()
-                        else if (strategy.title.includes('Reward')) handleNavigateToSettings('loyalty')
+                        else if (strategy.title.includes('Reward')) handleNavigateToSettings('integrations')
                       }}
                     >
                       Learn More
@@ -1866,7 +1856,7 @@ export const ComprehensiveHelpCenter: React.FC<ComprehensiveHelpCenterProps> = (
                     
                     <button 
                       className="mt-4 px-4 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors text-sm"
-                      onClick={() => handleNavigateToSettings('payments')}
+                      onClick={() => handleNavigateToSettings('payment')}
                     >
                       Fix Payment Settings
                     </button>
@@ -2006,7 +1996,7 @@ export const ComprehensiveHelpCenter: React.FC<ComprehensiveHelpCenterProps> = (
                         onClick={() => {
                           if (item.category === 'Traffic') handleNavigateToPageBuilder()
                           else if (item.category === 'Conversion') handleNavigateToAnalytics()
-                          else if (item.category === 'Payments') handleNavigateToSettings('payments')
+                          else if (item.category === 'Payments') handleNavigateToSettings('payment')
                           else if (item.category === 'Products') handleNavigateToProducts()
                           else if (item.category === 'Shipping') handleNavigateToSettings('delivery')
                           else if (item.category === 'Email') handleNavigateToNurture()

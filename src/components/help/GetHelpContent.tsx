@@ -51,14 +51,14 @@ export const GetHelpContent: React.FC<GetHelpContentProps> = ({
     {
       id: 'live-chat',
       title: 'Live Chat',
-      subtitle: 'Get instant help from our support team',
+      subtitle: 'Talk to a real person right now - like texting a friend',
       icon: MessageCircle,
       availability: 'Available Now',
       responseTime: '< 2 minutes',
-      bestFor: 'Quick questions, urgent issues',
+      bestFor: 'Quick questions, "How do I..." moments',
       color: 'blue',
       action: 'Start Chat',
-      description: 'Connect with our support team in real-time for immediate assistance with any questions or issues.',
+      description: 'Just like texting, but with a business expert who knows your store. Perfect for those "I\'m stuck, what do I click?" moments.',
       features: [
         'Real-time conversation',
         'Screen sharing capability',
@@ -69,14 +69,14 @@ export const GetHelpContent: React.FC<GetHelpContentProps> = ({
     {
       id: 'phone-support',
       title: 'Phone Support',
-      subtitle: 'Speak directly with our business experts',
+      subtitle: 'Talk it through with a real person who gets business',
       icon: Phone,
       availability: 'Mon-Fri 9AM-6PM EST',
       responseTime: 'Immediate',
-      bestFor: 'Complex issues, detailed discussions',
+      bestFor: 'When you need to talk through big decisions',
       color: 'green',
       action: 'Call Now',
-      description: 'Speak directly with our experienced support team for personalized assistance and detailed problem resolution.',
+      description: 'Sometimes you just need to talk to someone who understands business. Our team will walk you through solutions step by step.',
       features: [
         'Direct conversation',
         'Personalized assistance',
@@ -248,10 +248,10 @@ export const GetHelpContent: React.FC<GetHelpContentProps> = ({
           <div className="flex justify-center items-center mb-6">
             <GenieMascot mood="helpful" size="xl" showBackground />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Get Personal Help & Support</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">You're Never Alone - We're Here to Help</h1>
           <p className="text-lg text-[#A0A0A0] max-w-3xl mx-auto mb-8">
-            Our dedicated team of business experts, technical specialists, and growth consultants 
-            are here to ensure your online store succeeds. Choose the support method that works best for you.
+            Running an online business can feel overwhelming, but you don't have to figure it out alone. 
+            Our friendly team of business experts is here to guide you every step of the way - from your first sale to scaling your success.
           </p>
           
           {/* Support Stats */}
@@ -545,22 +545,32 @@ export const GetHelpContent: React.FC<GetHelpContentProps> = ({
 
       {/* Call to Action */}
       <div className="bg-[#1E1E1E] rounded-lg p-8 border border-[#3A3A3A] text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Everything You Need to Succeed</h2>
         <p className="text-[#A0A0A0] mb-6 max-w-2xl mx-auto">
-          Don't let technical issues hold back your business. Our support team is here to help you succeed.
+          Most questions can be answered instantly with our comprehensive guides, tutorials, and troubleshooting tools. 
+          Start building your successful online business today!
         </p>
         <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-          <button className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            <MessageCircle className="w-4 h-4 inline mr-2" />
-            Start Live Chat
+          <button 
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            onClick={() => onNavigateToSection?.('getting-started-guides')}
+          >
+            <BookOpen className="w-4 h-4 inline mr-2" />
+            Start Learning
           </button>
-          <button className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
-            <Phone className="w-4 h-4 inline mr-2" />
-            Call Support
+          <button 
+            className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            onClick={() => onNavigateToSection?.('video-tutorials')}
+          >
+            <Play className="w-4 h-4 inline mr-2" />
+            Watch Tutorials
           </button>
-          <button className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
-            <Mail className="w-4 h-4 inline mr-2" />
-            Send Email
+          <button 
+            className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            onClick={() => onNavigateToSection?.('troubleshooting')}
+          >
+            <Zap className="w-4 h-4 inline mr-2" />
+            Quick Fixes
           </button>
         </div>
       </div>
