@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { MapPin, Save, Loader2 } from 'lucide-react'
+import { COUNTRIES, getCountryByCode } from '../../lib/internationalData'
 
 const storeAddressSchema = z.object({
   store_address_line1: z.string().min(1, 'Address line 1 is required'),
@@ -54,7 +55,7 @@ export const StoreAddressSettings: React.FC<StoreAddressSettingsProps> = ({ stor
       store_city: store?.store_city || '',
       store_state: store?.store_state || '',
       store_postal_code: store?.store_postal_code || '',
-      store_country: store?.store_country || 'US',
+      store_country: store?.store_country || '',
       store_phone: store?.store_phone || '',
     }
   })
@@ -101,13 +102,6 @@ export const StoreAddressSettings: React.FC<StoreAddressSettingsProps> = ({ stor
     }
   }
 
-  const US_STATES = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-  ]
 
   if (!store) {
     return (
@@ -184,19 +178,14 @@ export const StoreAddressSettings: React.FC<StoreAddressSettingsProps> = ({ stor
 
           <div>
             <label className="block text-sm font-medium text-[#A0A0A0] mb-1">
-              State *
+              State/Province *
             </label>
-            <select
+            <input
               {...register('store_state')}
+              type="text"
+              placeholder="State, province, or region"
               className="w-full px-3 py-2 border border-[#3A3A3A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent bg-[#1E1E1E] text-white placeholder-[#A0A0A0]"
-            >
-              <option value="">Select State</option>
-              {US_STATES.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
+            />
             {errors.store_state && (
               <p className="mt-1 text-sm text-red-600">{errors.store_state.message}</p>
             )}
@@ -204,7 +193,7 @@ export const StoreAddressSettings: React.FC<StoreAddressSettingsProps> = ({ stor
 
           <div>
             <label className="block text-sm font-medium text-[#A0A0A0] mb-1">
-              ZIP Code *
+              Postal Code *
             </label>
             <input
               {...register('store_postal_code')}
@@ -226,8 +215,12 @@ export const StoreAddressSettings: React.FC<StoreAddressSettingsProps> = ({ stor
               {...register('store_country')}
               className="w-full px-3 py-2 border border-[#3A3A3A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent bg-[#1E1E1E] text-white placeholder-[#A0A0A0]"
             >
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
+              <option value="">Select Country</option>
+              {COUNTRIES.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
             </select>
             {errors.store_country && (
               <p className="mt-1 text-sm text-red-600">{errors.store_country.message}</p>

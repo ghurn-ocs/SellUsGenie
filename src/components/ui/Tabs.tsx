@@ -31,7 +31,10 @@ interface TabsListProps {
 
 export const TabsList: React.FC<TabsListProps> = ({ className = '', children }) => {
   return (
-    <div className={`flex ${className}`}>
+    <div 
+      className={`flex rounded-lg p-1 ${className}`}
+      style={{ backgroundColor: 'var(--bg-tertiary)' }}
+    >
       {children}
     </div>
   )
@@ -52,7 +55,12 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({ value, className = '',
   
   return (
     <button
-      className={`${className} ${isActive ? 'data-[state=active]' : ''}`}
+      type="button"
+      className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${className}`}
+      style={{
+        backgroundColor: isActive ? 'var(--color-primary)' : 'transparent',
+        color: isActive ? 'white' : 'var(--text-secondary)'
+      }}
       onClick={() => setActiveTab(value)}
     >
       {children}
@@ -75,7 +83,10 @@ export const TabsContent: React.FC<TabsContentProps> = ({ value, className = '',
   if (activeTab !== value) return null
   
   return (
-    <div className={className}>
+    <div 
+      className={`mt-4 ${className}`}
+      style={{ color: 'var(--text-primary)' }}
+    >
       {children}
     </div>
   )

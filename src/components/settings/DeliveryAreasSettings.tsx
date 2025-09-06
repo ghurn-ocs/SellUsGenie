@@ -292,9 +292,8 @@ export const DeliveryAreasSettings: React.FC<DeliveryAreasSettingsProps> = ({ st
           streetViewControl: false,
           mapTypeControl: true,
           fullscreenControl: true,
-          zoomControl: true,
+          zoomControl: true
           // Removed styles due to mapId conflict - mapId provides styling
-          streetViewControl: false
         })
 
         // Wait for map to be ready

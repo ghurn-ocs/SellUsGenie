@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Save, AlertCircle } from 'lucide-react'
+import { Calendar, Save, AlertCircle, DollarSign } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { CURRENCIES, getCurrencyByCode } from '../../lib/internationalData'
 
 interface FinancialYearSettingsProps {
   storeId: string
@@ -24,6 +25,7 @@ const MONTHS = [
 export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ storeId }) => {
   const [startMonth, setStartMonth] = useState(1)
   const [startDay, setStartDay] = useState(1)
+  const [currency, setCurrency] = useState('USD')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -53,6 +55,7 @@ export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ st
         if (data) {
           setStartMonth(data.financial_year_start_month || 1)
           setStartDay(data.financial_year_start_day || 1)
+          setCurrency('USD') // Default for now
         }
       } catch (error) {
         console.error('Error loading financial year settings:', error)
@@ -94,7 +97,7 @@ export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ st
         return
       }
 
-      setMessage({ type: 'success', text: 'Financial year settings saved successfully!' })
+      setMessage({ type: 'success', text: 'Financial settings saved successfully!' })
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -119,7 +122,7 @@ export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ st
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
           <Calendar className="w-6 h-6 text-[#9B51E0]" />
-          <h3 className="text-xl font-semibold text-white">Financial Year Settings</h3>
+          <h3 className="text-xl font-semibold text-white">Financial Settings</h3>
         </div>
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-[#3A3A3A] rounded w-1/2"></div>
@@ -133,23 +136,34 @@ export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ st
     <div className="space-y-6">
       <div className="flex items-center space-x-3">
         <Calendar className="w-6 h-6 text-[#9B51E0]" />
-        <h3 className="text-xl font-semibold text-white">Financial Year Settings</h3>
+        <h3 className="text-xl font-semibold text-white">Financial Settings</h3>
       </div>
 
       <div className="space-y-4">
         <p className="text-[#A0A0A0]">
-          Set when your financial year starts. This affects financial reporting and analytics calculations.
+          Configure your financial year period and currency. These settings affect financial reporting, analytics calculations, and pricing display.
         </p>
 
-        {/* Current Setting Display */}
+        {/* Current Settings Display */}
         <div className="bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-[#9B51E0]/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-[#9B51E0]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-[#9B51E0]/20 rounded-lg flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-[#9B51E0]" />
+              </div>
+              <div>
+                <p className="text-white font-medium">Financial Year Starts</p>
+                <p className="text-[#A0A0A0] text-sm">{getFormattedDate()} each year</p>
+              </div>
             </div>
-            <div>
-              <p className="text-white font-medium">Financial Year Starts</p>
-              <p className="text-[#A0A0A0] text-sm">{getFormattedDate()} each year</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-[#9B51E0]/20 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-[#9B51E0]" />
+              </div>
+              <div>
+                <p className="text-white font-medium">Store Currency</p>
+                <p className="text-[#A0A0A0] text-sm">{getCurrencyByCode(currency)?.name || 'US Dollar'} ({getCurrencyByCode(currency)?.symbol || '$'})</p>
+              </div>
             </div>
           </div>
         </div>
@@ -193,6 +207,25 @@ export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ st
           </div>
         </div>
 
+        {/* Currency Selector */}
+        <div>
+          <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+            Store Currency
+          </label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="w-full px-3 py-2 border border-[#3A3A3A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B51E0] focus:border-transparent bg-[#1E1E1E] text-white"
+            disabled={isSaving}
+          >
+            {CURRENCIES.map((curr) => (
+              <option key={curr.code} value={curr.code}>
+                {curr.name} ({curr.symbol}) - {curr.code}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Examples */}
         <div className="bg-[#1E1E1E] border border-[#3A3A3A] rounded-lg p-4">
           <p className="text-sm font-medium text-white mb-2">Common Financial Year Periods:</p>
@@ -230,7 +263,7 @@ export const FinancialYearSettings: React.FC<FinancialYearSettingsProps> = ({ st
           ) : (
             <>
               <Save className="w-4 h-4" />
-              <span>Save Financial Year Settings</span>
+              <span>Save Financial Settings</span>
             </>
           )}
         </button>

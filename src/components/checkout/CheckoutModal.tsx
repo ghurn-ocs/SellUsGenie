@@ -10,6 +10,7 @@ import { CheckoutForm } from './CheckoutForm'
 import { ShippingForm } from './ShippingForm'
 import { CheckoutAuthSelection } from './CheckoutAuthSelection'
 import { UserRegistrationForm } from './UserRegistrationForm'
+import { OrderSummary } from './OrderSummary'
 import { usePaymentConfiguration } from '../../hooks/usePaymentConfiguration'
 
 interface CheckoutModalProps {
@@ -20,13 +21,15 @@ interface CheckoutModalProps {
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, storeId }) => {
   const { user } = useAuth()
-  const { cartItems, subtotal } = useCart()
+  const { cartItems } = useCart()
   const { 
     shippingAddress, 
     isGuestCheckout, 
     setIsGuestCheckout,
     createPaymentIntent,
-    error 
+    error,
+    subtotal,
+    totalAfterDiscount
   } = useCheckout()
   const { isPaymentEnabled } = usePaymentConfiguration(storeId)
   
@@ -64,9 +67,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, s
   }
 
   const calculateTotals = () => {
-    const tax = subtotal * 0.08 // 8% tax
-    const shipping = subtotal >= 50 ? 0 : 5 // Free shipping over $50
-    const total = subtotal + tax + shipping
+    const tax = totalAfterDiscount * 0.08 // 8% tax on discounted amount
+    const shipping = totalAfterDiscount >= 50 ? 0 : 5 // Free shipping over $50
+    const total = totalAfterDiscount + tax + shipping
     
     return { tax, shipping, total }
   }
@@ -349,55 +352,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, s
               {/* Order summary */}
               <div className="order-1 lg:order-2">
                 <div className="bg-gray-50 rounded-lg p-6 sticky top-0">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    Order Summary
-                  </h3>
-                  
-                  <div className="space-y-3 mb-4">
-                    {cartItems.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <div className="flex-1">
-                          <span className="text-gray-900">{item.product.name}</span>
-                          <span className="text-gray-500 ml-2">×{item.quantity}</span>
-                        </div>
-                        <span className="text-gray-900">
-                          {formatPrice(item.product.price * item.quantity)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="text-gray-900">{formatPrice(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Shipping</span>
-                      <span className="text-gray-900">
-                        {shipping === 0 ? 'Free' : formatPrice(shipping)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax</span>
-                      <span className="text-gray-900">{formatPrice(tax)}</span>
-                    </div>
-                    <div className="border-t border-gray-200 pt-2">
-                      <div className="flex justify-between font-medium">
-                        <span className="text-gray-900">Total</span>
-                        <span className="text-gray-900">{formatPrice(total)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {shipping === 0 && subtotal < 50 && (
-                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-green-800">
-                        🎉 Add {formatPrice(50 - subtotal)} more for free shipping!
-                      </p>
-                    </div>
-                  )}
+                  <OrderSummary />
                 </div>
               </div>
             </div>

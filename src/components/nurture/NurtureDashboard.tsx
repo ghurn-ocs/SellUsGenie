@@ -10,7 +10,8 @@ import { LeadsTab } from './LeadsTab'
 import { CampaignsTab } from './CampaignsTab'
 import { IncompleteOrdersTab } from './IncompleteOrdersTab'
 import { SegmentsTab } from './SegmentsTab'
-import { Users, Mail, ShoppingCart, TrendingUp, Zap } from 'lucide-react'
+import { PromotionsTab } from './PromotionsTab'
+import { Users, Mail, ShoppingCart, TrendingUp, Zap, Percent } from 'lucide-react'
 
 interface NurtureDashboardProps {}
 
@@ -132,6 +133,16 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
             }`}
           >
             Customer Segments
+          </button>
+          <button
+            onClick={() => setActiveTab('promotions')}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'promotions'
+                ? 'bg-[#1A1A1A] text-[#9B51E0] shadow-md border border-[#4A4A4A]'
+                : 'text-[#A0A0A0] hover:bg-[#1F1F1F] hover:text-[#E0E0E0]'
+            }`}
+          >
+            Promotions
           </button>
         </div>
       </div>
@@ -256,6 +267,7 @@ export const NurtureDashboard: React.FC<NurtureDashboardProps> = () => {
       {activeTab === 'campaigns' && <CampaignsTab />}
       {activeTab === 'abandoned' && <IncompleteOrdersTab />}
       {activeTab === 'segments' && <SegmentsTab />}
+      {activeTab === 'promotions' && <PromotionsTab />}
     </div>
   )
 }

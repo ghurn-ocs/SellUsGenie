@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { useCart } from './CartContext'
 import type { Order, Customer } from '../lib/supabase'
+import { validatePromotionCode, recordPromotionUsage, type PromotionValidationResponse } from '../services/promotionValidation'
 
 interface ShippingFormData {
   firstName: string
@@ -44,6 +45,17 @@ interface ShippingAddress {
   country: string
 }
 
+interface AppliedPromotion {
+  id: string
+  code: string
+  name: string
+  type: string
+  value: number
+  discount_amount: number
+  min_order_amount: number
+  max_discount_amount?: number
+}
+
 interface CheckoutContextType {
   // Checkout state
   isCheckingOut: boolean
@@ -56,6 +68,17 @@ interface CheckoutContextType {
   // Legacy support
   shippingAddress: ShippingAddress | null
   setShippingAddress: (address: ShippingAddress) => void
+  
+  // Promotion handling
+  appliedPromotion: AppliedPromotion | null
+  validatePromotion: (code: string) => Promise<PromotionValidationResponse>
+  applyPromotion: (promotion: AppliedPromotion) => void
+  removePromotion: () => void
+  
+  // Totals with promotion
+  subtotal: number
+  discountAmount: number
+  totalAfterDiscount: number
   
   // Payment
   createPaymentIntent: () => Promise<{ clientSecret: string; orderId: string }>
@@ -83,11 +106,18 @@ interface CheckoutProviderProps {
 
 export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, storeId }) => {
   const { user } = useAuth()
-  const { cartItems, subtotal, clearCart } = useCart()
+  const { cartItems, subtotal: cartSubtotal, clearCart } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null)
+  const [shippingFormData, setShippingFormData] = useState<ShippingFormData | null>(null)
   const [isGuestCheckout, setIsGuestCheckout] = useState(!user)
+  const [appliedPromotion, setAppliedPromotion] = useState<AppliedPromotion | null>(null)
+
+  // Calculate totals with promotion
+  const subtotal = cartSubtotal
+  const discountAmount = appliedPromotion?.discount_amount || 0
+  const totalAfterDiscount = Math.max(0, subtotal - discountAmount)
 
   const createPaymentIntent = useCallback(async (): Promise<{ clientSecret: string; orderId: string }> => {
     if (cartItems.length === 0) {
@@ -98,11 +128,17 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
     setError(null)
 
     try {
-      // Calculate totals
+      // Calculate totals with promotion
       const subtotalAmount = Math.round(subtotal * 100) // Convert to cents
-      const taxAmount = Math.round(subtotalAmount * 0.08) // 8% tax for example
-      const shippingAmount = subtotalAmount >= 5000 ? 0 : 500 // Free shipping over $50
-      const totalAmount = subtotalAmount + taxAmount + shippingAmount
+      const discountAmountCents = Math.round(discountAmount * 100)
+      const subtotalAfterDiscount = Math.max(0, subtotalAmount - discountAmountCents)
+      const taxAmount = Math.round(subtotalAfterDiscount * 0.08) // 8% tax on discounted amount
+      
+      // Handle free shipping promotions
+      const baseShippingAmount = subtotalAfterDiscount >= 5000 ? 0 : 500 // Free shipping over $50
+      const shippingAmount = appliedPromotion?.type === 'FREE_SHIPPING' ? 0 : baseShippingAmount
+      
+      const totalAmount = subtotalAfterDiscount + taxAmount + shippingAmount
 
       // Create customer record if guest checkout
       let customerId = user?.id
@@ -189,6 +225,9 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
             order_number: orderNumber,
             status: 'pending',
             subtotal: subtotal,
+            discount_amount: discountAmount,
+            promotion_id: appliedPromotion?.id || null,
+            promotion_code: appliedPromotion?.code || null,
             tax: taxAmount / 100,
             shipping: shippingAmount / 100,
             total: totalAmount / 100,
@@ -258,8 +297,19 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
 
       if (orderError) throw orderError
 
-      // Clear the cart
+      // Record promotion usage if applicable
+      if (appliedPromotion && order.promotion_id) {
+        await recordPromotionUsage(
+          appliedPromotion.id,
+          order.id,
+          order.customer_id,
+          discountAmount
+        )
+      }
+
+      // Clear the cart and applied promotion
       await clearCart()
+      setAppliedPromotion(null)
 
       return order
     } catch (err) {
@@ -271,11 +321,47 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
     }
   }, [clearCart])
 
+  // Promotion handling methods
+  const validatePromotion = useCallback(async (code: string): Promise<PromotionValidationResponse> => {
+    const cart_items = cartItems.map(item => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+      category_id: item.product.category_id
+    }))
+
+    return await validatePromotionCode({
+      store_id: storeId,
+      code,
+      subtotal,
+      customer_id: user?.id,
+      cart_items
+    })
+  }, [storeId, subtotal, user, cartItems])
+
+  const applyPromotion = useCallback((promotion: AppliedPromotion) => {
+    setAppliedPromotion(promotion)
+    setError(null)
+  }, [])
+
+  const removePromotion = useCallback(() => {
+    setAppliedPromotion(null)
+    setError(null)
+  }, [])
+
   const value = {
     isCheckingOut,
     error,
     shippingAddress,
     setShippingAddress,
+    shippingFormData,
+    setShippingFormData,
+    appliedPromotion,
+    validatePromotion,
+    applyPromotion,
+    removePromotion,
+    subtotal,
+    discountAmount,
+    totalAfterDiscount,
     createPaymentIntent,
     confirmPayment,
     isGuestCheckout,
