@@ -81,6 +81,17 @@
 
 ## ✅ Recently Completed Tasks
 
+### Week of September 6, 2025 - Inventory Management System Fixes
+- [x] **INVENTORY-001**: Fix comprehensive inventory management system issues ✅ (September 6, 2025)
+  - Fixed $NaN value display in product values and total inventory value
+  - Resolved property name mismatch: `p.inventory` → `p.inventory_quantity`
+  - Made "Add Stock" and "Update Stock" buttons functional
+  - Created comprehensive StockUpdateModal.tsx component
+  - Added proper table refresh functionality with design-compliant styling
+  - Replaced text buttons with intuitive pencil icons
+  - Removed "Bulk Update" button as requested
+  - Implemented real-time query invalidation for immediate UI updates
+
 ### Week of January 9, 2025 - Google Maps Integration Fixes
 - [x] **MAPS-001**: Fix Radix Dialog accessibility warnings ✅ (January 9, 2025)
   - Added Dialog.Description components for WCAG 2.1 AA compliance

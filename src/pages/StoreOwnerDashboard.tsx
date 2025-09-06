@@ -16,6 +16,7 @@ import { EditOrderModal } from '../components/EditOrderModal'
 import { CreateCustomerModal } from '../components/CreateCustomerModal'
 import { ViewCustomerModal } from '../components/ViewCustomerModal'
 import { EditCustomerModal } from '../components/EditCustomerModal'
+import { StockUpdateModal } from '../components/StockUpdateModal'
 import { ProductListNew } from '../components/ProductListNew'
 import { OrderListNew } from '../components/OrderListNew'
 import { CustomerListNew } from '../components/CustomerListNew'
@@ -141,6 +142,12 @@ const StoreOwnerDashboard: React.FC = () => {
   const [isCreateCustomerOpen, setIsCreateCustomerOpen] = useState(false)
   const [viewingCustomer, setViewingCustomer] = useState<any>(null)
   const [editingCustomer, setEditingCustomer] = useState<any>(null)
+
+  // Stock management state
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false)
+  const [stockModalProduct, setStockModalProduct] = useState<Product | null>(null)
+  const [stockModalMode, setStockModalMode] = useState<'update' | 'add'>('update')
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const handleCreateStore = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -363,6 +370,21 @@ const StoreOwnerDashboard: React.FC = () => {
 
   const handleCloseEditCustomer = () => {
     setEditingCustomer(null)
+  }
+
+  // Stock management handlers
+  const handleCloseStockModal = () => {
+    setIsStockModalOpen(false)
+    setStockModalProduct(null)
+  }
+
+  const handleRefreshInventory = async () => {
+    setIsRefreshing(true)
+    try {
+      await refetch()
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const handleAddProduct = async () => {
@@ -645,10 +667,32 @@ const StoreOwnerDashboard: React.FC = () => {
                         <p className="text-sm text-[#A0A0A0] mt-1">Monitor and update product inventory levels</p>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <button className="flex items-center space-x-2 px-3 py-2 bg-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:bg-[#4A4A4A] transition-colors">
-                          Bulk Update
+                        <button 
+                          onClick={handleRefreshInventory}
+                          disabled={isRefreshing}
+                          className="flex items-center space-x-2 px-3 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] disabled:bg-[#9B51E0]/50 disabled:cursor-not-allowed transition-colors"
+                          title="Refresh inventory data"
+                        >
+                          {isRefreshing ? (
+                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          )}
+                          {isRefreshing ? 'Refreshing...' : 'Refresh'}
                         </button>
-                        <button className="flex items-center space-x-2 px-3 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors">
+                        <button 
+                          onClick={() => {
+                            setStockModalMode('add')
+                            setStockModalProduct(null)
+                            setIsStockModalOpen(true)
+                          }}
+                          className="flex items-center space-x-2 px-3 py-2 bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
                           Add Stock
                         </button>
                       </div>
@@ -675,7 +719,7 @@ const StoreOwnerDashboard: React.FC = () => {
                           <div>
                             <p className="text-sm font-medium text-[#A0A0A0]">Low Stock</p>
                             <p className="text-2xl font-bold text-orange-500">
-                              {products.filter(p => p.inventory <= 10).length}
+                              {products.filter(p => p.inventory_quantity <= 10).length}
                             </p>
                           </div>
                           <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -691,7 +735,7 @@ const StoreOwnerDashboard: React.FC = () => {
                           <div>
                             <p className="text-sm font-medium text-[#A0A0A0]">Out of Stock</p>
                             <p className="text-2xl font-bold text-red-500">
-                              {products.filter(p => p.inventory === 0).length}
+                              {products.filter(p => p.inventory_quantity === 0).length}
                             </p>
                           </div>
                           <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -707,7 +751,7 @@ const StoreOwnerDashboard: React.FC = () => {
                           <div>
                             <p className="text-sm font-medium text-[#A0A0A0]">Total Value</p>
                             <p className="text-2xl font-bold text-green-500">
-                              ${products.reduce((sum, p) => sum + (p.price * p.inventory), 0).toLocaleString()}
+                              ${products.reduce((sum, p) => sum + (p.price * p.inventory_quantity), 0).toLocaleString()}
                             </p>
                           </div>
                           <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -757,25 +801,35 @@ const StoreOwnerDashboard: React.FC = () => {
                                   {product.sku || 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 text-sm font-medium text-white">
-                                  {product.inventory}
+                                  {product.inventory_quantity}
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                    product.inventory === 0 
+                                    product.inventory_quantity === 0 
                                       ? 'bg-red-100 text-red-800'
-                                      : product.inventory <= 10
+                                      : product.inventory_quantity <= 10
                                       ? 'bg-orange-100 text-orange-800'
                                       : 'bg-green-100 text-green-800'
                                   }`}>
-                                    {product.inventory === 0 ? 'Out of Stock' : product.inventory <= 10 ? 'Low Stock' : 'In Stock'}
+                                    {product.inventory_quantity === 0 ? 'Out of Stock' : product.inventory_quantity <= 10 ? 'Low Stock' : 'In Stock'}
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-[#E0E0E0]">
-                                  ${(product.price * product.inventory).toLocaleString()}
+                                  ${(product.price * product.inventory_quantity).toLocaleString()}
                                 </td>
                                 <td className="px-6 py-4 text-sm">
-                                  <button className="text-[#9B51E0] hover:text-[#A051E0] font-medium">
-                                    Update Stock
+                                  <button 
+                                    onClick={() => {
+                                      setStockModalMode('update')
+                                      setStockModalProduct(product)
+                                      setIsStockModalOpen(true)
+                                    }}
+                                    className="text-[#9B51E0] hover:text-[#A051E0] p-1 rounded hover:bg-[#9B51E0]/10 transition-colors"
+                                    title="Update Stock"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
                                   </button>
                                 </td>
                               </tr>
@@ -1051,7 +1105,7 @@ const StoreOwnerDashboard: React.FC = () => {
                       <div className="flex space-x-1 bg-[#1E1E1E] p-1 rounded-lg border border-[#3A3A3A]">
                         {[
                           { id: 'branding', label: 'Store Branding' },
-                          { id: 'financial', label: 'Financial Year' },
+                          { id: 'financial', label: 'Financial' },
                           { id: 'address', label: 'Store Address' }
                         ].map((category) => (
                           <button
@@ -1293,6 +1347,16 @@ const StoreOwnerDashboard: React.FC = () => {
         onClose={handleCloseEditCustomer}
         onSuccess={handleUpdateCustomer}
         customer={editingCustomer}
+      />
+
+      {/* Stock Update Modal */}
+      <StockUpdateModal
+        isOpen={isStockModalOpen}
+        onClose={handleCloseStockModal}
+        product={stockModalProduct}
+        mode={stockModalMode}
+        products={products}
+        storeId={currentStore?.id || ''}
       />
     </div>
   )
