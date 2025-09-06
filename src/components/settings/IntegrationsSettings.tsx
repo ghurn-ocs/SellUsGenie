@@ -28,6 +28,7 @@ import {
 import { useEmailConfig } from '../../hooks/useEmailConfig'
 import { useAnalyticsIntegrations, useCreateAnalyticsIntegration, useUpdateAnalyticsIntegration, useDeleteAnalyticsIntegration, AnalyticsIntegration } from '../../hooks/useAnalyticsConfig'
 import { googleAnalytics, GoogleAnalyticsService } from '../../lib/googleAnalytics'
+import { metaPixel, MetaPixelService } from '../../lib/metaPixel'
 
 interface IntegrationsSettingsProps {
   storeId: string
@@ -508,11 +509,17 @@ const EmailIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) => {
 // Analytics Integrations Tab Component
 const AnalyticsIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) => {
   const [showGA4Modal, setShowGA4Modal] = useState(false)
+  const [showMetaPixelModal, setShowMetaPixelModal] = useState(false)
   const [ga4Config, setGA4Config] = useState({
     measurementId: '',
     enhancedEcommerce: true,
     conversionTracking: true,
     audienceTracking: false
+  })
+  const [metaPixelConfig, setMetaPixelConfig] = useState({
+    pixelId: '',
+    enableAdvancedMatching: true,
+    enableAutoConfig: true
   })
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null)
@@ -527,6 +534,7 @@ const AnalyticsIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) =>
   const deleteIntegrationMutation = useDeleteAnalyticsIntegration(storeId)
 
   const ga4Integration = integrations.find(i => i.integration_type === 'google_analytics')
+  const metaPixelIntegration = integrations.find(i => i.integration_type === 'facebook_pixel')
   
   const handleSaveGA4Config = async () => {
     try {
@@ -622,6 +630,98 @@ const AnalyticsIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) =>
     }
     setTestResult(null)
     setShowGA4Modal(true)
+  }
+
+  // Meta Pixel handlers
+  const handleSaveMetaPixelConfig = async () => {
+    try {
+      const validation = MetaPixelService.validatePixelId(metaPixelConfig.pixelId)
+      if (!validation.isValid) {
+        setTestResult({ success: false, error: validation.error })
+        return
+      }
+
+      const integrationData = {
+        integration_type: 'facebook_pixel' as const,
+        integration_name: 'Meta Pixel (Facebook)',
+        config: {
+          pixel_id: metaPixelConfig.pixelId,
+          enable_advanced_matching: metaPixelConfig.enableAdvancedMatching,
+          enable_auto_config: metaPixelConfig.enableAutoConfig
+        }
+      }
+
+      if (metaPixelIntegration) {
+        await updateIntegrationMutation.mutateAsync({
+          integrationId: metaPixelIntegration.id,
+          updates: {
+            config: integrationData.config,
+            integration_name: integrationData.integration_name
+          }
+        })
+      } else {
+        await createIntegrationMutation.mutateAsync(integrationData)
+      }
+
+      setShowMetaPixelModal(false)
+      setTestResult(null)
+    } catch (error) {
+      setTestResult({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to save configuration' 
+      })
+    }
+  }
+
+  const handleTestMetaPixelConnection = async () => {
+    setIsTestingConnection(true)
+    setTestResult(null)
+
+    try {
+      const validation = MetaPixelService.validatePixelId(metaPixelConfig.pixelId)
+      if (!validation.isValid) {
+        setTestResult({ success: false, error: validation.error })
+        return
+      }
+
+      await metaPixel.initialize({
+        pixelId: metaPixelConfig.pixelId,
+        enableAdvancedMatching: metaPixelConfig.enableAdvancedMatching,
+        enableAutoConfig: metaPixelConfig.enableAutoConfig
+      })
+
+      const result = await metaPixel.testConnection()
+      setTestResult(result)
+    } catch (error) {
+      setTestResult({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Connection test failed' 
+      })
+    } finally {
+      setIsTestingConnection(false)
+    }
+  }
+
+  const handleDeleteMetaPixelIntegration = async () => {
+    if (metaPixelIntegration && confirm('Are you sure you want to remove Meta Pixel integration?')) {
+      try {
+        await deleteIntegrationMutation.mutateAsync(metaPixelIntegration.id)
+      } catch (error) {
+        console.error('Failed to delete integration:', error)
+      }
+    }
+  }
+
+  const openMetaPixelModal = () => {
+    if (metaPixelIntegration) {
+      setMetaPixelConfig({
+        pixelId: metaPixelIntegration.config.pixel_id || '',
+        enableAdvancedMatching: metaPixelIntegration.config.enable_advanced_matching ?? true,
+        enableAutoConfig: metaPixelIntegration.config.enable_auto_config ?? true
+      })
+    }
+    setTestResult(null)
+    setShowMetaPixelModal(true)
   }
 
   if (isLoadingIntegrations) {
@@ -743,8 +843,8 @@ const AnalyticsIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) =>
           </div>
         </div>
 
-        {/* Coming Soon Integrations */}
-        <div className="border border-blue-500/20 bg-blue-500/10 rounded-lg p-4 opacity-60">
+        {/* Meta Pixel Integration */}
+        <div className="border border-blue-500/20 bg-blue-500/10 rounded-lg p-4 transition-colors">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
@@ -755,7 +855,95 @@ const AnalyticsIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) =>
                 <p className="text-sm text-[#A0A0A0]">Track conversions and optimize Facebook advertising campaigns</p>
               </div>
             </div>
-            <span className="px-2 py-1 text-xs bg-gray-500/20 text-gray-400 rounded">Coming Soon</span>
+            <div className="flex items-center space-x-2">
+              {metaPixelIntegration ? (
+                <span className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded">
+                  Connected
+                </span>
+              ) : (
+                <span className="px-2 py-1 text-xs bg-orange-500/20 text-orange-400 rounded">
+                  Not Connected
+                </span>
+              )}
+            </div>
+          </div>
+
+          {metaPixelIntegration && (
+            <div className="mb-4 p-3 bg-[#1A1A1A] border border-[#3A3A3A] rounded-lg">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-[#A0A0A0]">Pixel ID:</span>
+                  <span className="text-sm text-white font-mono">{metaPixelIntegration.config.pixel_id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-[#A0A0A0]">Advanced Matching:</span>
+                  <span className="text-sm text-white">
+                    {metaPixelIntegration.config.enable_advanced_matching ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-[#A0A0A0]">Status:</span>
+                  <span className="text-sm text-green-400">{metaPixelIntegration.status}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <h6 className="text-sm font-medium text-white">Features:</h6>
+              <ul className="text-sm text-[#A0A0A0] space-y-1">
+                <li>• Purchase tracking</li>
+                <li>• Add to cart events</li>
+                <li>• Page view tracking</li>
+                <li>• Custom conversions</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h6 className="text-sm font-medium text-white">Advanced:</h6>
+              <ul className="text-sm text-[#A0A0A0] space-y-1">
+                <li>• Advanced matching</li>
+                <li>• Custom audiences</li>
+                <li>• Lookalike audiences</li>
+                <li>• Attribution modeling</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t border-[#3A3A3A]">
+            <div className="flex items-center space-x-2 text-sm text-[#A0A0A0]">
+              <Shield className="w-4 h-4" />
+              <span>Facebook Events API integration</span>
+            </div>
+            <div className="flex space-x-2">
+              {metaPixelIntegration && (
+                <button
+                  onClick={handleDeleteMetaPixelIntegration}
+                  disabled={deleteIntegrationMutation.isPending}
+                  className="flex items-center space-x-2 px-3 py-2 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Remove</span>
+                </button>
+              )}
+              <button
+                onClick={openMetaPixelModal}
+                disabled={createIntegrationMutation.isPending || updateIntegrationMutation.isPending}
+                className="flex items-center space-x-2 px-4 py-2 border border-blue-500/20 text-blue-400 rounded-lg hover:opacity-80 disabled:opacity-50 transition-colors"
+              >
+                {metaPixelIntegration ? (
+                  <>
+                    <Settings className="w-4 h-4" />
+                    <span>Configure</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Setup</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -870,6 +1058,131 @@ const AnalyticsIntegrationsTab: React.FC<{ storeId: string }> = ({ storeId }) =>
                     updateIntegrationMutation.isPending
                   }
                   className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {(createIntegrationMutation.isPending || updateIntegrationMutation.isPending) ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Configuration</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meta Pixel Configuration Modal */}
+      {showMetaPixelModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1A1A1A] border border-[#3A3A3A] rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">
+                {metaPixelIntegration ? 'Configure' : 'Setup'} Meta Pixel
+              </h3>
+              <button
+                onClick={() => setShowMetaPixelModal(false)}
+                className="text-[#A0A0A0] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Pixel ID
+                </label>
+                <input
+                  type="text"
+                  value={metaPixelConfig.pixelId}
+                  onChange={(e) => setMetaPixelConfig({ ...metaPixelConfig, pixelId: e.target.value })}
+                  placeholder="1234567890123456"
+                  className="w-full px-3 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white placeholder-[#A0A0A0] focus:outline-none focus:border-blue-500"
+                />
+                <p className="text-xs text-[#A0A0A0] mt-1">
+                  Find this in your Facebook Ads Manager under Events Manager
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={metaPixelConfig.enableAdvancedMatching}
+                    onChange={(e) => setMetaPixelConfig({ ...metaPixelConfig, enableAdvancedMatching: e.target.checked })}
+                    className="w-4 h-4 text-blue-500 bg-[#2A2A2A] border border-[#3A3A3A] rounded focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-sm text-white">Advanced Matching</span>
+                    <p className="text-xs text-[#A0A0A0]">Automatically match customer data to improve attribution</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={metaPixelConfig.enableAutoConfig}
+                    onChange={(e) => setMetaPixelConfig({ ...metaPixelConfig, enableAutoConfig: e.target.checked })}
+                    className="w-4 h-4 text-blue-500 bg-[#2A2A2A] border border-[#3A3A3A] rounded focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-sm text-white">Automatic Events</span>
+                    <p className="text-xs text-[#A0A0A0]">Track page views and basic interactions automatically</p>
+                  </div>
+                </label>
+              </div>
+
+              {testResult && (
+                <div className={`p-3 rounded-lg border ${
+                  testResult.success 
+                    ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+                    : 'bg-red-500/10 border-red-500/20 text-red-400'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    {testResult.success ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    <span className="text-sm">
+                      {testResult.success ? 'Connection successful!' : testResult.error}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleTestMetaPixelConnection}
+                  disabled={isTestingConnection || !metaPixelConfig.pixelId}
+                  className="flex items-center space-x-2 px-4 py-2 border border-[#3A3A3A] text-[#A0A0A0] rounded-lg hover:text-white disabled:opacity-50 transition-colors"
+                >
+                  {isTestingConnection ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>Testing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="w-4 h-4" />
+                      <span>Test Connection</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleSaveMetaPixelConfig}
+                  disabled={
+                    !metaPixelConfig.pixelId || 
+                    createIntegrationMutation.isPending || 
+                    updateIntegrationMutation.isPending
+                  }
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {(createIntegrationMutation.isPending || updateIntegrationMutation.isPending) ? (
                     <>
