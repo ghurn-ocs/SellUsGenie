@@ -229,7 +229,7 @@ export const HeaderLayoutView: React.FC<{ widget: Widget<HeaderLayoutProps> }> =
   };
   
   return (
-    <header className="header-layout-widget" style={headerStyle}>
+    <header className="header-layout-widget group relative" style={headerStyle}>
       <div className={getLayoutClasses()}>
         {/* Logo Section */}
         <div className={`flex items-center ${

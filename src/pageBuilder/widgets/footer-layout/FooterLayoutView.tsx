@@ -456,7 +456,7 @@ export const FooterLayoutView: React.FC<{ widget: Widget<FooterLayoutProps> }> =
   };
   
   return (
-    <footer className="footer-layout-widget w-full" style={footerStyle}>
+    <footer className="footer-layout-widget w-full group relative" style={footerStyle}>
       <div className="max-w-7xl mx-auto">
         <div className={getLayoutClasses()}>
           {/* Main Footer Content */}

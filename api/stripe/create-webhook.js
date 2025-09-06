@@ -18,23 +18,48 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Store ID is required' });
     }
 
-    // Get the base URL for webhooks
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : req.headers.origin || 'http://localhost:3000';
+    // Get the base URL for webhooks - prioritize production domain
+    let baseUrl;
+    
+    if (process.env.NODE_ENV === 'production') {
+      // Production: Use fixed production domain
+      baseUrl = process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.sellusgenie.com';
+    } else if (process.env.VERCEL_URL) {
+      // Development on Vercel
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    } else {
+      // Local development
+      baseUrl = req.headers.origin || 'http://localhost:5173';
+    }
+    
+    console.log('Creating webhook with base URL:', baseUrl);
 
-    // Create webhook endpoint in Stripe
-    const endpoint = await stripe.webhookEndpoints.create({
-      url: `${baseUrl}/api/stripe/webhook`,
+    // Get store's Stripe configuration to use their API keys
+    const { data: stripeConfig, error: configError } = await supabase
+      .from('stripe_configurations')
+      .select('stripe_secret_key_encrypted, is_live_mode')
+      .eq('store_id', storeId)
+      .single();
+
+    if (configError || !stripeConfig) {
+      return res.status(400).json({ error: 'Store Stripe configuration not found' });
+    }
+
+    // Use the store owner's Stripe instance
+    const storeStripe = require('stripe')(stripeConfig.stripe_secret_key_encrypted);
+
+    // Create webhook endpoint in store owner's Stripe account
+    const endpoint = await storeStripe.webhookEndpoints.create({
+      url: `${baseUrl}/api/stripe/storefront-webhook?storeId=${storeId}`,
       enabled_events: [
         'payment_intent.succeeded',
         'payment_intent.payment_failed',
-        'invoice.payment_succeeded',
-        'customer.subscription.updated',
-        'customer.subscription.deleted',
+        'charge.succeeded',
+        'charge.failed',
       ],
       metadata: {
-        storeId: storeId
+        storeId: storeId,
+        platform: 'sellusgenie'
       }
     });
 

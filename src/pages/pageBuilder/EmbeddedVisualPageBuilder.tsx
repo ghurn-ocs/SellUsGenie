@@ -366,14 +366,28 @@ export const EmbeddedVisualPageBuilder: React.FC = () => {
 
   // Show pages list with dark theme styling
   return (
-    <div className="h-full bg-[#1E1E1E] text-white">
-      <div className="p-6">
-        <div className="max-w-6xl mx-auto">
+    <div className="h-full bg-[#1E1E1E] text-white flex flex-col">
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-white mb-2">Your Pages</h2>
-              <p className="text-[#A0A0A0]">Manage your store pages with the visual page builder</p>
+              <p className="text-[#A0A0A0] mb-1">Manage your store pages with the visual page builder</p>
+              <p className={`text-sm ${
+                pages.length >= 12 
+                  ? 'text-red-400' 
+                  : pages.length >= 10 
+                  ? 'text-yellow-400' 
+                  : 'text-green-400'
+              }`}>
+                {pages.length >= 12 
+                  ? `Page limit reached (${pages.length}/12) - Upgrade to add more pages`
+                  : pages.length >= 10 
+                  ? `Almost at your page limit (${pages.length}/12)`
+                  : `${pages.length} pages created • ${12 - pages.length} remaining`
+                }
+              </p>
             </div>
             <div className="flex items-center space-x-3">
               <button
@@ -430,7 +444,7 @@ export const EmbeddedVisualPageBuilder: React.FC = () => {
 
           {/* Pages List */}
           {!isLoading && (
-            <div className="space-y-4">
+            <div className="flex-1 flex flex-col">
               {pages.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="h-16 w-16 text-[#A0A0A0] mx-auto mb-4" />
@@ -447,81 +461,100 @@ export const EmbeddedVisualPageBuilder: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {pages.map((page) => (
-                    <div
-                      key={page.id}
-                      className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-6 hover:border-[#9B51E0] transition-colors cursor-pointer"
-                      onClick={() => handlePageSelect(page.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <FileText className="h-5 w-5 text-[#9B51E0]" />
-                            <h3 className="text-lg font-semibold text-white">{page.name}</h3>
-                            {page.slug === '/' && (
-                              <span className="px-2 py-1 text-xs bg-green-900/20 text-green-400 rounded-full border border-green-500/30">
-                                Home Page
+                <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg overflow-hidden flex-1">
+                  <div className="h-full overflow-y-auto">
+                    <table className="min-w-full divide-y divide-[#3A3A3A]">
+                      <thead className="bg-[#3A3A3A] sticky top-0 z-10">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">
+                            Page Name
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">
+                            URL Path
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">
+                            Display
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">
+                            Last Updated
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[#A0A0A0] uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-[#2A2A2A] divide-y divide-[#3A3A3A]">
+                        {pages.map((page) => (
+                          <tr
+                            key={page.id}
+                            className="hover:bg-[#3A3A3A] cursor-pointer transition-colors"
+                            onClick={() => handlePageSelect(page.id)}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <FileText className="h-4 w-4 text-[#9B51E0] mr-2" />
+                                <div className="text-sm font-medium text-white">
+                                  {page.name}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#A0A0A0]">
+                              {page.slug || '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                page.status === 'published' 
+                                  ? 'bg-green-900/20 text-green-400 border border-green-500/30'
+                                  : page.status === 'draft'
+                                  ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-500/30'
+                                  : 'bg-gray-800 text-gray-400'
+                              }`}>
+                                {page.status}
                               </span>
-                            )}
-                            {page.status === 'published' && (
-                              <span className="px-2 py-1 text-xs bg-blue-900/20 text-blue-400 rounded-full border border-blue-500/30">
-                                Published
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
+                                page.navigationPlacement === 'both' 
+                                  ? 'bg-purple-900/20 text-purple-400 border border-purple-500/30'
+                                  : page.navigationPlacement === 'header'
+                                  ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
+                                  : page.navigationPlacement === 'footer'
+                                  ? 'bg-green-900/20 text-green-400 border border-green-500/30'
+                                  : 'bg-gray-800 text-gray-400'
+                              }`}>
+                                {page.navigationPlacement === 'both' ? 'Both' :
+                                 page.navigationPlacement === 'header' ? 'Header' :
+                                 page.navigationPlacement === 'footer' ? 'Footer' :
+                                 'None'}
                               </span>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-[#A0A0A0]">
-                            <span className="flex items-center">
-                              <Globe className="h-4 w-4 mr-1" />
-                              {page.slug || '/'}
-                            </span>
-                            <span className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#A0A0A0]">
                               {new Date(page.updatedAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {page.seo?.metaTitle && (
-                            <p className="text-sm text-[#A0A0A0] mt-2 line-clamp-2">
-                              {page.seo.metaTitle}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-3 ml-6">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`/store/${currentStore.store_slug}${page.slug}`, '_blank');
-                            }}
-                            className="inline-flex items-center px-3 py-2 text-sm text-[#A0A0A0] hover:text-white border border-[#3A3A3A] rounded-lg hover:border-[#6A6A6A] transition-colors"
-                            title="Preview page"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Preview
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePageSelect(page.id);
-                            }}
-                            className="inline-flex items-center px-3 py-2 text-sm bg-[#9B51E0] text-white rounded-lg hover:bg-[#A051E0] transition-colors"
-                          >
-                            <Edit3 className="h-4 w-4 mr-2" />
-                            Edit
-                          </button>
-                          {!['Site Header', 'Home Page', 'Footer', 'Site Footer', 'About Us', 'Privacy Policy', 'Terms & Conditions', 'Contact Us', 'Returns'].includes(page.name) && (
-                            <button
-                              onClick={(e) => handleDeletePage(page.id, page.name, e)}
-                              className="inline-flex items-center px-3 py-2 text-sm text-red-400 hover:text-red-300 border border-[#3A3A3A] rounded-lg hover:border-red-500/30 transition-colors"
-                              title={`Delete ${page.name}`}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-1 text-[#9B51E0] hover:text-white transition-colors">
+                                  <Edit3 className="w-4 h-4" />
+                                  <span className="text-xs">Edit</span>
+                                </div>
+                                <button
+                                  onClick={(e) => handleDeletePage(page.id, page.name, e)}
+                                  className="flex items-center space-x-1 text-red-400 hover:text-red-300 transition-colors"
+                                  title={`Delete ${page.name}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span className="text-xs">Delete</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

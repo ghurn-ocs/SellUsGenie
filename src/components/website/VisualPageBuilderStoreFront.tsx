@@ -11,11 +11,13 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PublicPageRepository } from '../../lib/supabase-public';
 import { PageBuilderRenderer } from './PageBuilderRenderer';
-import { HeaderLayoutView } from '../../pageBuilder/widgets/header-layout/HeaderLayoutView';
-import { FooterLayoutView } from '../../pageBuilder/widgets/footer-layout/FooterLayoutView';
 import type { PageDocument } from '../../pageBuilder/types';
 import { useAnalyticsIntegrations } from '../../hooks/useAnalyticsConfig';
 import { googleAnalytics } from '../../lib/googleAnalytics';
+import { CartIcon } from '../cart/CartIcon';
+import { CartSidebar } from '../cart/CartSidebar';
+import { SmartLink } from '../ui/SmartLink';
+import { useDelegatedLinkNavigation } from '../../hooks/useDelegatedLinkNavigation';
 
 interface VisualPageBuilderStoreFrontProps {
   storeId: string;
@@ -46,6 +48,7 @@ interface NavigationPage {
   slug: string;
   navigation_placement: string;
 }
+
 
 /**
  * Helper function to safely check if a page has valid content to render
@@ -83,7 +86,7 @@ const extractFooterWidget = (page: PageDocument) => {
 /**
  * Visual Page Builder StoreFront Component
  */
-export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontProps> = ({
+const VisualPageBuilderStoreFrontComponent: React.FC<VisualPageBuilderStoreFrontProps> = ({
   storeId,
   storeName,
   children,
@@ -91,6 +94,18 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
   storeSlug
 }) => {
   const [location] = useLocation();
+  
+  // Debug: Track component mounting/unmounting
+  console.log('🔄 VisualPageBuilderStoreFront MOUNTED/RE-RENDERED for:', {
+    storeId,
+    storeName,
+    pagePath,
+    timestamp: new Date().toISOString().split('T')[1]
+  });
+  
+  // Enable delegated link navigation for any remaining HTML links
+  useDelegatedLinkNavigation('storefront-main');
+  
   const [systemPages, setSystemPages] = useState<SystemPages>({
     header: null,
     footer: null,
@@ -278,12 +293,27 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
 
   // Load current page content based on pagePath
   useEffect(() => {
+    console.log('🔄 VisualPageBuilderStoreFront pagePath changed:', {
+      storeId,
+      pagePath,
+      publicRepository: !!publicRepository
+    });
+    
     const depKey = `${storeId}-${pagePath}`;
-    if (currentPageRan.current === depKey) return;
+    if (currentPageRan.current === depKey) {
+      console.log('⏭️ Skipping page load - already loaded for:', depKey);
+      return;
+    }
     currentPageRan.current = depKey;
     
     const loadCurrentPage = async () => {
-      if (!publicRepository || pagePath === undefined) return;
+      if (!publicRepository || pagePath === undefined) {
+        console.log('❌ Cannot load page - missing dependencies:', {
+          publicRepository: !!publicRepository,
+          pagePath
+        });
+        return;
+      }
 
       try {
         setPageLoading(true);
@@ -291,7 +321,7 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
         // Normalize the path - remove leading slash for slug lookup
         const pageSlug = (pagePath === '/' || pagePath === '') ? '/' : pagePath.replace(/^\//, '');
         
-        console.log('🔍 Loading page for path:', fetchParams.pagePath);
+        console.log('🔍 Loading page for path:', pagePath, '-> normalized slug:', pageSlug);
 
         let page = null;
         
@@ -423,28 +453,88 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
 
   return (
     <div className="visual-page-builder-storefront">
-      {/* Header - Direct Rendering */}
+      {/* Header - Rebuilt from Scratch */}
       {(() => {
-        if (!safeRender(systemPages.header)) {
-          console.log('🔝 No valid header page found or sections empty');
-          return null;
-        }
-        
-        const headerWidget = extractHeaderWidget(systemPages.header!);
-        if (!headerWidget) {
-          console.log('🔝 No header-layout widget found in header page');
-          return null;
-        }
-        
+        console.log('🔝 Header Debug:', {
+          hasHeaderPage: !!systemPages.header,
+          headerSections: systemPages.header?.sections?.length || 0,
+          storeData: !!storeData,
+          storeName: storeData?.store_name,
+          navigationPages: navigationPages.length
+        });
+
         return (
-          <header className="storefront-header">
-            <HeaderLayoutView widget={headerWidget} />
+          <header 
+            className="storefront-header w-full"
+            style={{ 
+              backgroundColor: '#e0b000',
+              color: '#1f2937',
+              padding: '16px 24px'
+            }}
+          >
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              {/* Left: Logo and Store Name */}
+              <div className="flex items-center space-x-3">
+                {storeData?.store_logo_url && (
+                  <img 
+                    src={storeData.store_logo_url} 
+                    alt="Store Logo" 
+                    className="h-8 w-auto object-contain"
+                  />
+                )}
+                <div className="flex flex-col">
+                  <h1 className="font-bold text-xl text-black">
+                    {storeData?.store_name || 'Store Name'}
+                  </h1>
+                  <p className="text-sm text-black opacity-80">
+                    Where we come to go!
+                  </p>
+                </div>
+              </div>
+
+              {/* Center: Navigation */}
+              <nav className="flex items-center space-x-4">
+                {navigationPages
+                  .filter(page => page.navigation_placement === 'header' || page.navigation_placement === 'both')
+                  .map((page) => {
+                  // Build proper store slug URL, handling root path and avoiding double slashes
+                  let pageUrl;
+                  if (storeSlug) {
+                    if (page.slug === '/') {
+                      pageUrl = `/store/${storeSlug}`;
+                    } else {
+                      // Remove leading slash from page.slug to avoid double slashes
+                      const cleanSlug = page.slug.startsWith('/') ? page.slug.substring(1) : page.slug;
+                      pageUrl = `/store/${storeSlug}/${cleanSlug}`;
+                    }
+                  } else {
+                    pageUrl = page.slug === '/' ? '/' : `/${page.slug}`;
+                  }
+                  
+                  return (
+                    <Link
+                      key={page.id}
+                      to={pageUrl}
+                      className="px-4 py-2 text-black font-medium bg-transparent border border-black rounded-md hover:bg-black hover:text-white transition-colors"
+                      onClick={() => console.log('🔗 Direct Link clicked, navigating to:', pageUrl)}
+                    >
+                      {page.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Right: Shopping Cart */}
+              <div className="flex items-center">
+                <CartIcon className="text-black hover:text-gray-700" />
+              </div>
+            </div>
           </header>
         );
       })()}
 
       {/* Main Content Area - Regular Page Builder Content */}
-      <main className="storefront-main">
+      <main id="storefront-main" className="storefront-main">
         {safeRender(currentPage) ? (
           <PageBuilderRenderer
             page={currentPage!}
@@ -456,28 +546,133 @@ export const VisualPageBuilderStoreFront: React.FC<VisualPageBuilderStoreFrontPr
         ) : null}
       </main>
 
-      {/* Footer - Direct Rendering */}
+      {/* Footer - Rebuilt from Scratch */}
       {(() => {
-        if (!safeRender(systemPages.footer)) {
-          console.log('🦶 No valid footer page found or sections empty');
-          return null;
-        }
-        
-        const footerWidget = extractFooterWidget(systemPages.footer!);
-        if (!footerWidget) {
-          console.log('🦶 No footer-layout widget found in footer page');
-          return null;
-        }
-        
+        console.log('🦶 Footer Debug:', {
+          hasFooterPage: !!systemPages.footer,
+          footerSections: systemPages.footer?.sections?.length || 0,
+          storeData: !!storeData,
+          storeName: storeData?.store_name
+        });
+
         return (
-          <footer className="storefront-footer">
-            <FooterLayoutView widget={footerWidget} />
+          <footer 
+            className="storefront-footer w-full"
+            style={{ 
+              backgroundColor: '#0d0f12',
+              color: '#f9fafb',
+              padding: '48px 24px'
+            }}
+          >
+            <div className="max-w-7xl mx-auto">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {/* Column 1: Company Info */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    {storeData?.store_logo_url && (
+                      <img 
+                        src={storeData.store_logo_url} 
+                        alt="Store Logo" 
+                        className="h-8 w-auto object-contain"
+                      />
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-white">
+                        {storeData?.store_name || 'Store Name'}
+                      </h3>
+                      <p className="text-sm text-gray-300">
+                        Where we go now!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2: GENERAL */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-white uppercase tracking-wide">
+                    GENERAL
+                  </h4>
+                  <ul className="space-y-2 text-sm">
+                    <li>
+                      <Link 
+                        to={storeSlug ? `/store/${storeSlug}/about` : '/about'} 
+                        className="text-gray-300 hover:text-white transition-colors"
+                      >
+                        About Us
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Column 3: SUPPORT */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-white uppercase tracking-wide">
+                    SUPPORT
+                  </h4>
+                  <ul className="space-y-2 text-sm">
+                    <li>
+                      <Link 
+                        to={storeSlug ? `/store/${storeSlug}/contact` : '/contact'} 
+                        className="text-gray-300 hover:text-white transition-colors"
+                      >
+                        Contact Us
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Column 4: LEGAL */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-white uppercase tracking-wide">
+                    LEGAL
+                  </h4>
+                  <ul className="space-y-2 text-sm">
+                    <li>
+                      <Link 
+                        to={storeSlug ? `/store/${storeSlug}/terms` : '/terms'} 
+                        className="text-gray-300 hover:text-white transition-colors"
+                      >
+                        Terms & Conditions
+                      </Link>
+                    </li>
+                    <li>
+                      <Link 
+                        to={storeSlug ? `/store/${storeSlug}/returns` : '/returns'} 
+                        className="text-gray-300 hover:text-white transition-colors"
+                      >
+                        Returns
+                      </Link>
+                    </li>
+                    <li>
+                      <Link 
+                        to={storeSlug ? `/store/${storeSlug}/privacy` : '/privacy'} 
+                        className="text-gray-300 hover:text-white transition-colors"
+                      >
+                        Privacy Policy
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Copyright Section */}
+              <div className="mt-12 pt-8 border-t border-gray-700 text-center">
+                <p className="text-sm text-gray-400">
+                  © {new Date().getFullYear()} {storeData?.store_name || 'Store Name'}. All rights reserved.
+                </p>
+              </div>
+            </div>
           </footer>
         );
       })()}
 
+      {/* Shopping Cart Sidebar */}
+      <CartSidebar />
+
     </div>
   );
 };
+
+export const VisualPageBuilderStoreFront = VisualPageBuilderStoreFrontComponent;
 
 export default VisualPageBuilderStoreFront;

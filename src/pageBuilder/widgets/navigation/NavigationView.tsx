@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Link } from 'wouter';
 import type { WidgetBase } from '../../types';
 import { PublicPageRepository } from '../../../lib/supabase-public';
+import { SmartLink } from '../../../components/ui/SmartLink';
 interface NavigationProps {
   links?: Array<{
     name: string;
@@ -94,7 +94,7 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
           .filter(page => page.navigation_placement === 'header' || page.navigation_placement === 'both')
           .map(page => ({
             name: page.name,
-            href: `/${page.slug}`
+            href: page.slug === '/' ? '/' : `/${page.slug}` // Handle root path properly
           }));
         
         if (process.env.NODE_ENV === 'development') {
@@ -116,13 +116,40 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
   // Use provided links, or published pages, or empty (no more hardcoded defaults)
   const navigationLinks = links.length > 0 ? links : publishedPages;
   const getNavigationHref = (href: string) => {
-    // Extract current store slug from location
+    // Handle special case of root path
+    if (href === '/') {
+      // First, try to use storeData if available
+      if (storeData?.store_slug) {
+        return `/store/${storeData.store_slug}`;
+      }
+      
+      // Fallback: Extract current store slug from location
+      const storeMatch = location.match(/^\/store\/([^\/]+)/);
+      if (storeMatch) {
+        const storeSlug = storeMatch[1];
+        return `/store/${storeSlug}`;
+      }
+      
+      return '/';
+    }
+    
+    // Normalize href to ensure it starts with / but remove any double slashes
+    const normalizedHref = href.startsWith('/') ? href : `/${href}`;
+    
+    // First, try to use storeData if available
+    if (storeData?.store_slug) {
+      return `/store/${storeData.store_slug}${normalizedHref}`;
+    }
+    
+    // Fallback: Extract current store slug from location
     const storeMatch = location.match(/^\/store\/([^\/]+)/);
     if (storeMatch) {
       const storeSlug = storeMatch[1];
-      return `/store/${storeSlug}${href}`;
+      return `/store/${storeSlug}${normalizedHref}`;
     }
-    return href;
+    
+    // If no store context, return as-is (shouldn't happen in storefront)
+    return normalizedHref;
   };
   // Show loading state while pages are being loaded
   if (pagesLoading && links.length === 0) {
@@ -177,13 +204,13 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
           computedClassName = 'text-gray-600 hover:text-gray-900 px-3 py-2 transition-colors';
         }
         return (
-          <Link
+          <SmartLink
             key={index}
             href={href}
             className={computedClassName}
             style={linkStyle}
             onMouseEnter={(e) => {
-              if (shouldUseTheme) {
+              if (shouldUseTheme && theme) {
                 if (theme.navLinkStyle === 'bordered') {
                   // Bordered style: fill background with link color, text becomes background color
                   e.currentTarget.style.backgroundColor = theme.linkColor;
@@ -195,7 +222,7 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
               }
             }}
             onMouseLeave={(e) => {
-              if (shouldUseTheme) {
+              if (shouldUseTheme && theme) {
                 if (theme.navLinkStyle === 'bordered') {
                   // Bordered style: back to transparent background
                   e.currentTarget.style.backgroundColor = 'transparent';
@@ -208,7 +235,7 @@ export const NavigationView: React.FC<{ widget: NavigationWidgetProps; theme?: R
             }}
           >
             {link.name}
-          </Link>
+          </SmartLink>
         );
       })}
     </nav>

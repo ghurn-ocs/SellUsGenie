@@ -264,6 +264,7 @@ export interface WidgetEditorProps {
 export interface WidgetViewProps {
   widget: WidgetBase;
   theme?: Record<string, string>;
+  storeData?: any;
 }
 
 export interface DragItem {

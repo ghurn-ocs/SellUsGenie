@@ -135,7 +135,7 @@ const WidgetRenderer: React.FC<{
 
     const renderedWidget = (
       <div className={`${colSpanClasses.join(' ')} ${systemPageClass}`} data-widget-type={widget.type}>
-        <WidgetView widget={processedWidget} theme={theme} />
+        <WidgetView widget={processedWidget} theme={theme} storeData={storeData} />
       </div>
     );
 

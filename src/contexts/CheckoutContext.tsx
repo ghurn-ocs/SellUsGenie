@@ -253,9 +253,35 @@ export const CheckoutProvider: React.FC<CheckoutProviderProps> = ({ children, st
 
       if (orderItemsError) throw orderItemsError
 
-      // For production, this would call your backend API to create a Stripe Payment Intent
-      // Since no backend API is configured, throw an error
-      throw new Error('Payment system is not configured. Please contact the store owner to enable payments.')
+      // Create Stripe Payment Intent using store owner's configuration
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: totalAmount,
+          currency: 'usd',
+          orderId: order.id,
+          storeId: storeId,
+          metadata: {
+            customerEmail: shippingAddress?.email || user?.email,
+            promotionCode: appliedPromotion?.code || null,
+          }
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create payment intent')
+      }
+
+      const { clientSecret } = await response.json()
+      
+      return {
+        clientSecret,
+        orderId: order.id
+      }
     } catch (err) {
       console.error('Error creating payment intent:', err)
       setError(err instanceof Error ? err.message : 'Failed to create payment intent')
